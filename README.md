@@ -1,2 +1,3 @@
-# fbpic + signac = :heartbeat:
-Integration of the `fbpic` PIC code with the `signac` framework.
+# `fbpic` + `signac` = 💓 
+
+Integration of the `fbpic` particle-in-cell code with the `signac` data management framework.
