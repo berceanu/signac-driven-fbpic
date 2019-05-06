@@ -10,6 +10,7 @@ conda env export > environment.yml ✔️
 ```
 
 See [Managing conda environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) for more info on using conda environments.
+For matching NVIDIA drivers to particular CUDA versions, see [Anaconda's GPU software requirements](https://docs.anaconda.com/anaconda/user-guide/tasks/gpu-packages/#software-requirements).
 
 ## Clone your fork from Github, and update it
 

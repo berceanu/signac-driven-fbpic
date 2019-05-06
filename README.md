@@ -10,6 +10,4 @@ conda list
 
 ## TODO
 
-- [ ] create *reproducible* `conda` environment containing `fbpic` and latest `signac` version
-- [ ] add important files from `~/runs` to this repo
 - [ ] update the `environment.yml` file
