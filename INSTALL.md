@@ -4,6 +4,7 @@
 conda config --add channels conda-forge ✔️
 conda create -n signac-driven-fbpic numba==0.42 scipy h5py mkl cudatoolkit=8.0 pyculib ✔️
 conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard ✔️
+pip install fbpic
 conda activate signac-driven-fbpic ✔️
 ```
 
@@ -40,15 +41,6 @@ python setup.py test # optional
 **Usage**: `python fbpic_script.py`
 
 
-## CETAL fbpic runs
-
-| filename              | status    |
-|-----------------------|-----------|
-|post_cetal.py          |  NOT FOUND|
-|post_injection.py      |  NOT FOUND|
-|cetal.py               |  NOT FOUND|
-|calder_injection.py    |  NOT FOUND|
-|calder_high_density.py |  NOT FOUND|
 
 
 ## ~/Development/fbpic/docs/source/example_input ##
