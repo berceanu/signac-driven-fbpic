@@ -1,12 +1,13 @@
 # create fbpic conda environment with dependencies
 
-```
-$ conda config --add channels conda-forge
-$ conda create -n fbpic numba==0.42 scipy h5py mkl cudatoolkit=8.0 pyculib 
-$ conda install -n fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard
-$ conda activate fbpic
+```bash
+conda config --add channels conda-forge ✔️
+conda create -n signac-driven-fbpic numba==0.42 scipy h5py mkl cudatoolkit=8.0 pyculib ✔️
+conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard ✔️
+conda activate signac-driven-fbpic ✔️
 ```
 
+[Managing conda environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
 
 # clone your fork from Github, and update it 
 
