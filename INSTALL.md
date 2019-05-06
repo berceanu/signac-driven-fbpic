@@ -1,6 +1,6 @@
 # Create fbpic conda environment with dependencies
 
-```bash
+```console
 conda config --add channels conda-forge ✔️
 conda create -n signac-driven-fbpic numba==0.42 scipy h5py mkl cudatoolkit=8.0 pyculib ✔️
 conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard ✔️
@@ -32,10 +32,10 @@ git push origin dev ✔
 
 ```console
 python setup.py install
-python setup.py test
+python setup.py test # optional
 ```
 
-**Outcome**: installed `fbpic` in `~/anaconda3/envs/fbpic/lib/python3.6/site-packages/fbpic-0.12.0-py3.6.egg/`
+**Outcome**: installed `fbpic` in `~/anaconda3/envs/signac-driven-fbpic/lib/python3.6/site-packages/fbpic-0.12.0-py3.6.egg/`
 
 **Usage**: `python fbpic_script.py`
 
