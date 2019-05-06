@@ -1,4 +1,4 @@
-# create fbpic conda environment with dependencies
+# Create fbpic conda environment with dependencies
 
 ```bash
 conda config --add channels conda-forge ✔️
@@ -9,34 +9,35 @@ conda activate signac-driven-fbpic ✔️
 
 [Managing conda environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
 
-# clone your fork from Github, and update it 
+## Clone your fork from Github, and update it
 
-```
-$ git clone git@github.com:berceanu/fbpic.git
-$ cd fbpic
-$ git checkout dev
-$ git checkout master
-```
-
-```
-$ git remote add upstream https://github.com/fbpic/fbpic.git # only first time
-$ git pull --ff-only upstream master
-$ git push origin master
-$ git checkout dev
-$ git pull --ff-only upstream dev
-$ git push origin dev
+```console
+git clone git@github.com:berceanu/fbpic.git ✔️
+cd fbpic ️✔
+git checkout dev ✔
+git checkout master ✔
 ```
 
-```
-$ python setup.py install
-$ python setup.py test
+```console
+git remote add upstream https://github.com/fbpic/fbpic.git ✅
+git checkout master ✔
+git pull --ff-only upstream master ✔
+git push origin master ✔
+git checkout dev ✔
+git pull --ff-only upstream dev ✔
+git push origin dev ✔
 ```
 
-# installed fbpic `0.12.0` in
-`/home/berceanu/anaconda3/envs/fbpic/lib/python3.6/site-packages/fbpic-0.12.0-py3.6.egg/`
+### Test installation
 
-## Usage
-`$ python fbpic_script.py`
+```console
+python setup.py install
+python setup.py test
+```
+
+**Outcome**: installed `fbpic` in `~/anaconda3/envs/fbpic/lib/python3.6/site-packages/fbpic-0.12.0-py3.6.egg/`
+
+**Usage**: `python fbpic_script.py`
 
 
 ## CETAL fbpic runs
