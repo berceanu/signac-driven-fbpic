@@ -4,17 +4,12 @@ laser-wakefield acceleration using FBPIC.
 
 Usage
 -----
-- Type "export FBPIC_DISABLE_THREADING=1; python minimal_fbpic_script.py" in a terminal
-
-Help
-----
-All the structures implemented in FBPIC are internally documented. Enter
-"print(fbpic_object.__doc__)" to have access to this documentation, where
-fbpic_object is any of the objects or function of FBPIC.
+- Type "export FBPIC_DISABLE_THREADING=1; python minimal_fbpic_script.py" in a
+  terminal
 
 ETA
 ---
-1 minute
+~1 minute on 10 cores
 """
 
 # -------
@@ -48,15 +43,7 @@ dt = dz/c   # Timestep (seconds)
 N_step = 200  # Number of iterations to perform (tot length/resolution)
 
 # Order of the stencil for z derivatives in the Maxwell solver.
-# Use -1 for infinite order, i.e. for exact dispersion relation in
-# all direction (adviced for single-GPU/single-CPU simulation).
-# Use a positive number (and multiple of 2) for a finite-order stencil
-# (required for multi-GPU/multi-CPU with MPI). A large `n_order` leads
-# to more overhead in MPI communications, but also to a more accurate
-# dispersion relation for electromagnetic waves. (Typically,
-# `n_order = 32` is a good trade-off.)
-# See https://arxiv.org/abs/1611.05712 for more information.
-n_order = 16
+n_order = -1
 
 # The particles
 p_zmin = 0.e-6  # Position of the beginning of the plasma (meters)
@@ -78,7 +65,7 @@ z0 = 0.e-6      # Laser centroid
 v_window = c       # Speed of the window
 
 # The diagnostics and the checkpoints/restarts
-diag_period = 100        # Period of the diagnostics in number of timesteps
+diag_period = 50        # Period of the diagnostics in number of timesteps
 
 # The density profile
 
@@ -105,12 +92,7 @@ def dens_func( z, r ) :
     n = np.where( z>z4, 0., n )
     return(n)
 
-# ---------------------------
-# Carrying out the simulation
-# ---------------------------
 
-# NB: The code below is only executed when running the script,
-# (`python minimal_fbpic_script.py`), but not when importing it (`import minimal_fbpic_script`).
 if __name__ == '__main__':
 
     # Initialize the simulation object
