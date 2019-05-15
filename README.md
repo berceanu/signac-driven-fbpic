@@ -10,5 +10,7 @@ conda list # check installed packages
 
 ## TODO
 
+- [X] create minimal CPU example
 - [ ] update the `environment.yml` file
 - [ ] unit testing
+- [ ] integrate 2D plotz library
