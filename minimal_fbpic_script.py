@@ -7,9 +7,9 @@ Usage
 - Type "export FBPIC_DISABLE_THREADING=1; python minimal_fbpic_script.py" in a
   terminal
 
-ETA
----
-~1 minute on 10 cores
+Runtime
+-------
+~40s on 1 Intel(R) Xeon(R) Silver 4114 CPU @ 2.20GHz core
 """
 
 # -------
@@ -17,7 +17,6 @@ ETA
 # -------
 import numpy as np
 from scipy.constants import c
-# Import the relevant structures in FBPIC
 from fbpic.main import Simulation
 from fbpic.lpa_utils.laser import add_laser
 from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
@@ -25,9 +24,6 @@ from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
 # ----------
 # Parameters
 # ----------
-
-# Whether to use the GPU
-use_cuda = False
 
 # The simulation box
 Nz = 800        # Number of gridpoints along z
@@ -40,10 +36,7 @@ Nm = 2           # Number of modes used
 # The simulation timestep
 dz = (zmax-zmin)/Nz  # resolution along z
 dt = dz/c   # Timestep (seconds)
-N_step = 200  # Number of iterations to perform (tot length/resolution)
-
-# Order of the stencil for z derivatives in the Maxwell solver.
-n_order = -1
+N_step = 200  # Number of iterations to perform
 
 # The particles
 p_zmin = 0.e-6  # Position of the beginning of the plasma (meters)
@@ -61,11 +54,8 @@ w0 = 9.e-6       # Laser waist
 ctau = 9.e-6     # Laser duration
 z0 = 0.e-6      # Laser centroid
 
-# The moving window
-v_window = c       # Speed of the window
-
-# The diagnostics and the checkpoints/restarts
-diag_period = 50        # Period of the diagnostics in number of timesteps
+# The diagnostics
+diag_period = 50   # Period in number of timesteps
 
 # The density profile
 
@@ -99,14 +89,14 @@ if __name__ == '__main__':
     sim = Simulation( Nz, zmax, Nr, rmax, Nm, dt,
         p_zmin, p_zmax, p_rmin, p_rmax, p_nz, p_nr, p_nt, n_e,
         dens_func=dens_func, zmin=zmin, boundaries='open',
-        n_order=n_order, use_cuda=use_cuda )
+        n_order=-1, use_cuda=False )
 
     # Load initial fields
     # Add a laser to the fields of the simulation
     add_laser( sim, a0, w0, ctau, z0 )
 
     # Configure the moving window
-    sim.set_moving_window( v=v_window )
+    sim.set_moving_window( v=c )
 
     # Add diagnostics
     sim.diags = [ FieldDiagnostic( diag_period, sim.fld, comm=sim.comm ),
@@ -116,4 +106,3 @@ if __name__ == '__main__':
     ### Run the simulation
     np.random.seed(0) # set deterministic random seed
     sim.step( N_step )
-    print('')
