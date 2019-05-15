@@ -9,7 +9,7 @@ Usage
 
 Runtime
 -------
-~40s on 1 Intel(R) Xeon(R) Silver 4114 CPU @ 2.20GHz core
+~30s on 1 core
 """
 
 # -------
