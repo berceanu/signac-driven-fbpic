@@ -5,9 +5,10 @@ Integration of the `fbpic` particle-in-cell code with the `signac` data manageme
 ```console
 conda env create -f environment.yml
 conda activate signac-driven-fbpic
-conda list
+conda list # check installed packages
 ```
 
 ## TODO
 
 - [ ] update the `environment.yml` file
+- [ ] unit testing
