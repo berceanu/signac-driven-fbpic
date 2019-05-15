@@ -25,8 +25,7 @@ from scipy.constants import c
 # Import the relevant structures in FBPIC
 from fbpic.main import Simulation
 from fbpic.lpa_utils.laser import add_laser
-from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic, \
-     set_periodic_checkpoint, restart_from_checkpoint
+from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
 
 # ----------
 # Parameters
@@ -80,8 +79,6 @@ v_window = c       # Speed of the window
 
 # The diagnostics and the checkpoints/restarts
 diag_period = 100        # Period of the diagnostics in number of timesteps
-use_restart = False      # Whether to restart from a previous checkpoint
-track_electrons = False  # Whether to track and write particle ids
 
 # The density profile
 
@@ -113,7 +110,7 @@ def dens_func( z, r ) :
 # ---------------------------
 
 # NB: The code below is only executed when running the script,
-# (`python lwfa_script.py`), but not when importing it (`import lwfa_script`).
+# (`python minimal_fbpic_script.py`), but not when importing it (`import minimal_fbpic_script`).
 if __name__ == '__main__':
 
     # Initialize the simulation object
@@ -125,14 +122,6 @@ if __name__ == '__main__':
     # Load initial fields
     # Add a laser to the fields of the simulation
     add_laser( sim, a0, w0, ctau, z0 )
-
-    if use_restart is False:
-        # Track electrons if required (species 0 correspond to the electrons)
-        if track_electrons:
-            sim.ptcl[0].track( sim.comm )
-    else:
-        # Load the fields and particles from the latest checkpoint file
-        restart_from_checkpoint( sim )
 
     # Configure the moving window
     sim.set_moving_window( v=v_window )
