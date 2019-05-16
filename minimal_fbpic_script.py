@@ -4,14 +4,14 @@ laser-wakefield acceleration using FBPIC.
 
 Runtime
 -------
-~30s on 1 core
+~3 min on 1 core for 800 time steps
 """
 
 import numpy as np
-from scipy.constants import c  # m/s
-from fbpic.main import Simulation
 from fbpic.lpa_utils.laser import add_laser
+from fbpic.main import Simulation
 from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
+from scipy.constants import c  # m/s
 
 # The simulation box
 Nz = 800       # Number of gridpoints along z
@@ -37,6 +37,7 @@ z0 = 15.e-6      # Laser centroid
 
 
 ## up to here ##
+
 p_zmax = 500.e-6  # Position of the end of the plasma (meters)
 p_rmin = 0.       # Minimal radial position of the plasma (meters)
 
@@ -57,12 +58,10 @@ N_step = int(T_interact/dt)
 diag_period = int(N_step/4)  # change to 100 for long simulations!
 
 # The density profile
-
+ramp_start = 30.e-6
+ramp_length = 40.e-6  # increase (up to `p_zmax`) !
 
 def dens_func(z, r):
-    ramp_start = 30.e-6
-    ramp_length = 40.e-6  # increase (up to `p_zmax`) !
-
     """Returns relative density at position z and r"""
     # Allocate relative density
     n = np.ones_like(z)
