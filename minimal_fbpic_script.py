@@ -41,10 +41,6 @@ z0 = 0.e-6   # Laser centroid
 diag_period = 50  # Period in number of timesteps
 
 # The density profile (meters)
-#################
-#                   #
-#                       #
-# z1   z2             z3   z4
 z1 = 0.e-6
 z2 = 375.e-6
 z3 = 1875.e-6
