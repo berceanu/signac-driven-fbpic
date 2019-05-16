@@ -1,5 +1,7 @@
 {
     "python.pythonPath": "/home/berceanu/anaconda3/envs/signac-driven-fbpic/bin/python",
     "python.envFile": "${workspaceFolder}/dev.env",
-    "cSpell.enabled": false
+    "cSpell.enabled": false,
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true
 }
