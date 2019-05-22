@@ -177,9 +177,10 @@ def run_fbpic(job):
 
     job.document.ran_job = True
 
-@Project.operation
-@Project.pre.after(run_fbpic)
-@Project.post.isfile('')
+
+# @Project.operation
+# @Project.pre.after(run_fbpic)
+# @Project.post.isfile('')
 
 ############
 # PLOTTING #
