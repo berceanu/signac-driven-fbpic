@@ -1,8 +1,11 @@
-Project using the [signac](https://signac.io) data management framework.
-
-## Usage
+# Usage
 
 ```console
+export FBPIC_DISABLE_THREADING=1
+export MKL_NUM_THREADS=1
+export NUMBA_NUM_THREADS=1
+export OMP_NUM_THREADS=1
+
 python3 src/init.py
 python3 src/project.py run --parallel
 python3 src/project.py status --pretty --full --stack

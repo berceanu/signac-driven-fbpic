@@ -3,5 +3,13 @@
     "python.envFile": "${workspaceFolder}/dev.env",
     "cSpell.enabled": false,
     "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
+    "terminal.integrated.env.linux": {
+        "FBPIC_DISABLE_THREADING": "1",
+        "MKL_NUM_THREADS": "1",
+        "NUMBA_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1"
+    }
 }
