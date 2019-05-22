@@ -10,6 +10,7 @@ See also: $ python src/project.py --help
 """
 import logging
 import os
+import shutil
 import subprocess
 import sys
 
@@ -58,6 +59,19 @@ def arefiles(filenames):
     return lambda job: all(job.isfile(fn) for fn in filenames)
 
 
+def sh(*cmd, **kwargs):
+    logger.info(cmd[0])
+    stdout = (
+        subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs
+        )
+        .communicate()[0]
+        .decode("utf-8")
+    )
+    logger.info(stdout)
+    return stdout
+
+
 class Project(FlowProject):
     pass
 
@@ -78,6 +92,45 @@ class Project(FlowProject):
 # @Project.label
 # def progress(job):
 #     return '{}/4'.format(int(round(current_step(job) / 5000) * 4))
+
+
+def data_to_ascii(fname):
+    pre, _ = os.path.splitext(fname)
+    outfname = pre + ".sed"
+
+    shutil.copy(fname, outfname)
+
+    # replace '\r' by '\n'
+    sh(rf"sed -i 's/\x0d/\x0a/g' {outfname}", shell=True)
+
+    # replace '\u2588'(█) by '-'
+    sh(rf"sed -i 's/\xe2\x96\x88/-/g' {outfname}", shell=True)
+
+    # remove '<ESC>[K'
+    sh(
+        rf"sed -i -e $(echo -e 's/\033\[K//g') {outfname}",
+        shell=True,
+        executable="/bin/bash",
+    )
+    return outfname
+
+
+@Project.label
+def progress(job):
+    fn = "stdout.txt"
+    if job.isfile(fn):
+        outfn = data_to_ascii(job.fn(fn))
+        # last_line = data.split("\033[K\r")[-1]
+        # last_line = sh(f"tail -n 1 {job.fn(fn)}", shell=True)
+        last_line = read_last_line(outfn).decode("UTF-8")
+        if last_line.startswith("|"):
+            percentage = last_line  # .split()[-4]
+        else:  # already finished the matrix calculation
+            percentage = "100.00"
+    else:  # didn't yet start the matrix calculation
+        percentage = "0.00"
+
+    return percentage
 
 
 ###############################
@@ -169,11 +222,11 @@ def run_fbpic(job):
     # contents.replace()
 
     # remove '<ESC>[K'
-    subprocess.call(["sed -i -e $(echo -e 's/\033\[K//g') stdout.txt"], shell=True)
+    # subprocess.call(["sed -i -e $(echo -e 's/\033\[K//g') stdout.txt"], shell=True)
     # replace '\r' by '\n'
-    subprocess.call(["sed -i 's/\x0d/\x0a/g' stdout.txt"], shell=True)
+    # subprocess.call(["sed -i 's/\x0d/\x0a/g' stdout.txt"], shell=True)
     # replace '\u2588'(█) by '-'
-    subprocess.call(["sed -i 's/\xe2\x96\x88/-/g' stdout.txt"], shell=True)
+    # subprocess.call(["sed -i 's/\xe2\x96\x88/-/g' stdout.txt"], shell=True)
 
     job.document.ran_job = True
 
