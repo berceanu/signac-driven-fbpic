@@ -108,3 +108,4 @@ venv.bak/
 diags
 workspace/
 signac_statepoints.json
+.signac_sp_cache.json.gz

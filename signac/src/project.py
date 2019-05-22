@@ -10,6 +10,7 @@ See also: $ python src/project.py --help
 """
 import logging
 import os
+import subprocess
 import sys
 
 import numpy as np
@@ -162,8 +163,23 @@ def run_fbpic(job):
     sys.stdout = orig_stdout
     f.close()
 
+    # convert stdout file from data to ascii
+    # f = open(job.fn("stdout.txt"), "r")
+    # contents = f.read()
+    # contents.replace()
+
+    # remove '<ESC>[K'
+    subprocess.call(["sed -i -e $(echo -e 's/\033\[K//g') stdout.txt"], shell=True)
+    # replace '\r' by '\n'
+    subprocess.call(["sed -i 's/\x0d/\x0a/g' stdout.txt"], shell=True)
+    # replace '\u2588'(█) by '-'
+    subprocess.call(["sed -i 's/\xe2\x96\x88/-/g' stdout.txt"], shell=True)
+
     job.document.ran_job = True
 
+@Project.operation
+@Project.pre.after(run_fbpic)
+@Project.post.isfile('')
 
 ############
 # PLOTTING #
