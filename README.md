@@ -11,6 +11,8 @@ Distribution for your OS.
 conda env create -f environment.yml
 conda activate signac-driven-fbpic
 conda list # check installed packages
+
+python minimal_fbpic_script_injection.py # test fbpic
 ```
 
 ## TODO
