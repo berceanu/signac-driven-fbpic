@@ -168,7 +168,7 @@ def run_fbpic(job):
         zmin=job.sp.zmin,
         boundaries="open",
         n_order=-1,
-        use_cuda=False,
+        use_cuda=True,
         verbose_level=2,
     )
 
