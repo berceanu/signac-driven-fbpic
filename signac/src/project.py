@@ -15,9 +15,6 @@ import subprocess
 import sys
 
 import numpy as np
-from fbpic.lpa_utils.laser import add_laser
-from fbpic.main import Simulation
-from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
 from flow import FlowProject
 from scipy.constants import c  # m/s
 
@@ -128,6 +125,10 @@ def progress(job):
 @Project.operation
 @Project.post(lambda job: job.document.ran_job == True)
 def run_fbpic(job):
+    from fbpic.lpa_utils.laser import add_laser
+    from fbpic.main import Simulation
+    from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic    
+    
     # The density profile
     def dens_func(z, r):
         """Returns relative density at position z and r"""
