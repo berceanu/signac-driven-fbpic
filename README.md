@@ -15,6 +15,10 @@ conda list # check installed packages
 python minimal_fbpic_script_injection.py # test fbpic
 ```
 
+## Usage
+
+See [`signac/README.md`](https://github.com/berceanu/signac-driven-fbpic/blob/master/signac/README.md).
+
 ## TODO
 
 - [X] create minimal CPU example
