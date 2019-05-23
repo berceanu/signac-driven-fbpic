@@ -1,14 +1,24 @@
 # Create fbpic conda environment with dependencies
 
+Download and install the [Anaconda](https://www.anaconda.com) Python 3
+Distribution for your OS.
+
+
 ```console
 conda config --add channels conda-forge ✔️
 move `defaults` channel to top of `~/.condarc`
 conda config --set channel_priority true
-conda create -n signac-driven-fbpic numba==0.42 scipy h5py mkl cudatoolkit=8.0 pyculib ✔️
-conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard ✔️
+
+
+conda create -n signac-driven-fbpic numba==0.42 scipy h5py mkl cudatoolkit=9.0 pyculib matplotlib pylint
+conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard black
+
+conda activate signac-driven-fbpic
 pip install fbpic
-conda activate signac-driven-fbpic ✔️
-conda env export > environment.yml ✔️
+
+python minimal_fbpic_script_injection.py
+
+conda env export > environment.yml
 ```
 
 See [Managing conda environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) for more info on using conda environments.
