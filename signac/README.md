@@ -1,6 +1,8 @@
 # Usage
 
 ```console
+conda activate signac-driven-fbpic
+
 export FBPIC_DISABLE_THREADING=1
 export MKL_NUM_THREADS=1
 export NUMBA_NUM_THREADS=1

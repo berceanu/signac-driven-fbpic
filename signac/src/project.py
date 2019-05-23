@@ -80,19 +80,6 @@ class Project(FlowProject):
 # OPERATION LABELS #
 ####################
 
-# TODO: implement progress based on output files
-
-# def current_step(job):
-#     import gsd.hoomd
-#     if job.isfile('dump.gsd'):
-#         with gsd.hoomd.open(job.fn('dump.gsd')) as traj:
-#             return traj[-1].configuration.step
-#     return -1
-
-# @Project.label
-# def progress(job):
-#     return '{}/4'.format(int(round(current_step(job) / 5000) * 4))
-
 
 def data_to_ascii(fname):
     pre, _ = os.path.splitext(fname)
