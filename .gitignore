@@ -111,3 +111,5 @@ signac_statepoints.json
 .signac_sp_cache.json.gz
 signac.rc
 .idea/workspace.xml
+.bundles/
+templates/
