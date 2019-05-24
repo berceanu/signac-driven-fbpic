@@ -23,4 +23,8 @@ See [`signac/README.md`](https://github.com/berceanu/signac-driven-fbpic/blob/ma
 
 - [X] create minimal CPU example
 - [ ] unit testing
-- [ ] integrate 2D plotz library
+- [ ] integrate 2D `plotz` library
+
+## Notes
+
+- you can remove a previous version of the `conda` environment via `conda remove --name signac-driven-fbpic --all`
