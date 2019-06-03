@@ -127,8 +127,8 @@ def progress(job):
 def run_fbpic(job):
     from fbpic.lpa_utils.laser import add_laser
     from fbpic.main import Simulation
-    from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic    
-    
+    from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
+
     # The density profile
     def dens_func(z, r):
         """Returns relative density at position z and r"""
@@ -226,6 +226,9 @@ def run_fbpic(job):
 ############
 # PLOTTING #
 ############
+
+# TODO: plotting
+# TODO: install plotz module
 
 
 if __name__ == "__main__":

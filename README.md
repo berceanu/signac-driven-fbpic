@@ -10,8 +10,10 @@ Distribution for your OS.
 ```console
 conda env create -f environment.yml
 conda activate signac-driven-fbpic
-conda list # check installed packages
+# install homegrown postprocessing modules 
+pip install -e PostProc
 
+conda list # check installed packages
 python minimal_fbpic_script_injection.py # test fbpic
 ```
 
