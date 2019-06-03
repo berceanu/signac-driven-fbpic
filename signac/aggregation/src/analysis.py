@@ -59,7 +59,7 @@ ts_circ = OpenPMDTimeSeries(h5_path, check_all_files=False)
 def field_snapshot(
         tseries,
         iteration,
-        field,
+        field_name,
         norm_factor,
         coord=None,
         m="all",
@@ -70,7 +70,7 @@ def field_snapshot(
     if chop is None:
         chop = [0.0, 0.0, 0.0, 0.0]
     field, info = tseries.get_field(
-        field=field, coord=coord, iteration=iteration, m=m, theta=theta
+        field=field_name, coord=coord, iteration=iteration, m=m, theta=theta
     )
     #
     field *= norm_factor
@@ -92,7 +92,7 @@ def field_snapshot(
     )
     #
     # print(plot)
-    plot.canvas.print_figure("{}{:06d}.png".format(field, iteration))
+    plot.canvas.print_figure("{}{:06d}.png".format(field_name, iteration))
 
 
 def particle_histogram(
@@ -116,7 +116,7 @@ def apply_func(iteration):
     field_snapshot(
         tseries=ts_circ,
         iteration=iteration,
-        field="rho",
+        field_name="rho",
         norm_factor=unit_factor,
         chop=[40, -20, 15, -15],
         zlabel=r"$n/n_e$",
@@ -183,7 +183,7 @@ if __name__ == "__main__":
     z_max = (
             ts_circ.iterations[-1] * tstep_to_pos + 70
     )  # offset by 70 because left margin is at -70
-    z_35100 = ts_circ.iterations[35100 // 100] * tstep_to_pos + 70
+    z_35100 = ts_circ.iterations[35100 // 100] * tstep_to_pos + 70 # error here!
     #
     h_axis = np.linspace(z_min, z_max, ts_circ.iterations.size - 1)
     v_axis = np.linspace(1.0, 350.0, 349)
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     field_snapshot(
         tseries=ts_circ,
         iteration=35100,
-        field="E",
+        field_name="E",
         coord="x",
         norm_factor=1 / pp.E0(),
         chop=[40, -20, 15, -15],
