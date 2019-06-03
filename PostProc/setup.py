@@ -8,9 +8,9 @@ setup(
    packages=['postproc'],
 #    scripts=['bin/script1','bin/script2'],
 #    url='http://pypi.python.org/pypi/PackageName/',
-   license='LICENSE.txt',
+   license='LICENSE.md',
    description='Package containing modules for post-processing fbpic simulation output',
-   long_description=open('README.txt').read(),
+   long_description=open('README.md').read(),
    install_requires=[
        "signac >= 1.1.0",
        "signac-flow >= 0.7.1",
