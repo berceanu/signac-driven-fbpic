@@ -1,25 +1,22 @@
 # coding: utf-8
 # python analysis.py
 
+# import psutil
+# import itertools
+import os
+# from multiprocessing import Pool
+
+import h5py
+import matplotlib as mpl
+
+# import matplotlib.colors as colors
 import numpy as np
 from scipy.constants import physical_constants
 
-import h5py
-import os
-from multiprocessing import Pool
-
-# import psutil
-import itertools
-
 from opmd_viewer import OpenPMDTimeSeries
-
-import matplotlib.colors as colors
-
 import fbpic_script  # fb-pic parameter file, located in the same folder
-import postpic as pp
-import plotz
-
-import matplotlib as mpl
+import postproc.plotz as plotz
+import postproc.postpic as pp
 
 mpl.rc("lines", linewidth=2)
 mpl.rc("axes", labelsize=20, titlesize=20, linewidth=1.5)
@@ -29,7 +26,6 @@ mpl.rc("legend", fontsize=12)
 mpl.rc("xtick", **{"labelsize": 18, "major.size": 5.5, "major.width": 1.5})
 mpl.rc("ytick", **{"labelsize": 18, "major.size": 5.5, "major.width": 1.5})
 mpl.rc("savefig", dpi=300, frameon=False, transparent=True)
-
 
 base_dir = "./"
 out_dir = "diags"
@@ -46,7 +42,7 @@ dt = bpath.attrs["dt"] * bpath.attrs["timeUnitSI"] * 1e15  # time step in fs
 
 q_e = physical_constants["elementary charge"][0]  # C, positive
 c = physical_constants["speed of light in vacuum"][0]  # m/s
-m_e = physical_constants["electron mass"][0]  #  Kg
+m_e = physical_constants["electron mass"][0]  # Kg
 mc2 = m_e * c ** 2 / (q_e * 1e6)  # electron rest energy in MeV: 0.511
 tstep_to_pos = (c * 1e-9) * dt  # conversion factor in mu
 
@@ -61,23 +57,25 @@ ts_circ = OpenPMDTimeSeries(h5_path, check_all_files=False)
 
 
 def field_snapshot(
-    tseries,
-    iteration,
-    field,
-    norm_factor,
-    coord=None,
-    m="all",
-    theta=0.0,
-    chop=[0.0, 0.0, 0.0, 0.0],
-    **kwargs
+        tseries,
+        iteration,
+        field,
+        norm_factor,
+        coord=None,
+        m="all",
+        theta=0.0,
+        chop=None,
+        **kwargs
 ):
-    F, info = tseries.get_field(
+    if chop is None:
+        chop = [0.0, 0.0, 0.0, 0.0]
+    field, info = tseries.get_field(
         field=field, coord=coord, iteration=iteration, m=m, theta=theta
     )
     #
-    F *= norm_factor
+    field *= norm_factor
     plot = plotz.Plot2D(
-        F,
+        field,
         info.z * 1e6,
         info.r * 1e6,
         xlabel=r"${} \;(\mu m)$".format(info.axes[1]),
@@ -98,22 +96,20 @@ def field_snapshot(
 
 
 def particle_histogram(
-    tseries,
-    iteration,
-    Emin=1.0,
-    Emax=300.0,
-    nbins=100,
-    mc2=0.5109989462686102,
-    q_e=1.6021766208e-19,
+        tseries,
+        iteration,
+        energy_min=1.0,
+        energy_max=300.0,
+        nbins=100,
 ):
-    dE = (Emax - Emin) / nbins
-    E_bins = np.linspace(Emin, Emax, nbins + 1)
+    delta_energy = (energy_max - energy_min) / nbins
+    energy_bins = np.linspace(energy_min, energy_max, nbins + 1)
     ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=iteration)
-    E = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)  # Energy in MeV
-    Q_bins, edges = np.histogram(
-        E, E_bins, weights=q_e * 1e12 / dE * w
+    energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)  # Energy in MeV
+    q_bins, edges = np.histogram(
+        energy, energy_bins, weights=q_e * 1e12 / delta_energy * w
     )  # weights in pC/MeV
-    return Q_bins.tolist(), edges.tolist()
+    return q_bins.tolist(), edges.tolist()
 
 
 def apply_func(iteration):
@@ -128,20 +124,28 @@ def apply_func(iteration):
         vmax=3,
     )
     time_fs = iteration * dt
-    z0, a0, w0, ctau = pp.get_a0(ts_circ, iteration=iteration)  # SI
-    Q, edg = particle_histogram(
-        tseries=ts_circ, iteration=iteration, Emin=1.0, Emax=350.0, nbins=349
+    z_0, a_0, w_0, c_tau = pp.get_a0(ts_circ, iteration=iteration)  # SI
+    q_bins_list, edg_list = particle_histogram(
+        tseries=ts_circ, iteration=iteration, energy_min=1.0, energy_max=350.0, nbins=349
     )
-    return (iteration, time_fs, z0 * 1e6, a0, w0 * 1e6, ctau * 1e6, Q, edg)  # microns
+    return iteration, time_fs, z_0 * 1e6, a_0, w_0 * 1e6, c_tau * 1e6, q_bins_list, edg_list  # microns
 
 
 if __name__ == "__main__":
     print(ts_circ.iterations[-1], tstep_to_pos)
 
-    pool = Pool()
-    diags = pool.map(apply_func, ts_circ.iterations.tolist())
-    #
-    extract = lambda i, lst_of_tuples: np.array([tple[i] for tple in lst_of_tuples])
+    diags = list()
+    for it in ts_circ.iterations.tolist():
+        diags.append(apply_func(it))
+
+
+    # pool = Pool()
+    # diags = pool.map(apply_func, ts_circ.iterations.tolist())
+
+    def extract(i, lst_of_tuples):
+        return np.array([tple[i] for tple in lst_of_tuples])
+
+
     z0 = extract(2, diags)
     a0 = extract(3, diags)
     w0 = extract(4, diags)
@@ -149,7 +153,7 @@ if __name__ == "__main__":
     Q = extract(6, diags)
     # edg = extract(7, diags)
 
-    plot = plotz.Plot1D(
+    plot_1d = plotz.Plot1D(
         a0,
         z0,
         xlabel=r"$%s \;(\mu m)$" % "z",
@@ -159,25 +163,25 @@ if __name__ == "__main__":
         figsize=(10, 6),
         color="red",
     )
-    plot.canvas.print_figure("a0.png")  #
+    plot_1d.canvas.print_figure("a0.png")  #
     #
-    plot = plotz.Plot1D(
+    plot_1d = plotz.Plot1D(
         w0,
         z0,
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$%s \;(\mu m)$" % "w_0",
         figsize=(10, 6),
     )
-    plot.canvas.print_figure("w0.png")  #
+    plot_1d.canvas.print_figure("w0.png")  #
     #
-    plot = plotz.Plot1D(
+    plot_1d = plotz.Plot1D(
         ctau, z0, xlabel=r"$%s \;(\mu m)$" % "z", ylabel=r"$c \tau \;(\mu m)$"
     )
-    plot.canvas.print_figure("ctau.png")  #
+    plot_1d.canvas.print_figure("ctau.png")  #
 
     z_min = ts_circ.iterations[0] * tstep_to_pos + 70  # mu
     z_max = (
-        ts_circ.iterations[-1] * tstep_to_pos + 70
+            ts_circ.iterations[-1] * tstep_to_pos + 70
     )  # offset by 70 because left margin is at -70
     z_35100 = ts_circ.iterations[35100 // 100] * tstep_to_pos + 70
     #
@@ -232,7 +236,6 @@ if __name__ == "__main__":
         vmax=8,
         hslice_val=0.0,
     )
-
 
 # 100 msec / image, 10 fps
 # ffmpeg -framerate 10 -i rho%05d.png -c:v libx264 -vf fps=25 -pix_fmt yuv420p rho.mp4

@@ -9,9 +9,14 @@ Distribution for your OS.
 
 ```console
 conda env create -f environment.yml
+
 conda activate signac-driven-fbpic
+
 # install homegrown postprocessing modules 
 pip install -e PostProc
+
+# install https://github.com/openPMD/openPMD-viewer
+conda install -n signac-driven-fbpic -c rlehe openpmd_viewer
 
 conda list # check installed packages
 python minimal_fbpic_script_injection.py # test fbpic
@@ -24,6 +29,7 @@ See [`signac/README.md`](https://github.com/berceanu/signac-driven-fbpic/blob/ma
 ## TODO
 
 - [X] create minimal CPU example
+- [ ] add `openpmd_viewer` to `environment.yml` and update
 - [ ] unit testing
 - [ ] integrate 2D `plotz` library
 

@@ -12,6 +12,7 @@ conda config --set channel_priority true
 
 conda create -n signac-driven-fbpic numba==0.42 scipy h5py mkl cudatoolkit=9.0 pyculib matplotlib pylint
 conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard black
+conda install -n signac-driven-fbpic -c rlehe openpmd_viewer
 
 conda activate signac-driven-fbpic
 pip install fbpic

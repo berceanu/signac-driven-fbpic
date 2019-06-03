@@ -15,6 +15,7 @@ setup(
        "signac >= 1.1.0",
        "signac-flow >= 0.7.1",
        "signac-dashboard >= 0.2.3",
-       "fbpic >= 0.12.0"
+       "fbpic >= 0.12.0",
+       "opmd_viewer >= 0.8.2"
    ],
 )
