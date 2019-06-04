@@ -1,14 +1,14 @@
 """ Module containing useful plotting abstractions on top of matplotlib. """
 
-import numpy as np
+from typing import Union
 
+import numpy as np
+from matplotlib.artist import setp, getp
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
-
+from matplotlib.gridspec import GridSpec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from matplotlib.gridspec import GridSpec
-from matplotlib.artist import setp, getp
 
 
 def idx_from_val(arr1d, val):
@@ -18,11 +18,20 @@ def idx_from_val(arr1d, val):
 
 
 class Plot2D:
-    "Pseudocolor plot of a 2D array with optional 1D slices attached."
+    """
+    Pseudocolor plot of a 2D array with optional 1D slices attached.
+    """
 
     def __init__(
-        self, arr2d, h_axis, v_axis, xlabel=r"", ylabel=r"", zlabel=r"", **kwargs
-    ):
+        self,
+        arr2d: np.ndarray,
+        h_axis: np.ndarray,
+        v_axis: np.ndarray,
+        xlabel=r"",
+        ylabel=r"",
+        zlabel=r"",
+        **kwargs: Union[int, str, float]
+    ) -> None:
         r"""
         >>> uu = np.linspace(0, np.pi, 128)
         >>> data = np.cos(uu - 0.5) * np.cos(uu.reshape(-1, 1) - 1.0)
@@ -41,6 +50,14 @@ class Plot2D:
         Other options for norm:
         >>> import matplotlib.colors as colors
         >>> norm = colors.LogNorm()
+
+        :param arr2d: data to be plotted
+        :param h_axis: values on the "x" axis
+        :param v_axis: values on the "y" axis
+        :param xlabel: "x" axis label
+        :param ylabel: "y" axis label
+        :param zlabel: "z" axis label
+        :param kwargs: other arguments for ``matplotlib``
         """
         self.extent = kwargs.get(
             "extent", (np.min(h_axis), np.max(h_axis), np.min(v_axis), np.max(v_axis))
@@ -278,14 +295,29 @@ class Plot2D:
 
 
 class Plot1D:
-    "Plot of 1D array."
+    """
+    Plot of 1D array.
+    """
 
-    def __init__(self, arr1d, h_axis, xlabel=r"", ylabel=r"", **kwargs):
+    def __init__(
+        self,
+        arr1d: np.ndarray,
+        h_axis: np.ndarray,
+        xlabel=r"",
+        ylabel=r"",
+        **kwargs: Union[int, str, float]
+    ) -> None:
         r"""
-        >>> plot = plotz.Plot1D(a0, z0, xlabel=r'$%s \;(\mu m)$'%'z', ylabel=r'$%s$'%'a_0',
+        >>> plot = Plot1D(a0, z0, xlabel=r'$%s \;(\mu m)$'%'z', ylabel=r'$%s$'%'a_0',
                                 xlim=[0, 900], ylim=[0, 10],
                                 figsize=(10, 6), color='red')
         >>> plot.canvas.print_figure('a0.png')
+
+        :param arr1d: data to be plotted on the "y" axis
+        :param h_axis: values on the "x" axis
+        :param xlabel: "x" axis label
+        :param ylabel: "y" axis label
+        :param kwargs: other arguments for ``matplotlib.plot()``
         """
         self.xlim = kwargs.pop("xlim", [np.min(h_axis), np.max(h_axis)])
         self.ylim = kwargs.pop("ylim", [np.min(arr1d), np.max(arr1d)])
@@ -362,7 +394,7 @@ def plot1d_break_x(fig, h_axis, v_axis, param, slice_opts):
     ax_right.spines["left"].set_visible(False)
 
     # From https://matplotlib.org/examples/pylab_examples/broken_axis.html
-    d = .015  # how big to make the diagonal lines in axes coordinates
+    d = 0.015  # how big to make the diagonal lines in axes coordinates
     # arguments to pass plot, just so we don't keep repeating them
     kwargs = dict(transform=ax_left.transAxes, color="k", clip_on=False)
     ax_left.plot((1 - d, 1 + d), (-d, +d), **kwargs)
@@ -371,4 +403,3 @@ def plot1d_break_x(fig, h_axis, v_axis, param, slice_opts):
     kwargs.update(transform=ax_right.transAxes)  # switch to the right axes
     ax_right.plot((-d, +d), (1 - d, 1 + d), **kwargs)
     ax_right.plot((-d, +d), (-d, +d), **kwargs)
-

@@ -297,7 +297,7 @@ if __name__ == "__main__":
         iteration=35100,
         field_name="E",
         coord="x",
-        norm_factor=1 / pp.E0(),
+        norm_factor=1 / pp.laser_electric_field(),
         chop=[40, -20, 15, -15],
         zlabel=r"$E_x / E_0$",
         vmin=-8,

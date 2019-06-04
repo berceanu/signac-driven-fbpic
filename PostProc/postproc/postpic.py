@@ -1,7 +1,8 @@
 from scipy.constants import physical_constants
-c = physical_constants['speed of light in vacuum'][0] # speed of light in m/s
-q_e = physical_constants['elementary charge'][0] # electron charge in C
-m_e = physical_constants['electron mass'][0] # electon mass in Kg
+
+c = physical_constants['speed of light in vacuum'][0]  # speed of light in m/s
+q_e = physical_constants['elementary charge'][0]  # electron charge in C
+m_e = physical_constants['electron mass'][0]  # electon mass in Kg
 
 import numpy as np
 from scipy.signal import hilbert
@@ -10,20 +11,26 @@ from multiprocessing import cpu_count
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from opmd_viewer import OpenPMDTimeSeries
 
-
 default_nprocs = cpu_count()
 
-def distribute(nitems,  nprocs=None):
+
+def distribute(nitems, nprocs=None):
     if nprocs is None:
         nprocs = default_nprocs
-    nitems_per_proc = (nitems + nprocs -1) // nprocs
-    return [(i, min(nitems, i+nitems_per_proc))
+    nitems_per_proc = (nitems + nprocs - 1) // nprocs
+    return [(i, min(nitems, i + nitems_per_proc))
             for i in range(0, nitems, nitems_per_proc)]
 
-def E0(lambda0=0.8e-6):
-    k0 = 2 * np.pi / 0.8e-6
-    E0 = m_e * c**2 * k0 / q_e #V/m
-    return E0
+
+def laser_electric_field(lambda0=0.8e-6) -> float:
+    """
+    Compute the peak laser electric field.
+
+    :param lambda0: laser wavelength (meters)
+    :return: peak laser electric field E0 in V/m
+    """
+    k0 = 2 * np.pi / lambda0
+    return m_e * c ** 2 * k0 / q_e
 
 
 def get_a0(ts: OpenPMDTimeSeries,
@@ -43,15 +50,18 @@ def get_a0(ts: OpenPMDTimeSeries,
     :param lambda0: laser wavelength (meters)
     :return: z₀, a₀, w₀, cτ
     """
+    # the direction along which to slice the data eg., 'x', 'y' or 'z'
     slicing_dir = 'y'
+    # the angle of the plane of observation, with respect to the 'x' axis
     theta = 0
 
     # get E_x field in V/m
-    Ex, info_Ex = ts.get_field(field='E', coord=pol,
-                               t=t, iteration=iteration,
-                               m=m, theta=theta, slicing_dir=slicing_dir)
-    # normalization
-    a0 = Ex / E0(lambda0)
+    electric_field_x, info_electric_field_x = ts.get_field(field='E', coord=pol,
+                                                           t=t, iteration=iteration,
+                                                           m=m, theta=theta, slicing_dir=slicing_dir)
+
+    # normalized vector potential
+    a0 = electric_field_x / laser_electric_field(lambda0)
 
     # get pulse envelope
     envelope = np.abs(hilbert(a0, axis=1))
@@ -62,15 +72,14 @@ def get_a0(ts: OpenPMDTimeSeries,
     # index of peak
     z_idx = np.argmax(envelope_z)
     # peak position
-    z0 = info_Ex.z[z_idx]
+    z0 = info_electric_field_x.z[z_idx]
 
     # FWHM perpendicular size of beam, proportional to w0
-    fwhm_a0_w0 = np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2)) * info_Ex.dr
+    fwhm_a0_w0 = np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2)) * info_electric_field_x.dr
     # FWHM longitudinal size of the beam, proportional to ctau
-    fwhm_a0_ctau = np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_Ex.dz
+    fwhm_a0_ctau = np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_electric_field_x.dz
 
     return z0, a0_max, fwhm_a0_w0, fwhm_a0_ctau
-
 
 
 def get_laser_diags(ts, t=None, iteration=None, pol='x', m='all',
@@ -132,35 +141,35 @@ def get_laser_diags(ts, t=None, iteration=None, pol='x', m='all',
     # else:
     #     slicing_dir = 'x'
     #     theta = np.pi / 2.
-        
+
     # get pulse envelope
-    #E_vs_z, info = ts.get_laser_envelope(t=t, iteration=iteration,
+    # E_vs_z, info = ts.get_laser_envelope(t=t, iteration=iteration,
     #                                     pol=pol, m=m, theta=theta,
     #                                     slicing_dir=slicing_dir,
     #                                     index='center')
-    #i_max = np.argmax( E_vs_z )
-    #z0 = info.z[i_max]
-    
-    z0, a0, w0, ctau = get_a0(ts, t=t, iteration=iteration,
-                                              pol=pol, m=m, lambda0=lambda0)
+    # i_max = np.argmax( E_vs_z )
+    # z0 = info.z[i_max]
 
-    #omega0 = ts.get_main_frequency(t=t, iteration=iteration, pol=pol)
+    z0, a0, w0, ctau = get_a0(ts, t=t, iteration=iteration,
+                              pol=pol, m=m, lambda0=lambda0)
+
+    # omega0 = ts.get_main_frequency(t=t, iteration=iteration, pol=pol)
     omega0 = 0.
-    #a0 = ts.get_a0(t=t, iteration=iteration, pol=pol)
-    #w0 = ts.get_laser_waist(t=t, iteration=iteration, pol=pol, theta=theta,
+    # a0 = ts.get_a0(t=t, iteration=iteration, pol=pol)
+    # w0 = ts.get_laser_waist(t=t, iteration=iteration, pol=pol, theta=theta,
     #                     slicing_dir=slicing_dir, method=method)
-    #ctau = ts.get_ctau(t=t, iteration=iteration, pol=pol, method=method)
+    # ctau = ts.get_ctau(t=t, iteration=iteration, pol=pol, method=method)
 
     # assign units
     z0_u, omega0_u, w0_u, ctau_u = 'm', 'rad/s', 'm', 'm'
 
-    if units=='mufs':
+    if units == 'mufs':
         # rescale
-        z0, omega0, w0, ctau = z0*1e6, omega0*1e-15, w0*1e6, ctau*1e6
+        z0, omega0, w0, ctau = z0 * 1e6, omega0 * 1e-15, w0 * 1e6, ctau * 1e6
         # change units
         z0_u, omega0_u, w0_u, ctau_u = 'mu', 'rad/fs', 'mu', 'mu'
-        
-    if prnt and units=='mufs':
-        print('z0 = {:.2f} {}, omega0 = {:.2f} {}, a0 = {:.2f}, w0 = {:.2f} {}, ctau = {:.2f} {}.'\
-        .format(z0, z0_u, omega0, omega0_u, a0, w0, w0_u, ctau, ctau_u))
+
+    if prnt and units == 'mufs':
+        print('z0 = {:.2f} {}, omega0 = {:.2f} {}, a0 = {:.2f}, w0 = {:.2f} {}, ctau = {:.2f} {}.' \
+              .format(z0, z0_u, omega0, omega0_u, a0, w0, w0_u, ctau, ctau_u))
     return z0, omega0, a0, w0, ctau
