@@ -7,6 +7,9 @@ import numpy as np
 from scipy.signal import hilbert
 
 from multiprocessing import cpu_count
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from opmd_viewer import OpenPMDTimeSeries
+
 
 default_nprocs = cpu_count()
 
@@ -23,40 +26,48 @@ def E0(lambda0=0.8e-6):
     return E0
 
 
-def get_a0(ts, t=None, iteration=None, pol='x', m='all', lambda0=0.8e-6):
-    
-    # if pol not in ['x', 'y']:
-    #     raise ValueError('The `pol` argument is missing or erroneous.')
+def get_a0(ts: OpenPMDTimeSeries,
+           t: Optional[float] = None,
+           iteration: Optional[int] = None,
+           pol='x',
+           m='all',
+           lambda0=0.8e-6) -> Tuple[float, float, float, float]:
+    """
+    Compute z₀, a₀, w₀, cτ.
 
-    # if pol == 'x':
+    :param ts: whole simulation time series
+    :param t: time (in seconds) at which to obtain the data
+    :param iteration: time step at which to obtain the data
+    :param pol: which component of the field to extract
+    :param m: 'all' for extracting the sum of all the modes
+    :param lambda0: laser wavelength (meters)
+    :return: z₀, a₀, w₀, cτ
+    """
     slicing_dir = 'y'
     theta = 0
-    # else:
-    #     slicing_dir = 'x'
-    #     theta = np.pi / 2.
 
     # get E_x field in V/m
     Ex, info_Ex = ts.get_field(field='E', coord=pol,
                                t=t, iteration=iteration,
                                m=m, theta=theta, slicing_dir=slicing_dir)
-    #normalization
-    a0 = Ex/E0(lambda0)
+    # normalization
+    a0 = Ex / E0(lambda0)
 
     # get pulse envelope
     envelope = np.abs(hilbert(a0, axis=1))
-    envelope_z = envelope[envelope.shape[0]//2, :]
-    
-    a0_max = np.amax(envelope_z)    
-        
+    envelope_z = envelope[envelope.shape[0] // 2, :]
+
+    a0_max = np.amax(envelope_z)
+
     # index of peak
     z_idx = np.argmax(envelope_z)
     # peak position
     z0 = info_Ex.z[z_idx]
 
     # FWHM perpendicular size of beam, proportional to w0
-    fwhm_a0_w0 = np.sum(np.greater_equal(envelope[:, z_idx], a0_max/2)) * info_Ex.dr
+    fwhm_a0_w0 = np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2)) * info_Ex.dr
     # FWHM longitudinal size of the beam, proportional to ctau
-    fwhm_a0_ctau = np.sum(np.greater_equal(envelope_z, a0_max/2)) * info_Ex.dz
+    fwhm_a0_ctau = np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_Ex.dz
 
     return z0, a0_max, fwhm_a0_w0, fwhm_a0_ctau
 

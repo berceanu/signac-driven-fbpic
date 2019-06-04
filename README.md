@@ -20,6 +20,8 @@ conda install -n signac-driven-fbpic -c rlehe openpmd_viewer
 
 conda list # check installed packages
 python minimal_fbpic_script_injection.py # test fbpic
+
+sudo apt install ffmpeg
 ```
 
 ## Usage

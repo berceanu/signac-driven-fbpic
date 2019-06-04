@@ -143,7 +143,7 @@ def particle_histogram(
 
 
 def apply_func(
-    iteration
+        iteration: int
 ) -> Tuple[int, float, float, float, float, float, np.ndarray, np.ndarray]:
     """
     Computes z₀, a₀, w₀, cτ, energy histogram and plots particle density for the field ``"rho"``.
@@ -272,7 +272,7 @@ if __name__ == "__main__":
         # norm = colors.LogNorm(),
     )
     hist2d.canvas.print_figure("hist2d.png")
-    #
+
     # Q_bins, edges = particle_histogram(tseries=ts_circ, iteration=35100, Emin=1., Emax=350., nbins=349,
     #                     mc2=0.5109989462686102, q_e=1.6021766208e-19)
     # #
