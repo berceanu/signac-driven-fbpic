@@ -1,4 +1,6 @@
-""" Module containing useful plotting abstractions on top of matplotlib. """
+"""
+Module containing useful plotting abstractions on top of matplotlib.
+"""
 
 from typing import Union
 
@@ -56,7 +58,7 @@ class Plot2D:
         :param v_axis: values on the "y" axis
         :param xlabel: "x" axis label
         :param ylabel: "y" axis label
-        :param zlabel: "z" axis label
+        :param zlabel: colorbar label
         :param kwargs: other arguments for ``matplotlib``
         """
         self.extent = kwargs.get(
@@ -300,12 +302,7 @@ class Plot1D:
     """
 
     def __init__(
-        self,
-        arr1d: np.ndarray,
-        h_axis: np.ndarray,
-        xlabel=r"",
-        ylabel=r"",
-        **kwargs
+        self, arr1d: np.ndarray, h_axis: np.ndarray, xlabel=r"", ylabel=r"", **kwargs
     ) -> None:
         r"""
         >>> plot = Plot1D(a0, z0, xlabel=r'$%s \;(\mu m)$'%'z', ylabel=r'$%s$'%'a_0',

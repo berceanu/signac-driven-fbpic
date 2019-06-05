@@ -224,31 +224,29 @@ def run_fbpic(job):
     job.document.ran_job = True
 
 
-# @Project.operation
-# @Project.pre.after(run_fbpic)
-# @Project.post.isfile('')
+@Project.operation
+@Project.pre.after(run_fbpic)
+@Project.post.isfile('')
+def plot_rhos(job):
+    
 
 ############
 # PLOTTING #
 ############
 
-q_e = physical_constants["elementary charge"][0]
 m_e = physical_constants["electron mass"][0]
+q_e = physical_constants["elementary charge"][0]
 mc2 = m_e * c ** 2 / (q_e * 1e6)
 
 
 def particle_histogram(
-    tseries: OpenPMDTimeSeries,
-    iteration: int,
-    energy_min=1.0,
-    energy_max=300.0,
-    nbins=100,
+    tseries: OpenPMDTimeSeries, iter: int, energy_min=1.0, energy_max=300.0, nbins=100
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
 
     :param tseries: whole simulation time series
-    :param iteration: time step in the simulation
+    :param iter: time step in the simulation
     :param energy_min: lower energy threshold
     :param energy_max: upper energy threshold
     :param nbins: number of bins
@@ -257,21 +255,21 @@ def particle_histogram(
     delta_energy = (energy_max - energy_min) / nbins
     energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
 
-    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=iteration)
+    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=iter)
     energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
 
-    q_bins, edges = np.histogram(
+    charge_bins, edges = np.histogram(
         energy, bins=energy_bins, weights=q_e * 1e12 / delta_energy * w
     )
 
-    return q_bins, edges
+    return charge_bins, edges
 
 
 def field_snapshot(
     tseries: OpenPMDTimeSeries,
-    iteration: int,
+    iter: int,
     field_name: str,
-    norm_factor: float,
+    normalization_factor: float,
     coord: Optional[str] = None,
     m="all",
     theta=0.0,
@@ -279,26 +277,28 @@ def field_snapshot(
     **kwargs,
 ) -> None:
     """
-    Plot the ``field_name`` field from ``tseries`` at step ``iteration``.
+    Plot the ``field_name`` field from ``tseries`` at step ``iter``.
 
     :param tseries: whole simulation time series
-    :param iteration: time step in the simulation
+    :param iter: time step in the simulation
     :param field_name: which field to extract, eg. 'rho', 'E', 'B' or 'J'
-    :param norm_factor: normalization factor for the extracted field
+    :param normalization_factor: normalization factor for the extracted field
     :param coord: which component of the field to extract, eg. 'r', 't' or 'z'
-    :param m: 'all' for extracting the sum of all the modes
-    :param theta: the angle of the plane of observation, with respect to the x axis
+    :param m: 'all' for extracting the sum of all the azimuthal modes
+    :param theta: the angle of the plane of observation, with respect to the 'x' axis
     :param chop: adjusting extent of simulation box plot
     :param kwargs: extra plotting arguments, eg. labels, data limits etc.
     :return: saves field plot image to disk
     """
     if chop is None:
         chop = [0.0, 0.0, 0.0, 0.0]
+
     field, info = tseries.get_field(
-        field=field_name, coord=coord, iteration=iteration, m=m, theta=theta
+        field=field_name, coord=coord, iteration=iter, m=m, theta=theta
     )
 
-    field *= norm_factor
+    field *= normalization_factor
+
     plot = plotz.Plot2D(
         field,
         info.z * 1e6,
@@ -312,11 +312,22 @@ def field_snapshot(
             info.rmax * 1e6 + chop[3],
         ),
         cbar=True,
-        text="iteration {}".format(iteration),
+        text=f"iteration {iter}",
         **kwargs,
     )
 
-    plot.canvas.print_figure("{}{:06d}.png".format(field_name, iteration))
+    plot.canvas.print_figure(f"{field_name}{iter:06d}.png")
+
+
+# https://docs.signac.io/projects/core/en/latest/api.html#the-h5storemanager
+
+# @Project.operation
+# @directives(np=8) # only needed when submitting
+# def generate_movie(job):
+#     h5_files = glob(job.fn('diags/hdf5/*.h5'))
+#     with multiprocessing.Pool(np=8) as pool:
+#         pool.map(generate_png_files, h5files)
+#     ffmpeg.input(job.fn(r'%016d.png'), framerate=24).output(job.fn('movie.mp4').run()
 
 
 if __name__ == "__main__":
