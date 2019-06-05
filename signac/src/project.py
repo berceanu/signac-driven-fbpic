@@ -13,13 +13,13 @@ import os
 import shutil
 import subprocess
 import sys
+from typing import List, Optional, Tuple
 
 import numpy as np
 from flow import FlowProject
+from opmd_viewer import OpenPMDTimeSeries
 from scipy.constants import c, physical_constants
 
-from opmd_viewer import OpenPMDTimeSeries
-from typing import List, Optional, Tuple
 import postproc.plotz as plotz
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,7 @@ logfname = "fbpic-minimal-project.log"
 #####################
 
 # https://stackoverflow.com/questions/3346430/what-is-the-most-efficient-way-to-get-first-and-last-line-of-a-text-file/18603065#18603065
+
 
 def read_last_line(filename):
     with open(filename, "rb") as f:
