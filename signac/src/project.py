@@ -16,18 +16,22 @@ import sys
 
 import numpy as np
 from flow import FlowProject
-from scipy.constants import c  # m/s
+from scipy.constants import c, physical_constants
+
+from opmd_viewer import OpenPMDTimeSeries
+from typing import List, Optional, Tuple
+import postproc.plotz as plotz
 
 logger = logging.getLogger(__name__)
 # Usage: logger.info('message') or logger.warning('message')
 logfname = "fbpic-minimal-project.log"
+
 
 #####################
 # UTILITY FUNCTIONS #
 #####################
 
 # https://stackoverflow.com/questions/3346430/what-is-the-most-efficient-way-to-get-first-and-last-line-of-a-text-file/18603065#18603065
-
 
 def read_last_line(filename):
     with open(filename, "rb") as f:
@@ -123,14 +127,14 @@ def progress(job):
 
 
 @Project.operation
-@Project.post(lambda job: job.document.ran_job == True)
+@Project.post(lambda job: job.document.ran_job is True)
 def run_fbpic(job):
     from fbpic.lpa_utils.laser import add_laser
     from fbpic.main import Simulation
     from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
 
     # The density profile
-    def dens_func(z, r):
+    def dens_func(z):
         """Returns relative density at position z and r"""
         # Allocate relative density
         n = np.ones_like(z)
@@ -227,8 +231,91 @@ def run_fbpic(job):
 # PLOTTING #
 ############
 
-# TODO: plotting
-# TODO: install plotz module
+q_e = physical_constants["elementary charge"][0]
+m_e = physical_constants["electron mass"][0]
+mc2 = m_e * c ** 2 / (q_e * 1e6)
+
+
+def particle_histogram(
+    tseries: OpenPMDTimeSeries,
+    iteration: int,
+    energy_min=1.0,
+    energy_max=300.0,
+    nbins=100,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
+
+    :param tseries: whole simulation time series
+    :param iteration: time step in the simulation
+    :param energy_min: lower energy threshold
+    :param energy_max: upper energy threshold
+    :param nbins: number of bins
+    :return: histogram values and bin edges
+    """
+    delta_energy = (energy_max - energy_min) / nbins
+    energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
+
+    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=iteration)
+    energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
+
+    q_bins, edges = np.histogram(
+        energy, bins=energy_bins, weights=q_e * 1e12 / delta_energy * w
+    )
+
+    return q_bins, edges
+
+
+def field_snapshot(
+    tseries: OpenPMDTimeSeries,
+    iteration: int,
+    field_name: str,
+    norm_factor: float,
+    coord: Optional[str] = None,
+    m="all",
+    theta=0.0,
+    chop: Optional[List[float]] = None,
+    **kwargs,
+) -> None:
+    """
+    Plot the ``field_name`` field from ``tseries`` at step ``iteration``.
+
+    :param tseries: whole simulation time series
+    :param iteration: time step in the simulation
+    :param field_name: which field to extract, eg. 'rho', 'E', 'B' or 'J'
+    :param norm_factor: normalization factor for the extracted field
+    :param coord: which component of the field to extract, eg. 'r', 't' or 'z'
+    :param m: 'all' for extracting the sum of all the modes
+    :param theta: the angle of the plane of observation, with respect to the x axis
+    :param chop: adjusting extent of simulation box plot
+    :param kwargs: extra plotting arguments, eg. labels, data limits etc.
+    :return: saves field plot image to disk
+    """
+    if chop is None:
+        chop = [0.0, 0.0, 0.0, 0.0]
+    field, info = tseries.get_field(
+        field=field_name, coord=coord, iteration=iteration, m=m, theta=theta
+    )
+
+    field *= norm_factor
+    plot = plotz.Plot2D(
+        field,
+        info.z * 1e6,
+        info.r * 1e6,
+        xlabel=r"${} \;(\mu m)$".format(info.axes[1]),
+        ylabel=r"${} \;(\mu m)$".format(info.axes[0]),
+        extent=(
+            info.zmin * 1e6 + chop[0],
+            info.zmax * 1e6 + chop[1],
+            info.rmin * 1e6 + chop[2],
+            info.rmax * 1e6 + chop[3],
+        ),
+        cbar=True,
+        text="iteration {}".format(iteration),
+        **kwargs,
+    )
+
+    plot.canvas.print_figure("{}{:06d}.png".format(field_name, iteration))
 
 
 if __name__ == "__main__":
