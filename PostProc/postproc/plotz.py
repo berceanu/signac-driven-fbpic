@@ -30,7 +30,7 @@ class Plot2D:
         xlabel=r"",
         ylabel=r"",
         zlabel=r"",
-        **kwargs: Union[int, str, float]
+        **kwargs
     ) -> None:
         r"""
         >>> uu = np.linspace(0, np.pi, 128)
@@ -305,7 +305,7 @@ class Plot1D:
         h_axis: np.ndarray,
         xlabel=r"",
         ylabel=r"",
-        **kwargs: Union[int, str, float]
+        **kwargs
     ) -> None:
         r"""
         >>> plot = Plot1D(a0, z0, xlabel=r'$%s \;(\mu m)$'%'z', ylabel=r'$%s$'%'a_0',

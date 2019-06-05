@@ -4,19 +4,18 @@
 # import psutil
 # import itertools
 import os
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import List, Optional, Tuple
 
+# import fbpic_script  # fb-pic parameter file, located in the same folder
 import h5py
 import matplotlib as mpl
 
 # import matplotlib.colors as colors
 import numpy as np
-from opmd_viewer import OpenPMDTimeSeries
-from scipy.constants import physical_constants
-
-import fbpic_script  # fb-pic parameter file, located in the same folder
 import postproc.plotz as plotz
 import postproc.postpic as pp
+from opmd_viewer import OpenPMDTimeSeries
+from scipy.constants import physical_constants
 
 # from multiprocessing import Pool
 
@@ -49,7 +48,8 @@ m_e = physical_constants["electron mass"][0]  # Kg
 mc2 = m_e * c ** 2 / (q_e * 1e6)  # electron rest energy in MeV: 0.511
 tstep_to_pos = (c * 1e-9) * dt  # conversion factor in mu (Δz)
 
-n_e = fbpic_script.n_e  # initial electron density in electrons x m^{-3}
+n_e = 7.5e18 * 1.0e6  # Density (electrons.meters^-3)
+# n_e = fbpic_script.n_e  # initial electron density in electrons x m^{-3}
 n_c = 1.75e27  # critical electron density in electrons x m^{-3}
 fields = "/data/{}/fields".format(timestep)
 handler = f[fields]
@@ -68,7 +68,7 @@ def field_snapshot(
     m="all",
     theta=0.0,
     chop: Optional[List[float]] = None,
-    **kwargs: Union[int, str, float]
+    **kwargs
 ) -> None:
     """
     Plot the ``field_name`` field from ``tseries`` at step ``iteration``.
@@ -143,7 +143,7 @@ def particle_histogram(
 
 
 def apply_func(
-        iteration: int
+    iteration: int
 ) -> Tuple[int, float, float, float, float, float, np.ndarray, np.ndarray]:
     """
     Computes z₀, a₀, w₀, cτ, energy histogram and plots particle density for the field ``"rho"``.
