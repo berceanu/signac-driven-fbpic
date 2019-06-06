@@ -177,7 +177,7 @@ def run_fbpic(job):
         zmin=job.sp.zmin,
         boundaries="open",
         n_order=-1,
-        use_cuda=True,
+        use_cuda=False,
         verbose_level=2,
     )
 
@@ -380,7 +380,7 @@ def plot_rhos(job):
     h5_dir = "hdf5"
     h5_path: Union[bytes, str] = os.path.join(base_dir, out_dir, h5_dir)
 
-    time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=True)
+    time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
     number_of_iterations: int = time_series.iterations.size
 
     nbins = 349
@@ -421,11 +421,11 @@ def plot_rhos(job):
             it=it,
             field_name="rho",
             normalization_factor=1.0 / (-q_e * job.sp.n_e),
-            # chop=[40, -20, 15, -15],
+            chop=[40, -20, 15, -15],
             path=rho_path,
             zlabel=r"$n/n_e$",
-            # vmin=0,
-            # vmax=3,
+            vmin=0,
+            vmax=3,
         )
 
     diags_file.close()
@@ -440,6 +440,7 @@ def plot_rhos(job):
     #   plot w0 vs z0
     #   plot ctau vs z0
     # plot electric field
+    # TODO test parallel GPU version @ CETAL
 
 # https://docs.signac.io/projects/core/en/latest/api.html#the-h5storemanager
 

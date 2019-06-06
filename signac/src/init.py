@@ -13,7 +13,7 @@ from scipy.constants import c  # m/s
 def main():
     project = signac.init_project("fbpic-minimal-project")
 
-    for Nm in (2,):
+    for Nm in (2, 3, 4):
         sp = dict(
             # The simulation box
             Nz=800,  # Number of gridpoints along z
