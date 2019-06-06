@@ -16,15 +16,19 @@ import sys
 from typing import List, Optional, Tuple
 
 import numpy as np
+import postproc.plotz as plotz
 from flow import FlowProject
 from opmd_viewer import OpenPMDTimeSeries
-from scipy.constants import c, physical_constants
-
-import postproc.plotz as plotz
+from scipy.constants import physical_constants
 
 logger = logging.getLogger(__name__)
 # Usage: logger.info('message') or logger.warning('message')
 logfname = "fbpic-minimal-project.log"
+
+c_light = physical_constants[u"speed of light in vacuum"][0]
+m_e = physical_constants[u"electron mass"][0]
+q_e = physical_constants[u"elementary charge"][0]
+mc2 = m_e * c_light ** 2 / (q_e * 1e6)
 
 
 #####################
@@ -66,9 +70,7 @@ def sh(*cmd, **kwargs):
     stdout = (
         subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs
-        )
-        .communicate()[0]
-        .decode("utf-8")
+        ).communicate()[0].decode("utf-8")
     )
     logger.info(stdout)
     return stdout
@@ -182,7 +184,7 @@ def run_fbpic(job):
     add_laser(sim, job.sp.a0, job.sp.w0, job.sp.ctau, job.sp.z0)
 
     # Configure the moving window
-    sim.set_moving_window(v=c)
+    sim.set_moving_window(v=c_light)
 
     # Add diagnostics
     write_dir = os.path.join(job.ws, "diags")
@@ -224,29 +226,19 @@ def run_fbpic(job):
     job.document.ran_job = True
 
 
-@Project.operation
-@Project.pre.after(run_fbpic)
-@Project.post.isfile('')
-def plot_rhos(job):
-    
-
 ############
 # PLOTTING #
 ############
 
-m_e = physical_constants["electron mass"][0]
-q_e = physical_constants["elementary charge"][0]
-mc2 = m_e * c ** 2 / (q_e * 1e6)
 
-
-def particle_histogram(
-    tseries: OpenPMDTimeSeries, iter: int, energy_min=1.0, energy_max=300.0, nbins=100
+def particle_energy_histogram(
+        tseries: OpenPMDTimeSeries, it: int, energy_min=1.0, energy_max=300.0, nbins=100
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
 
     :param tseries: whole simulation time series
-    :param iter: time step in the simulation
+    :param it: time step in the simulation
     :param energy_min: lower energy threshold
     :param energy_max: upper energy threshold
     :param nbins: number of bins
@@ -255,32 +247,32 @@ def particle_histogram(
     delta_energy = (energy_max - energy_min) / nbins
     energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
 
-    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=iter)
+    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=it)
     energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
 
-    charge_bins, edges = np.histogram(
+    hist, bin_edges = np.histogram(
         energy, bins=energy_bins, weights=q_e * 1e12 / delta_energy * w
     )
 
-    return charge_bins, edges
+    return hist, bin_edges
 
 
 def field_snapshot(
-    tseries: OpenPMDTimeSeries,
-    iter: int,
-    field_name: str,
-    normalization_factor: float,
-    coord: Optional[str] = None,
-    m="all",
-    theta=0.0,
-    chop: Optional[List[float]] = None,
-    **kwargs,
+        tseries: OpenPMDTimeSeries,
+        it: int,
+        field_name: str,
+        normalization_factor: float,
+        coord: Optional[str] = None,
+        m="all",
+        theta=0.0,
+        chop: Optional[List[float]] = None,
+        **kwargs,
 ) -> None:
     """
     Plot the ``field_name`` field from ``tseries`` at step ``iter``.
 
     :param tseries: whole simulation time series
-    :param iter: time step in the simulation
+    :param it: time step in the simulation
     :param field_name: which field to extract, eg. 'rho', 'E', 'B' or 'J'
     :param normalization_factor: normalization factor for the extracted field
     :param coord: which component of the field to extract, eg. 'r', 't' or 'z'
@@ -294,7 +286,7 @@ def field_snapshot(
         chop = [0.0, 0.0, 0.0, 0.0]
 
     field, info = tseries.get_field(
-        field=field_name, coord=coord, iteration=iter, m=m, theta=theta
+        field=field_name, coord=coord, iteration=it, m=m, theta=theta
     )
 
     field *= normalization_factor
@@ -312,11 +304,31 @@ def field_snapshot(
             info.rmax * 1e6 + chop[3],
         ),
         cbar=True,
-        text=f"iteration {iter}",
+        text=f"iteration {it}",
         **kwargs,
     )
 
-    plot.canvas.print_figure(f"{field_name}{iter:06d}.png")
+    plot.canvas.print_figure(f"{field_name}{it:06d}.png")
+
+
+@Project.operation
+@Project.pre.after(run_fbpic)
+@Project.post.isfile('rho.mp4')
+@Project.post.isfile('diags.txt')
+def plot_rhos(job):
+    # shape=(number of iterations, size of ``energy_bins`` from ``particle_energy_histogram``)
+    all_hist = np.empty(shape=(10, nbins), dtype=np.float64)
+    all_bin_edges = np.empty(shape=(10, nbins+1), dtype=np.float64)
+    # loop through all the iterations in the job's time series
+    #   for *each iteration*, compute
+    #       z₀, a₀, w₀, cτ via ``pp.get_a0``
+    #           append ``iteration``, ``time_fs``, ``z_0 * 1e6``, ``a_0``, ``w_0 * 1e6``, ``c_tau * 1e6`` to "diags.txt"
+    #       ``charge_bins``, ``edges`` 1D numpy arrays via ``particle_energy_histogram``
+    #           all_hist[it,:] = charge_bins; all_bin_edges[it,:] = edges
+    #       save "rho{it:06d}.png" via ``field_snapshot``
+    # run ffmpeg on all "rho{it:06d}.png" files and generate "rho.mp4"
+    # save ``all_hist`` and ``all_bin_edges`` to file via ``np.savetxt`` and ``np.loadtxt``
+    pass
 
 
 # https://docs.signac.io/projects/core/en/latest/api.html#the-h5storemanager

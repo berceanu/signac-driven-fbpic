@@ -4,11 +4,10 @@ from typing import List, Optional, Tuple
 import h5py
 import matplotlib as mpl
 import numpy as np
-from opmd_viewer import OpenPMDTimeSeries
-from scipy.constants import physical_constants
-
 import postproc.plotz as plotz
 import postproc.postpic as pp
+from opmd_viewer import OpenPMDTimeSeries
+from scipy.constants import physical_constants
 
 mpl.rc("lines", linewidth=2)
 mpl.rc("axes", labelsize=20, titlesize=20, linewidth=1.5)
@@ -32,7 +31,6 @@ bpath = f["/data/{}".format(timestep)]
 
 dt = bpath.attrs["dt"] * bpath.attrs["timeUnitSI"] * 1e15
 
-
 q_e = physical_constants["elementary charge"][0]
 c = physical_constants["speed of light in vacuum"][0]
 m_e = physical_constants["electron mass"][0]
@@ -51,15 +49,15 @@ ts_circ = OpenPMDTimeSeries(h5_path, check_all_files=False)
 
 
 def field_snapshot(
-    tseries: OpenPMDTimeSeries,
-    iteration: int,
-    field_name: str,
-    norm_factor: float,
-    coord: Optional[str] = None,
-    m="all",
-    theta=0.0,
-    chop: Optional[List[float]] = None,
-    **kwargs
+        tseries: OpenPMDTimeSeries,
+        iteration: int,
+        field_name: str,
+        norm_factor: float,
+        coord: Optional[str] = None,
+        m="all",
+        theta=0.0,
+        chop: Optional[List[float]] = None,
+        **kwargs
 ) -> None:
     """
     Plot the ``field_name`` field from ``tseries`` at step ``iteration``.
@@ -103,11 +101,11 @@ def field_snapshot(
 
 
 def particle_histogram(
-    tseries: OpenPMDTimeSeries,
-    iteration: int,
-    energy_min=1.0,
-    energy_max=300.0,
-    nbins=100,
+        tseries: OpenPMDTimeSeries,
+        iteration: int,
+        energy_min=1.0,
+        energy_max=300.0,
+        nbins=100,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
@@ -133,7 +131,7 @@ def particle_histogram(
 
 
 def apply_func(
-    iteration: int
+        iteration: int
 ) -> Tuple[int, float, float, float, float, float, np.ndarray, np.ndarray]:
     """
     Computes z₀, a₀, w₀, cτ, energy histogram and plots particle density for the field ``"rho"``.
@@ -163,7 +161,7 @@ def apply_func(
     )
 
     time_fs = iteration * dt
-    return (iteration, time_fs, z_0 * 1e6, a_0, w_0 * 1e6, c_tau * 1e6, q_bins, edges)
+    return iteration, time_fs, z_0 * 1e6, a_0, w_0 * 1e6, c_tau * 1e6, q_bins, edges
 
 
 def extract(i: int, lst_of_tuples: List[Tuple]) -> np.ndarray:
