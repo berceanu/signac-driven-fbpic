@@ -1,25 +1,15 @@
 from scipy.constants import physical_constants
 
-c = physical_constants['speed of light in vacuum'][0]  # speed of light in m/s
-q_e = physical_constants['elementary charge'][0]  # electron charge in C
-m_e = physical_constants['electron mass'][0]  # electon mass in Kg
+c = physical_constants[u'speed of light in vacuum'][0]  # speed of light in m/s
+q_e = physical_constants[u'elementary charge'][0]  # electron charge in C
+m_e = physical_constants[u'electron mass'][0]  # electon mass in Kg
 
 import numpy as np
 from scipy.signal import hilbert
 
-from multiprocessing import cpu_count
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from opmd_viewer import OpenPMDTimeSeries
 
-default_nprocs = cpu_count()
-
-
-def distribute(nitems, nprocs=None):
-    if nprocs is None:
-        nprocs = default_nprocs
-    nitems_per_proc = (nitems + nprocs - 1) // nprocs
-    return [(i, min(nitems, i + nitems_per_proc))
-            for i in range(0, nitems, nitems_per_proc)]
 
 
 def laser_electric_field(lambda0=0.8e-6) -> float:

@@ -13,13 +13,14 @@ import os
 import shutil
 import subprocess
 import sys
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import postproc.plotz as plotz
 from flow import FlowProject
 from opmd_viewer import OpenPMDTimeSeries
 from scipy.constants import physical_constants
+from scipy.signal import hilbert
 
 logger = logging.getLogger(__name__)
 # Usage: logger.info('message') or logger.warning('message')
@@ -311,24 +312,114 @@ def field_snapshot(
     plot.canvas.print_figure(f"{field_name}{it:06d}.png")
 
 
+def get_a0(ts: OpenPMDTimeSeries,
+           t: Optional[float] = None,
+           it: Optional[int] = None,
+           coord='x',
+           m='all',
+           lambda0=0.8e-6) -> Tuple[float, float, float, float]:
+    """
+    Compute z₀, a₀, w₀, cτ.
+
+    :param ts: whole simulation time series
+    :param t: time (in seconds) at which to obtain the data
+    :param it: time step at which to obtain the data
+    :param coord: which component of the field to extract
+    :param m: 'all' for extracting the sum of all the modes
+    :param lambda0: laser wavelength (meters)
+    :return: z₀, a₀, w₀, cτ
+    """
+    # the direction along which to slice the data eg., 'x', 'y' or 'z'
+    slicing_dir = 'y'
+    # the angle of the plane of observation, with respect to the 'x' axis
+    theta = 0.0
+
+    # get E_x field in V/m
+    electric_field_x, info_electric_field_x = ts.get_field(field='E', coord=coord,
+                                                           t=t, iteration=it,
+                                                           m=m, theta=theta, slicing_dir=slicing_dir)
+
+    # normalized vector potential
+    k0 = 2 * np.pi / lambda0
+    electric_field_0 = m_e * c_light ** 2 * k0 / q_e
+
+    a0 = electric_field_x / electric_field_0
+
+    # get pulse envelope
+    envelope = np.abs(hilbert(a0, axis=1))
+    envelope_z = envelope[envelope.shape[0] // 2, :]
+
+    a0_max = np.amax(envelope_z)
+
+    # index of peak
+    z_idx = np.argmax(envelope_z)
+    # peak position
+    z0 = info_electric_field_x.z[z_idx]
+
+    # FWHM perpendicular size of beam, proportional to w0
+    fwhm_a0_w0 = np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2)) * info_electric_field_x.dr
+
+    # FWHM longitudinal size of the beam, proportional to ctau
+    fwhm_a0_ctau = np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_electric_field_x.dz
+
+    return z0, a0_max, fwhm_a0_w0, fwhm_a0_ctau
+
+
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.isfile('rho.mp4')
 @Project.post.isfile('diags.txt')
 def plot_rhos(job):
-    # shape=(number of iterations, size of ``energy_bins`` from ``particle_energy_histogram``)
-    all_hist = np.empty(shape=(10, nbins), dtype=np.float64)
-    all_bin_edges = np.empty(shape=(10, nbins+1), dtype=np.float64)
+    base_dir = job.workspace()
+    out_dir = "diags"
+    h5_dir = "hdf5"
+    h5_path: Union[bytes, str] = os.path.join(base_dir, out_dir, h5_dir)
+
+    time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
+    number_of_iterations: int = time_series.iterations.size
+
+    nbins = 349
+    all_hist = np.empty(shape=(number_of_iterations, nbins), dtype=np.float64)
+    all_bin_edges = np.empty(shape=(number_of_iterations, nbins + 1), dtype=np.float64)
+
+    diags_file = open(job.fn("diags.txt"), "w")
+    diags_file.write("# iteration, time[fs], z₀[μm], a₀, w₀[μm], cτ[μm]\n")
+
     # loop through all the iterations in the job's time series
+    for it in time_series.iterations:
+        time = it * job.sp.dt
+        z_0, a_0, w_0, c_tau = get_a0(time_series, it=it)
+        diags_file.write(f"{it}, {time * 1e15}, {z_0 * 1e6}, {a_0}, {w_0 * 1e6}, {c_tau * 1e6}\n")
+
+        energy_hist, bin_edges = particle_energy_histogram(
+            tseries=time_series,
+            it=it,
+            energy_min=1.0,
+            energy_max=350.0,
+            nbins=nbins,
+        )
+        all_hist[it, :] = energy_hist
+        all_bin_edges[it, :] = bin_edges
+
+        field_snapshot(
+            tseries=time_series,
+            it=it,
+            field_name="rho",
+            normalization_factor=1.0 / (-q_e * job.sp.n_e),
+            chop=[40, -20, 15, -15],
+            zlabel=r"$n/n_e$",
+            vmin=0,
+            vmax=3,
+        )
+
+    diags_file.close()
+    # use ``np.loadtxt`` to load them
+    np.savetxt(job.fn("all_hist.txt"), all_hist, header="Each row contains an energy histogram, in order of increasing iteration number.")
+    np.savetxt(job.fn("all_bin_edges.txt"), all_bin_edges, header="Each row contains an energy histogram bin edges, in order of increasing iteration number.")
+
     #   for *each iteration*, compute
-    #       z₀, a₀, w₀, cτ via ``pp.get_a0``
-    #           append ``iteration``, ``time_fs``, ``z_0 * 1e6``, ``a_0``, ``w_0 * 1e6``, ``c_tau * 1e6`` to "diags.txt"
-    #       ``charge_bins``, ``edges`` 1D numpy arrays via ``particle_energy_histogram``
-    #           all_hist[it,:] = charge_bins; all_bin_edges[it,:] = edges
-    #       save "rho{it:06d}.png" via ``field_snapshot``
+    #       save "rho{it:06d}.png"
     # run ffmpeg on all "rho{it:06d}.png" files and generate "rho.mp4"
-    # save ``all_hist`` and ``all_bin_edges`` to file via ``np.savetxt`` and ``np.loadtxt``
-    pass
 
 
 # https://docs.signac.io/projects/core/en/latest/api.html#the-h5storemanager
