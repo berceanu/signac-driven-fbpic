@@ -138,7 +138,7 @@ def run_fbpic(job):
     from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
 
     # The density profile
-    def dens_func(z):
+    def dens_func(z, r):
         """Returns relative density at position z and r"""
         # Allocate relative density
         n = np.ones_like(z)
@@ -267,11 +267,13 @@ def field_snapshot(
         m="all",
         theta=0.0,
         chop: Optional[List[float]] = None,
+        path="./",
         **kwargs,
 ) -> None:
     """
     Plot the ``field_name`` field from ``tseries`` at step ``iter``.
 
+    :param path: path to output file
     :param tseries: whole simulation time series
     :param it: time step in the simulation
     :param field_name: which field to extract, eg. 'rho', 'E', 'B' or 'J'
@@ -309,7 +311,8 @@ def field_snapshot(
         **kwargs,
     )
 
-    plot.canvas.print_figure(f"{field_name}{it:06d}.png")
+    filename = os.path.join(path, f"{field_name}{it:06d}.png")
+    plot.canvas.print_figure(filename)
 
 
 def get_a0(ts: OpenPMDTimeSeries,
@@ -367,8 +370,10 @@ def get_a0(ts: OpenPMDTimeSeries,
 
 @Project.operation
 @Project.pre.after(run_fbpic)
-@Project.post.isfile('rho.mp4')
+# @Project.post.isfile('rho.mp4')
 @Project.post.isfile('diags.txt')
+@Project.post.isfile("all_hist.txt")
+@Project.post.isfile("all_bin_edges.txt")
 def plot_rhos(job):
     base_dir = job.workspace()
     out_dir = "diags"
@@ -401,12 +406,23 @@ def plot_rhos(job):
         all_hist[it, :] = energy_hist
         all_bin_edges[it, :] = bin_edges
 
+        # create folder "rhos"
+        rho_path = os.path.join(base_dir, out_dir, "rhos")
+        try:
+            os.mkdir(rho_path)
+        except OSError:
+            logger.warning("Creation of the directory %s failed" % rho_path)
+        else:
+            logger.info("Successfully created the directory %s " % rho_path)
+
+        # save "rho{it:06d}.png"
         field_snapshot(
             tseries=time_series,
             it=it,
             field_name="rho",
             normalization_factor=1.0 / (-q_e * job.sp.n_e),
             chop=[40, -20, 15, -15],
+            path=rho_path,
             zlabel=r"$n/n_e$",
             vmin=0,
             vmax=3,
@@ -417,8 +433,6 @@ def plot_rhos(job):
     np.savetxt(job.fn("all_hist.txt"), all_hist, header="Each row contains an energy histogram, in order of increasing iteration number.")
     np.savetxt(job.fn("all_bin_edges.txt"), all_bin_edges, header="Each row contains an energy histogram bin edges, in order of increasing iteration number.")
 
-    #   for *each iteration*, compute
-    #       save "rho{it:06d}.png"
     # run ffmpeg on all "rho{it:06d}.png" files and generate "rho.mp4"
 
 
