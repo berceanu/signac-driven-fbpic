@@ -380,7 +380,7 @@ def plot_rhos(job):
     h5_dir = "hdf5"
     h5_path: Union[bytes, str] = os.path.join(base_dir, out_dir, h5_dir)
 
-    time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
+    time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=True)
     number_of_iterations: int = time_series.iterations.size
 
     nbins = 349
@@ -391,10 +391,10 @@ def plot_rhos(job):
     diags_file.write("# iteration, time[fs], z₀[μm], a₀, w₀[μm], cτ[μm]\n")
 
     # loop through all the iterations in the job's time series
-    for it in time_series.iterations:
+    for idx, it in enumerate(time_series.iterations):
         time = it * job.sp.dt
         z_0, a_0, w_0, c_tau = get_a0(time_series, it=it)
-        diags_file.write(f"{it}, {time * 1e15}, {z_0 * 1e6}, {a_0}, {w_0 * 1e6}, {c_tau * 1e6}\n")
+        diags_file.write(f"{it:06d}, {time * 1e15:.3e}, {z_0 * 1e6:.3e}, {a_0:.3e}, {w_0 * 1e6:.3e}, {c_tau * 1e6:.3e}\n")
 
         energy_hist, bin_edges = particle_energy_histogram(
             tseries=time_series,
@@ -403,8 +403,8 @@ def plot_rhos(job):
             energy_max=350.0,
             nbins=nbins,
         )
-        all_hist[it, :] = energy_hist
-        all_bin_edges[it, :] = bin_edges
+        all_hist[idx, :] = energy_hist
+        all_bin_edges[idx, :] = bin_edges
 
         # create folder "rhos"
         rho_path = os.path.join(base_dir, out_dir, "rhos")
@@ -421,20 +421,25 @@ def plot_rhos(job):
             it=it,
             field_name="rho",
             normalization_factor=1.0 / (-q_e * job.sp.n_e),
-            chop=[40, -20, 15, -15],
+            # chop=[40, -20, 15, -15],
             path=rho_path,
             zlabel=r"$n/n_e$",
-            vmin=0,
-            vmax=3,
+            # vmin=0,
+            # vmax=3,
         )
 
     diags_file.close()
-    # use ``np.loadtxt`` to load them
     np.savetxt(job.fn("all_hist.txt"), all_hist, header="Each row contains an energy histogram, in order of increasing iteration number.")
     np.savetxt(job.fn("all_bin_edges.txt"), all_bin_edges, header="Each row contains an energy histogram bin edges, in order of increasing iteration number.")
 
     # run ffmpeg on all "rho{it:06d}.png" files and generate "rho.mp4"
-
+    # use ``np.loadtxt`` to load them
+    #   plot 2D energy-charge histogram
+    # read "diags.txt" using ``pandas``, and
+    #   plot a0 vs z0
+    #   plot w0 vs z0
+    #   plot ctau vs z0
+    # plot electric field
 
 # https://docs.signac.io/projects/core/en/latest/api.html#the-h5storemanager
 
