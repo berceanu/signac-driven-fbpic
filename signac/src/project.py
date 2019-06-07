@@ -177,7 +177,7 @@ def run_fbpic(job):
         zmin=job.sp.zmin,
         boundaries="open",
         n_order=-1,
-        use_cuda=False,
+        use_cuda=True,
         verbose_level=2,
     )
 
@@ -421,11 +421,11 @@ def plot_rhos(job):
             it=it,
             field_name="rho",
             normalization_factor=1.0 / (-q_e * job.sp.n_e),
-            chop=[40, -20, 15, -15],
+            #chop=[40, -20, 15, -15],
             path=rho_path,
             zlabel=r"$n/n_e$",
-            vmin=0,
-            vmax=3,
+            #vmin=0,
+            #vmax=3,
         )
 
     diags_file.close()
