@@ -530,14 +530,6 @@ def plot_1d_diags(job):
     plot_1d.canvas.print_figure(job.fn("ctau.png"))
 
 
-def sh(*cmd, **kwargs):
-    logger.info(cmd[0])
-    stdout = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                              **kwargs).communicate()[0].decode('utf-8')
-    logger.info(stdout)
-    return stdout
-
-
 # http://hamelot.io/visualization/using-ffmpeg-to-convert-a-set-of-images-into-a-video/
 def ffmpeg_command(
         framerate=4.,  # fps
@@ -561,7 +553,6 @@ def generate_movie(job):
                              )
 
     sh(command, shell=True)
-
 
 
 @Project.operation
