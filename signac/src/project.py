@@ -429,18 +429,19 @@ def plot_rhos(job):
         )
 
     diags_file.close()
-    np.savetxt(job.fn("all_hist.txt"), all_hist, header="Each row contains an energy histogram, in order of increasing iteration number.")
-    np.savetxt(job.fn("all_bin_edges.txt"), all_bin_edges, header="Each row contains an energy histogram bin edges, in order of increasing iteration number.")
+    np.savetxt(job.fn("all_hist.txt"), all_hist,
+               header="Each row contains an energy histogram, in order of increasing iteration number.")
+    np.savetxt(job.fn("all_bin_edges.txt"), all_bin_edges,
+               header="Each row contains an energy histogram bin edges, in order of increasing iteration number.")
 
     # run ffmpeg on all "rho{it:06d}.png" files and generate "rho.mp4"
-    # use ``np.loadtxt`` to load them
+    # use ``np.loadtxt`` to load "all_hist.txt" and "all_bin_edges.txt" and
     #   plot 2D energy-charge histogram
     # read "diags.txt" using ``pandas``, and
     #   plot a0 vs z0
     #   plot w0 vs z0
     #   plot ctau vs z0
     # plot electric field
-    # TODO test parallel GPU version @ CETAL
 
 # https://docs.signac.io/projects/core/en/latest/api.html#the-h5storemanager
 
