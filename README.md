@@ -31,9 +31,9 @@ See [`signac/README.md`](https://github.com/berceanu/signac-driven-fbpic/blob/ma
 ## TODO
 
 - [X] create minimal CPU example
-- [ ] add `openpmd_viewer` to `environment.yml` and update
+- [X] integrate 2D `plotz` library
+- [ ] add `openpmd_viewer` and `pandas` to `environment.yml` and update
 - [ ] unit testing
-- [ ] integrate 2D `plotz` library
 
 ## Notes
 

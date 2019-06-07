@@ -30,3 +30,5 @@ if __name__ == '__main__':
         config=config
     )
     dashboard.main()
+
+# TODO show rho.mp4 movie
