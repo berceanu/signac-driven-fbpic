@@ -7,11 +7,14 @@ import logging
 
 # import numpy as np
 import signac
-from scipy.constants import c  # m/s
+from scipy.constants import physical_constants
 
 # TODO test small sims on parallel multi-cores
 # TODO adapt parameters to large injection run
 # TODO test multiple large injection runs on parallel GPUs @ CETAL
+
+c_light = physical_constants["speed of light in vacuum"][0]
+
 
 def main():
     project = signac.init_project("fbpic-minimal-project")
@@ -25,6 +28,7 @@ def main():
             Nr=50,  # Number of gridpoints along r
             rmax=20.0e-6,  # Length of the box along r (meters)
             Nm=Nm,  # Number of modes used
+
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=25.0e-6,
@@ -34,21 +38,27 @@ def main():
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
             p_nt=4,  # Number of particles per cell along theta
+
             # The laser
             a0=4.0,  # Laser amplitude
             w0=5.0e-6,  # Laser waist
             ctau=5.0e-6,  # Laser duration
             z0=15.0e-6,  # Laser centroid
-            ## do not change below this line ##
+
+
+            # do not change below this line #
             p_zmax=500.0e-6,  # Position of the end of the plasma (meters)
             # Minimal radial position of the plasma (meters)
             p_rmin=0.0,
+
             # The density profile
             ramp_start=30.0e-6,
             ramp_length=40.0e-6,  # increase (up to `p_zmax`) !
+
             # The interaction length of the simulation (meters)
             # increase (up to `p_zmax`) to simulate longer distance!
             L_interact=0.0e-6,  # 50.e-6 in fbpic LWFA example
+
             # Period in number of timesteps
             # change to 100 for long simulations!
             diag_period=None,
@@ -60,21 +70,15 @@ def main():
             # Number of iterations to perform
             N_step=None,
         )
-        sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / c
-        sp["T_interact"] = (sp["L_interact"] + (sp["zmax"] - sp["zmin"])) / c
+
+        sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / c_light
+        sp["T_interact"] = (sp["L_interact"] + (sp["zmax"] - sp["zmin"])) / c_light
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
         sp["diag_period"] = int(sp["N_step"] / 4)
+
         project.open_job(sp).init()
 
-    # for job in project:
-    # nprot = job.sp.proton_number
-    # nneutr = job.sp.neutron_number
-    # nucleus = 'SN132'
-    # job.doc.setdefault('nucleus', nucleus)
-
     project.write_statepoints()
-    for job in project:
-        job.doc.setdefault("ran_job", False)
 
 
 if __name__ == "__main__":

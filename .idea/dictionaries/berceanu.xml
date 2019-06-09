@@ -2,6 +2,7 @@
   <dictionary name="berceanu">
     <words>
       <w>asctime</w>
+      <w>cetal</w>
       <w>ctau</w>
       <w>diags</w>
       <w>efield</w>
@@ -14,6 +15,7 @@
       <w>libx</w>
       <w>nbins</w>
       <w>plotz</w>
+      <w>pngs</w>
       <w>poiting</w>
       <w>popen</w>
       <w>signac</w>

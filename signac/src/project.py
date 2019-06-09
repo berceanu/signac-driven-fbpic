@@ -13,7 +13,7 @@ import os
 import shutil
 import subprocess
 import sys
-from typing import List, Optional, Tuple, Union, Callable, Any, Iterable
+from typing import List, Optional, Tuple, Union, Callable, Iterable
 
 import numpy as np
 import pandas as pd
@@ -59,16 +59,25 @@ def read_last_line(file_name: str) -> str:
     return last.decode("utf-8")
 
 
-def are_files(
-        file_names: Iterable[str]
-) -> Callable[[Job], bool]:
-    """Check if given file names are in the ``job`` folder.
+def are_files(file_names: Iterable[str]) -> Callable[[Job], bool]:
+    """Check if given file names are in the ``job`` dir.
     Useful for pre- and post- operation conditions.
 
     :param file_names: iterable containing file names
-    :return: anonymous function that checks file existence
+    :return: anonymous function that does the check
     """
     return lambda job: all(job.isfile(fn) for fn in file_names)
+
+
+def path_exists(path: str) -> Callable[[Job], bool]:
+    """
+    Checks if relative ``path`` exists inside the job's workspace folder.
+    Useful for pre- and post- operation conditions.
+
+    :param path: relative path, eg. dir1/dir2
+    :return: anonymous function that does the check
+    """
+    return lambda job: os.path.exists(os.path.join(job.ws, path))
 
 
 def sh(*cmd, **kwargs) -> str:
@@ -176,16 +185,48 @@ def progress(job: Job) -> str:
 ###############################
 
 
+def fbpic_ran(job: Job) -> bool:
+    """
+    Check if ``fbpic`` produced all the output .h5 files.
+
+    :param job: the job instance is a handle to the data of a unique statepoint
+    :return: True if all output files are in {job_dir}/diags/hdf5, False otherwise
+    """
+    h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
+    time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=True)
+    iterations: np.ndarray = time_series.iterations
+
+    # estimate iteration array based on input parameters
+    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+
+    # check if iterations array corresponds to input params
+    return np.array_equal(estimated_iterations, iterations)
+
+
+def are_rho_pngs(job: Job) -> bool:
+    """
+    Check if all the {job_dir}/diags/rhos/rho{it:06d}.png files are present.
+
+    :param job: the job instance is a handle to the data of a unique statepoint
+    :return: True if .png files are there, False otherwise
+    """
+    files = os.listdir(os.path.join(job.ws, "diags", "rhos"))
+
+    # estimate iteration array based on input parameters
+    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+
+    pngs = (f"rho{it:06d}.png" for it in iterations)
+
+    return set(files) == set(pngs)
+
+
 @Project.operation
-@Project.post(
-    lambda job: job.document.ran_job is True
-)  # TODO check the produced time series instead
+@Project.post(fbpic_ran)
 def run_fbpic(job: Job) -> None:
     """
     This ``signac-flow`` operation runs a ``fbpic`` simulation.
 
     :param job: the job instance is a handle to the data of a unique statepoint
-    :return: None
     """
     from fbpic.lpa_utils.laser import add_laser
     from fbpic.main import Simulation
@@ -250,7 +291,7 @@ def run_fbpic(job: Job) -> None:
     sim.set_moving_window(v=c_light)
 
     # Add diagnostics
-    write_dir = os.path.join(job.workspace(), "diags")
+    write_dir = os.path.join(job.ws, "diags")
     sim.diags = [
         FieldDiagnostic(
             job.sp.diag_period, fldobject=sim.fld, comm=sim.comm, write_dir=write_dir
@@ -270,11 +311,9 @@ def run_fbpic(job: Job) -> None:
     # Run the simulation
     sim.step(job.sp.N_step, show_progress=True)
 
-    # redirect stdout back
+    # redirect stdout back and close "stdout.txt"
     sys.stdout = orig_stdout
     f.close()
-
-    job.document.ran_job = True
 
 
 ############
@@ -443,18 +482,14 @@ def get_a0(
     return z0, a0_max, fwhm_a0_w0, fwhm_a0_ctau
 
 
-# TODO change pre- and post-conditions to more specific ones
-# TODO check recipe for adding parameters for project operation functions
-
-
 @Project.operation
-@Project.pre.after(
-    run_fbpic
-)  # TODO check instead that the time series was generated and is complete
+@Project.pre(path_exists(os.path.join("diags", "rhos")))
+@Project.pre.after(run_fbpic)
 @Project.post(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
-def plot_rhos(job: Job) -> None:  # TODO: rename function
+@Project.post(are_rho_pngs)
+def post_process_results(job: Job) -> None:
     """
-    Loop through a whole simulation time series and, for *each iteration*:
+    Loop through a whole simulation and, for *each ``fbpic`` iteration*:
 
     a. compute
 
@@ -511,14 +546,6 @@ def plot_rhos(job: Job) -> None:  # TODO: rename function
         if idx == 0:  # only save the first one
             hist_edges[:] = bin_edges
 
-        # create folder "rhos"
-        try:  # TODO factor out into separate operation
-            os.mkdir(rho_path)
-        except OSError:
-            logger.warning("Creation of the directory %s failed" % rho_path)
-        else:
-            logger.info("Successfully created the directory %s " % rho_path)
-
         # save "rho{it:06d}.png"
         field_snapshot(
             tseries=time_series,
@@ -542,6 +569,37 @@ def plot_rhos(job: Job) -> None:  # TODO: rename function
     np.savetxt(job.fn("hist_edges.txt"), hist_edges, header="Energy histogram bins.")
 
 
+def add_create_dir_workflow(path: str) -> None:
+    """
+    Adds ``create_dir`` function(s) to the project workflow, for each value of ``path``.
+    Can be called inside a loop, for multiple values of ``path``.
+    For details, see `this recipe <https://github.com/glotzerlab/signac-docs/blob/master/docs/source/recipes.rst#how-to-define-parameter-dependent-operations>`_
+
+    :param path: path to pass to ``create_dir``, and its pre- and post-conditions
+    """
+
+    # Make sure to make the operation-name a function of the parameter(s)!
+    @Project.operation(f"create_dir_{path}".replace("/", "_"))
+    @Project.pre(path_exists(os.path.dirname(path)))
+    @Project.post(path_exists(path))
+    def create_dir(job: Job) -> None:
+        """
+        Creates new ``path`` inside the job directory.
+
+        :param job: the job instance is a handle to the data of a unique statepoint
+        """
+        full_path = os.path.join(job.ws, path)
+        try:
+            os.mkdir(full_path)
+        except OSError:
+            logger.warning("Creation of the directory %s failed" % full_path)
+        else:
+            logger.info("Successfully created the directory %s " % full_path)
+
+
+add_create_dir_workflow(path=os.path.join("diags", "rhos"))
+
+
 @Project.operation
 @Project.pre(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
 @Project.post.isfile("hist2d.png")
@@ -563,7 +621,7 @@ def plot_2d_hist(job: Job) -> None:
 
     # plot 2D energy-charge histogram
     hist2d = plotz.Plot2D(
-        all_hist.T,
+        all_hist.T,  # 2D data
         z_0.values,  # x-axis
         hist_edges[1:],  # y-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
@@ -595,21 +653,20 @@ def plot_1d_diags(job: Job) -> None:
 
     # plot a_0 vs z_0
     plot_1d = plotz.Plot1D(
-        a_0,
-        z_0,
+        a_0,  # y-axis
+        z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$%s$" % "a_0",
         xlim=[0, 900],  # TODO: hard-coded magic number
         ylim=[0, 10],  # TODO: hard-coded magic number
         figsize=(10, 6),
-        color="red",
     )
     plot_1d.canvas.print_figure(job.fn("a0.png"))
 
     # plot w_0 vs z_0
     plot_1d = plotz.Plot1D(
-        w_0,
-        z_0,
+        w_0,  # y-axis
+        z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$%s \;(\mu m)$" % "w_0",
         figsize=(10, 6),
@@ -618,8 +675,8 @@ def plot_1d_diags(job: Job) -> None:
 
     # plot c_tau vs z_0
     plot_1d = plotz.Plot1D(
-        c_tau,
-        z_0,
+        c_tau,  # x-axis
+        z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$c \tau \;(\mu m)$",
         figsize=(10, 6),
@@ -628,7 +685,8 @@ def plot_1d_diags(job: Job) -> None:
 
 
 @Project.operation
-@Project.pre.after(plot_rhos)
+@Project.pre(path_exists(os.path.join("diags", "rhos")))
+@Project.pre(are_rho_pngs)
 @Project.post.isfile("rho.mp4")
 def generate_movie(job: Job) -> None:
     """
@@ -645,6 +703,7 @@ def generate_movie(job: Job) -> None:
     sh(command, shell=True)
 
 
+# TODO apply parametrization recipe
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.isfile("E035100.png")  # TODO: hard-coded magic number
@@ -684,6 +743,6 @@ if __name__ == "__main__":
     )
     logger.info("==RUN STARTED==")
 
-    Project().main()  # run the whole signac workflow
+    Project().main()  # run the whole signac project workflow
 
     logger.info("==RUN FINISHED==")
