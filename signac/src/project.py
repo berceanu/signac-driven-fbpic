@@ -599,6 +599,7 @@ def add_create_dir_workflow(path: str) -> None:
 
 add_create_dir_workflow(path=os.path.join("diags", "rhos"))
 
+# TODO move .png and .mp4 from {job_dir} to {job_dir}/diags
 
 @Project.operation
 @Project.pre(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
@@ -717,6 +718,7 @@ def plot_efield_snapshot(job: Job) -> None:
 
     h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
     time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
+    # TODO no need to load the whole time series, can extract directly the relevant iteration
 
     # plot electric field and save to disk
     field_snapshot(
@@ -732,7 +734,10 @@ def plot_efield_snapshot(job: Job) -> None:
         vmax=8,  # TODO: hard-coded magic number
         hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
     )
+# TODO plot 1D energy histogram for certain iteration (see analysis.py)
+# TODO plot rho field for certain iteration
 
+# TODO animation of the whole plot panel: energy histogram, rho field, electric field
 
 if __name__ == "__main__":
     logging.basicConfig(
