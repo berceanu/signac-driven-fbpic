@@ -31,4 +31,5 @@ if __name__ == '__main__':
     )
     dashboard.main()
 
-# TODO show rho.mp4 movie
+# TODO show ``rho.mp4`` movie and diagnostic ``.png`` files.
+# TODO test web interface from CETAL

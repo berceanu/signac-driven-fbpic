@@ -9,6 +9,9 @@ import logging
 import signac
 from scipy.constants import c  # m/s
 
+# TODO test small sims on parallel multi-cores
+# TODO adapt parameters to large injection run
+# TODO test multiple large injection runs on parallel GPUs @ CETAL
 
 def main():
     project = signac.init_project("fbpic-minimal-project")
