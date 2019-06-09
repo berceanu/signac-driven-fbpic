@@ -12,7 +12,7 @@ conda env create -f environment.yml
 
 conda activate signac-driven-fbpic
 
-# install homegrown postprocessing modules 
+# install homegrown postprocessing modules
 pip install -e PostProc
 
 # install https://github.com/openPMD/openPMD-viewer
@@ -33,7 +33,7 @@ See [`signac/README.md`](https://github.com/berceanu/signac-driven-fbpic/blob/ma
 - [X] create minimal CPU example
 - [X] integrate 2D `plotz` library
 - [ ] add `openpmd_viewer` and `pandas` to `environment.yml` and update
-- [ ] unit testing
+- [ ] [unit testing](http://katyhuff.github.io/python-testing/)
 
 ## Notes
 
