@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from signac_dashboard import Dashboard
+from signac_dashboard.modules import VideoViewer
 from signac_dashboard.modules.document_list import DocumentList
 from signac_dashboard.modules.file_list import FileList
 from signac_dashboard.modules.image_viewer import ImageViewer
@@ -22,6 +23,7 @@ if __name__ == "__main__":
     dashboard = MyDashboard(
         modules=[
             ImageViewer(name="Image Viewer", img_globs=["*.png"]),
+            VideoViewer(name='Animation', video_globs=['*.mp4'], preload='auto'),
             StatepointList(enabled=True),
             DocumentList(max_chars=140),
             FileList(enabled=True),
@@ -31,6 +33,5 @@ if __name__ == "__main__":
     )
     dashboard.main()
 
-# TODO show ``rho.mp4`` movie and diagnostic ``.png`` files.
 # TODO test web interface from CETAL
 # TODO add file docstring
