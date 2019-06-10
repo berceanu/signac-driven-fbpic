@@ -600,6 +600,7 @@ def add_create_dir_workflow(path: str) -> None:
 add_create_dir_workflow(path=os.path.join("diags", "rhos"))
 
 # TODO move .png and .mp4 from {job_dir} to {job_dir}/diags
+# TODO bash script that allows single project.py run for GPU + postproc
 
 @Project.operation
 @Project.pre(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
