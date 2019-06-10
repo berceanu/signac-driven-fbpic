@@ -77,7 +77,7 @@ def path_exists(path: str) -> Callable[[Job], bool]:
     :param path: relative path, eg. dir1/dir2
     :return: anonymous function that does the check
     """
-    return lambda job: os.path.exists(os.path.join(job.ws, path))
+    return lambda job: os.path.isdir(os.path.join(job.ws, path))
 
 
 def sh(*cmd, **kwargs) -> str:
@@ -93,17 +93,17 @@ def sh(*cmd, **kwargs) -> str:
         subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs
         )
-            .communicate()[0]
-            .decode("utf-8")
+        .communicate()[0]
+        .decode("utf-8")
     )
     logger.info(stdout)
     return stdout
 
 
 def ffmpeg_command(
-        frame_rate: float = 4.0,
-        input_files: str = "pic%04d.png",  # pic0001.png, pic0002.png, ...
-        output_file: str = "test.mp4",
+    frame_rate: float = 4.0,
+    input_files: str = "pic%04d.png",  # pic0001.png, pic0002.png, ...
+    output_file: str = "test.mp4",
 ) -> str:
     """
     Build up the command string for running ``ffmpeg``.
@@ -121,6 +121,10 @@ def ffmpeg_command(
 
 
 class Project(FlowProject):
+    """
+    Placeholder for ``FlowProject`` class.
+    """
+
     pass
 
 
@@ -193,6 +197,11 @@ def fbpic_ran(job: Job) -> bool:
     :return: True if all output files are in {job_dir}/diags/hdf5, False otherwise
     """
     h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
+    if not os.path.isdir(h5_path):
+        # {job_dir}/diags/hdf5 not present, ``fbpic`` didn't run
+        did_it_run = False
+        return did_it_run
+
     time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=True)
     iterations: np.ndarray = time_series.iterations
 
@@ -200,7 +209,9 @@ def fbpic_ran(job: Job) -> bool:
     estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
 
     # check if iterations array corresponds to input params
-    return np.array_equal(estimated_iterations, iterations)
+    did_it_run = np.array_equal(estimated_iterations, iterations)
+
+    return did_it_run
 
 
 def are_rho_pngs(job: Job) -> bool:
@@ -285,7 +296,7 @@ def run_fbpic(job: Job) -> None:
     )
 
     # Add a laser to the fields of the simulation
-    add_laser(sim, job.sp.a0, job.sp.w0, job.sp.ctau, job.sp.z0)
+    add_laser(sim, job.sp.a0, job.sp.w0, job.sp.ctau, job.sp.z0, lambda0=job.sp.lambda0)
 
     # Configure the moving window
     sim.set_moving_window(v=c_light)
@@ -337,7 +348,7 @@ def electric_field_amplitude_norm(lambda0=0.8e-6):
 
 
 def particle_energy_histogram(
-        tseries: OpenPMDTimeSeries, it: int, energy_min=1.0, energy_max=300.0, nbins=100
+    tseries: OpenPMDTimeSeries, it: int, energy_min=1.0, energy_max=300.0, nbins=100
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
@@ -357,22 +368,22 @@ def particle_energy_histogram(
 
     hist, bin_edges = np.histogram(
         energy, bins=energy_bins, weights=q_e * 1e12 / delta_energy * w
-    )
+    )  # todo explain weighting
 
     return hist, bin_edges
 
 
 def field_snapshot(
-        tseries: OpenPMDTimeSeries,
-        it: int,
-        field_name: str,
-        normalization_factor: float,
-        coord: Optional[str] = None,
-        m="all",
-        theta=0.0,
-        chop: Optional[List[float]] = None,
-        path="./",
-        **kwargs,
+    tseries: OpenPMDTimeSeries,
+    it: int,
+    field_name: str,
+    normalization_factor: float,
+    coord: Optional[str] = None,
+    m="all",
+    theta=0.0,
+    chop: Optional[List[float]] = None,
+    path="./",
+    **kwargs,
 ) -> None:
     """
     Plot the ``field_name`` field from ``tseries`` at step ``iter``.
@@ -420,14 +431,14 @@ def field_snapshot(
 
 
 def get_a0(
-        tseries: OpenPMDTimeSeries,
-        t: Optional[float] = None,
-        it: Optional[int] = None,
-        coord="x",
-        m="all",
-        slicing_dir="y",
-        theta=0.0,
-        lambda0=0.8e-6,
+    tseries: OpenPMDTimeSeries,
+    t: Optional[float] = None,
+    it: Optional[int] = None,
+    coord="x",
+    m="all",
+    slicing_dir="y",
+    theta=0.0,
+    lambda0=0.8e-6,
 ) -> Tuple[float, float, float, float]:
     """
     Compute z₀, a₀, w₀, cτ.
@@ -470,13 +481,13 @@ def get_a0(
 
     # FWHM perpendicular size of beam, proportional to w0
     fwhm_a0_w0 = (
-            np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2))
-            * info_electric_field_x.dr
+        np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2))
+        * info_electric_field_x.dr
     )
 
     # FWHM longitudinal size of the beam, proportional to ctau
     fwhm_a0_ctau = (
-            np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_electric_field_x.dz
+        np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_electric_field_x.dz
     )
 
     return z0, a0_max, fwhm_a0_w0, fwhm_a0_ctau
@@ -526,8 +537,8 @@ def post_process_results(job: Job) -> None:
         it_time = it * job.sp.dt
 
         z_0, a_0, w_0, c_tau = get_a0(
-            time_series, it=it, lambda0=0.8e-6
-        )  # TODO: hard-coded magic number
+            time_series, it=it, lambda0=job.sp.lambda0
+        )
 
         diags_file.write(
             f"{it:06d},{it_time * 1e15:.3e},{z_0 * 1e6:.3e},{a_0:.3e},{w_0 * 1e6:.3e},{c_tau * 1e6:.3e}\n"
@@ -551,7 +562,8 @@ def post_process_results(job: Job) -> None:
             tseries=time_series,
             it=it,
             field_name="rho",
-            normalization_factor=1.0 / (-q_e * job.sp.n_e),
+            normalization_factor=1.0
+            / (-q_e * job.sp.n_e),  # m^3/C  # todo explain rho normalization
             chop=[40, -20, 15, -15],  # TODO hard-coded magic number
             path=rho_path,
             zlabel=r"$n/n_e$",
@@ -577,7 +589,6 @@ def add_create_dir_workflow(path: str) -> None:
 
     :param path: path to pass to ``create_dir``, and its pre- and post-conditions
     """
-
     # Make sure to make the operation-name a function of the parameter(s)!
     @Project.operation(f"create_dir_{path}".replace("/", "_"))
     @Project.pre(path_exists(os.path.dirname(path)))
@@ -601,6 +612,7 @@ add_create_dir_workflow(path=os.path.join("diags", "rhos"))
 
 # TODO move .png and .mp4 from {job_dir} to {job_dir}/diags
 # TODO bash script that allows single project.py run for GPU + postproc
+
 
 @Project.operation
 @Project.pre(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
@@ -653,8 +665,7 @@ def plot_1d_diags(job: Job) -> None:
     w_0 = df_diags.loc[:, "w₀[μm]"].values
     c_tau = df_diags.loc[:, "cτ[μm]"].values
 
-    # plot a_0 vs z_0
-    plot_1d = plotz.Plot1D(
+    a0_vs_z0 = plotz.Plot1D(
         a_0,  # y-axis
         z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
@@ -663,27 +674,25 @@ def plot_1d_diags(job: Job) -> None:
         ylim=[0, 10],  # TODO: hard-coded magic number
         figsize=(10, 6),
     )
-    plot_1d.canvas.print_figure(job.fn("a0.png"))
+    a0_vs_z0.canvas.print_figure(job.fn("a0.png"))
 
-    # plot w_0 vs z_0
-    plot_1d = plotz.Plot1D(
+    w0_vs_z0 = plotz.Plot1D(
         w_0,  # y-axis
         z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$%s \;(\mu m)$" % "w_0",
         figsize=(10, 6),
     )
-    plot_1d.canvas.print_figure(job.fn("w0.png"))
+    w0_vs_z0.canvas.print_figure(job.fn("w0.png"))
 
-    # plot c_tau vs z_0
-    plot_1d = plotz.Plot1D(
-        c_tau,  # x-axis
+    ctau_vs_z0 = plotz.Plot1D(
+        c_tau,  # y-axis
         z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$c \tau \;(\mu m)$",
         figsize=(10, 6),
     )
-    plot_1d.canvas.print_figure(job.fn("ctau.png"))
+    ctau_vs_z0.canvas.print_figure(job.fn("ctau.png"))
 
 
 @Project.operation
@@ -705,38 +714,104 @@ def generate_movie(job: Job) -> None:
     sh(command, shell=True)
 
 
-# TODO apply parametrization recipe
-@Project.operation
-@Project.pre.after(run_fbpic)
-@Project.post.isfile("E035100.png")  # TODO: hard-coded magic number
-def plot_efield_snapshot(job: Job) -> None:
+def add_plot_snapshots_workflow(iteration: int) -> None:
     """
-    Plot a snapshot of the electric field from a given iteration number (35100 in this case).
+    Adds ``plot_snapshots`` function(s) to the project workflow, for each value of ``iteration``.
 
-    :param job: the job instance is a handle to the data of a unique statepoint
+    :param iteration: iteration number to pass to ``plot_snapshots`` and its conditions
     """
-    e0 = electric_field_amplitude_norm(lambda0=0.8e-6)  # TODO: hard-coded magic number
 
-    h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
-    time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
-    # TODO no need to load the whole time series, can extract directly the relevant iteration
-
-    # plot electric field and save to disk
-    field_snapshot(
-        tseries=time_series,
-        it=35100,  # TODO: hard-coded magic number
-        field_name="E",
-        coord="x",
-        normalization_factor=1.0 / e0,
-        chop=[40, -20, 15, -15],  # TODO: hard-coded magic number
-        path=job.ws,
-        zlabel=r"$E_x / E_0$",
-        vmin=-8,  # TODO: hard-coded magic number
-        vmax=8,  # TODO: hard-coded magic number
-        hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
+    @Project.operation(f"plot_snapshots_{iteration:06d}")
+    @Project.pre.after(run_fbpic)
+    @Project.post(
+        are_files(
+            (
+                f"E{iteration:06d}.png",
+                f"rho{iteration:06d}.png",
+                f"hist{iteration:06d}.png",
+            )
+        )
     )
-# TODO plot 1D energy histogram for certain iteration (see analysis.py)
-# TODO plot rho field for certain iteration
+    def plot_snapshots(job: Job) -> None:
+        """
+        Plot a snapshot of
+
+        a. the electric field Ex
+        b. the 1D weighted particle energy histogram
+        c. plasma density field ``rho``
+
+        corresponding to ``iteration``.
+
+        :param job: the job instance is a handle to the data of a unique statepoint
+        """
+        e0 = electric_field_amplitude_norm(
+            lambda0=job.sp.lambda0
+        )
+
+        h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
+        time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(
+            h5_path, check_all_files=False
+        )
+
+        # plot electric field and save to disk
+        field_snapshot(
+            tseries=time_series,
+            it=iteration,
+            field_name="E",
+            coord="x",
+            normalization_factor=1.0 / e0,
+            chop=[40, -20, 15, -15],  # TODO: hard-coded magic number
+            path=job.ws,
+            zlabel=r"$E_x/E_0$",
+            vmin=-8,  # TODO: hard-coded magic number
+            vmax=8,  # TODO: hard-coded magic number
+            hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
+        )
+
+        # plot plasma density and save to disk
+        field_snapshot(
+            tseries=time_series,
+            it=iteration,
+            field_name="rho",
+            normalization_factor=1.0
+            / (-q_e * job.sp.n_c),  # m^3/C
+            chop=[40, -20, 15, -15],  # TODO: hard-coded magic number
+            path=job.ws,
+            zlabel=r"$n_e/n_c$",
+            vmin=0.0,  # TODO: hard-coded magic number
+            vmax=0.1,  # TODO: hard-coded magic number
+            hslice_val=0,  # do a 1D slice through the middle of the simulation box
+            vslice_val=840.5,  # TODO: hard-coded magic number
+        )
+
+        # compute 1D histogram
+        energy_hist, bin_edges = particle_energy_histogram(
+            tseries=time_series,
+            it=iteration,
+            energy_min=1.0,  # TODO: hard-coded magic number
+            energy_max=350.0,  # TODO: hard-coded magic number
+            nbins=349,  # TODO: hard-coded magic number
+        )
+        x_axis = np.array([bin_edges[:-1], bin_edges[1:]]).T.flatten()
+        y_axis = np.array([energy_hist, energy_hist]).T.flatten()
+        #
+        # plot it
+        hist = plotz.Plot1D(
+            y_axis,
+            x_axis,
+            xlabel=r"E (MeV)",
+            ylabel=r"dQ/dE (pC/MeV)",
+            figsize=(10, 6),
+            xlim=[1.0, 350.0],  # TODO: hard-coded magic number
+            ylim=[0.0, 10.0],  # TODO: hard-coded magic number
+            text=f"iteration = {iteration}",
+        )  # save to disk
+        hist.canvas.print_figure(job.fn(f"hist{iteration:06d}.png"))
+
+
+for iteration_number in (35100,):
+    add_plot_snapshots_workflow(iteration=iteration_number)
+
 
 # TODO animation of the whole plot panel: energy histogram, rho field, electric field
 

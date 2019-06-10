@@ -20,6 +20,7 @@ from numpy import pi as π
 import numpy as np
 import unyt as u
 
+# TODO add betatron estimation from Thomas paper
 
 # %% [markdown]
 # ## Constants
@@ -164,14 +165,18 @@ class GaussianBeam(object):
 # Example usage
 
 
+
+a = u.unyt_quantity(3., 'cm')
+test = f'{a:.2f}'
+
 # %%
 beam = GaussianBeam()
-beam = GaussianBeam(w0=7.202530529256849*u.micrometer)
-beam = GaussianBeam(fwhm=8.4803316326207*u.micrometer)
-beam = GaussianBeam(w0=7.202530529256849*u.micrometer,
-                    fwhm=8.4803316326207*u.micrometer)
-beam = GaussianBeam.from_f_number(f_number=10.)
-beam = GaussianBeam.from_focal_distance(f=1*u.meter, D=10*u.cm)
+# beam = GaussianBeam(w0=7.202530529256849*u.micrometer)
+# beam = GaussianBeam(fwhm=8.4803316326207*u.micrometer)
+# beam = GaussianBeam(w0=7.202530529256849*u.micrometer,
+#                     fwhm=8.4803316326207*u.micrometer)
+# beam = GaussianBeam.from_f_number(f_number=10.)
+# beam = GaussianBeam.from_focal_distance(f=1*u.meter, D=10*u.cm)
 print(beam)
 
 # %% [markdown]
@@ -689,3 +694,6 @@ print('Matching conditions:')
 print(matched_frasc)
 
 # %%
+
+if __name__ == "__main__":
+    pass
