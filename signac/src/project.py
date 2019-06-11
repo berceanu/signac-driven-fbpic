@@ -25,7 +25,7 @@ from scipy.signal import hilbert
 from signac.contrib.job import Job
 
 logger = logging.getLogger(__name__)
-log_file_name = "fbpic-minimal-project.log"
+log_file_name = "fbpic-project.log"
 
 c_light = physical_constants["speed of light in vacuum"][0]
 m_e = physical_constants["electron mass"][0]
