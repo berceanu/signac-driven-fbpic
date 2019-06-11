@@ -95,7 +95,7 @@ if __name__ == "__main__":
         zmin=zmin,
         boundaries="open",
         n_order=-1,
-        use_cuda=False,
+        use_cuda=True,
     )
 
     # Add a laser to the fields of the simulation

@@ -9,12 +9,13 @@ conda config --add channels conda-forge ✔️
 move `defaults` channel to top of `~/.condarc`
 conda config --set channel_priority true
 
-conda create -n signac-driven-fbpic -c defaults numba scipy h5py mkl cudatoolkit=9.0 matplotlib pandas
+conda create -n signac-driven-fbpic -c defaults numba scipy h5py mkl cudatoolkit=10.0 matplotlib pandas
 conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard unyt
-conda install -n signac-driven-fbpic -c rlehe openpmd_viewer
+# conda install -n signac-driven-fbpic -c rlehe openpmd_viewer
 
 conda activate signac-driven-fbpic
-pip install cupy-cuda90
+pip install cupy-cuda100
+pip install openPMD-viewer
 pip install fbpic
 
 conda env export > environment.yml
@@ -22,6 +23,7 @@ conda env export > environment.yml
 
 See [Managing conda environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) for more info on using conda environments.
 For matching NVIDIA drivers to particular CUDA versions, see [Anaconda's GPU software requirements](https://docs.anaconda.com/anaconda/user-guide/tasks/gpu-packages/#software-requirements).
+Which GPUs are supported by the [latest NVIDIA drivers](https://www.nvidia.com/object/unix.html) and how to install the latest driver on [Ubuntu 18.04](https://askubuntu.com/questions/1054954/how-to-install-nvidia-driver-in-ubuntu-18-04).
 
 ## Clone your fork from Github, and update it
 
@@ -45,13 +47,13 @@ git push origin dev ✔
 ### Install `fbpic`
 
 ```console
-python setup.py install
+python setup.py develop
 python setup.py test # optional
 ```
 
 **Outcome**: installed `fbpic` in `~/anaconda3/envs/signac-driven-fbpic/lib/python3.6/site-packages/fbpic-0.12.0-py3.6.egg/`.
 
-**Usage**: `python fbpic_script.py`
+**Usage**: `python3 fbpic_script.py`
 
 ### Python files
 
