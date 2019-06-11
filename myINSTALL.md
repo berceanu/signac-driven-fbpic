@@ -5,18 +5,12 @@ Distribution for your OS.
 
 
 ```console
-conda config --add channels conda-forge ✔️
-move `defaults` channel to top of `~/.condarc`
-conda config --set channel_priority true
-
 conda create -n signac-driven-fbpic -c defaults numba scipy h5py mkl cudatoolkit=10.0 matplotlib pandas
 conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard unyt
 # conda install -n signac-driven-fbpic -c rlehe openpmd_viewer
 
 conda activate signac-driven-fbpic
-pip install cupy-cuda100
-pip install openPMD-viewer
-pip install fbpic
+pip install cupy-cuda100 openPMD-viewer fbpic
 
 conda env export > environment.yml
 ```
