@@ -24,8 +24,12 @@ To run the `fbpic` simulations defined in `src/init.py`, in parallel, using `N`
 GPUs and all CPU cores available on the machine:
 
 ```console
+$ screen -S fbpic
 $ ./project.sh N
 ```
+
+It is convenient to run the project under a `screen` session, as the `fbpic`
+simulations might take a few hours to complete.
 
 ## Check completion status
 

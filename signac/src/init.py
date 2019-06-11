@@ -8,15 +8,16 @@ import logging
 import postproc.lwfa as lwfa
 import signac
 import unyt as u
+import numpy as np
 
 
 # TODO use scaling laws to estimate some of the input params
-# todo parameter scan while varying ``a0``
 
 def main():
     project = signac.init_project("fbpic-project")
 
-    for a0 in (1.0, 3.0, 5.0):
+    # main loop, for defining the parameter(s) to scan over
+    for a0 in np.linspace(start=0.5, stop=5.0, num=6):
         sp = dict(
             # The simulation box
             Nz=4096,  # Number of gridpoints along z
