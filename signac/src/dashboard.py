@@ -18,26 +18,41 @@ from signac_dashboard.modules.statepoint_list import StatepointList
 
 
 class MyDashboard(Dashboard):
+    """Child class for customization."""
     def job_sorter(self, job):
-        # should return key for
-        # sorted(jobs, key=lambda job: job_sorter(job))
-        return job.sp["Nz"], job.sp["Nm"]
+        """This method returns a key that can be compared to sort jobs.
+
+        :param job: The job being sorted.
+        :type job: :py:class:`signac.contrib.job.Job`
+        :returns: Key for :py:function:`sorted(jobs, key=lambda job: job_sorter(job))`
+        :rtype: any comparable type
+        """
+        return job.sp.a0, job.sp.Nm
 
     def job_title(self, job):
-        return f"(Nz, Nm) = ({job.sp['Nz']}, {job.sp['Nm']})"
+        """This method generates custom job subtitles.
+
+        :param job: The job being subtitled.
+        :type job: :py:class:`signac.contrib.job.Job`
+        :returns: Subtitle to be displayed.
+        :rtype: str
+        """
+        return f"a₀, Nₘ = {job.sp.a0}, {job.sp.Nm}"
 
 
 if __name__ == "__main__":
-    config = {"DASHBOARD_PATHS": ["src/"]}
+    # which modules are visible by default in the web page
     dashboard = MyDashboard(
         modules=[
             ImageViewer(name="Image Viewer", img_globs=["*.png"]),
             VideoViewer(name='Animation', video_globs=['*.mp4'], preload='auto'),
             StatepointList(enabled=True),
-            DocumentList(max_chars=140),
+            DocumentList(max_chars=140, enabled=False),
             FileList(enabled=True),
             Notes(enabled=False),
         ],
-        config=config,
+        config={"DASHBOARD_PATHS": ["src/"]},
     )
+
+    # launch web server
     dashboard.main()

@@ -15,9 +15,9 @@ import numpy as np
 # todo remove `deprecated.py` and `init_minimal.py`
 
 def main():
+    """Main function, for defining the parameter(s) to be varied in the simulations."""
     project = signac.init_project("fbpic-project")
 
-    # main loop, for defining the parameter(s) to scan over
     for a0 in np.linspace(start=0.5, stop=5.0, num=6):
         sp = dict(
             # The simulation box
