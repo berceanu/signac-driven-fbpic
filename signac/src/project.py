@@ -133,6 +133,7 @@ class Project(FlowProject):
 ####################
 
 
+# todo replace this mess with a simple counter for written/total .h5 files
 def data_to_ascii(file_name: str) -> str:
     """
     Runs a series of ``sed`` substitions on ``file_name``, saving it as ``output_file_name``.
