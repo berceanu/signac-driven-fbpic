@@ -2,6 +2,8 @@
 
 ## Initialize the project's workspace
 
+### from scratch
+
 To initialize the `signac` project from scratch:
 
 ```console
@@ -10,6 +12,9 @@ $ ./init.sh
 
 This will create the folder structure corresponding to `src/init.py`, and
 **delete** any existing simulation results (see `init.sh` script for details).
+
+### existing data
+
 If, instead of starting from scratch, one wants to add new simulations to an
 existing project, `src/init.py` should be used instead of `init.sh`:
 
@@ -25,11 +30,12 @@ GPUs and all CPU cores available on the machine:
 
 ```console
 $ screen -S fbpic
-$ ./project.sh N
+$ [time] ./project.sh N
 ```
 
 It is convenient to run the project under a `screen` session, as the `fbpic`
-simulations might take a few hours to complete.
+simulations might take a few hours to complete. The optional `time` command will
+give the total runtime once the project operations are all completed.
 
 ## Check completion status
 
@@ -40,12 +46,16 @@ execute
 $ ./status.sh
 ```
 
+Where available, the command [`nvtop`](https://github.com/Syllo/nvtop) can be
+used to check the usage of the machine's GPUs.
+
 ## Visualize post-processed results via the web interface
 
 To check the output of running the `signac` project operations, a web server
 can be launched via
 
 ```console
+$ screen -S dashboard
 $ ./dashboard.sh
 ```
 
@@ -59,14 +69,7 @@ forwarding.
 
 On the remote server
 
-- launch the web interface inside a `screen` session
-
-  ```console
-  $ screen -S dashboard
-  $ ./dashboard.sh
-  ```
-
-  then disconnect from `screen`.
+- launch the web interface inside a `screen` session, as described above
 
 On the local machine
 
@@ -76,4 +79,4 @@ On the local machine
   $ ssh -f username@remote_server -L 9999:localhost:7777 -N
   ```
 
-- finally, go to `localhost:9999` inside a web browser
+- open a web browser and point it to `localhost:9999`
