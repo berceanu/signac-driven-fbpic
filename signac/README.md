@@ -9,10 +9,8 @@ conda activate signac-driven-fbpic
 # serial version for testing purposes
 python3 src/project.py run 
 
-# parallel on 6 GPUs
-python3 src/project.py submit --bundle=6 --parallel --test | /bin/bash
-# complete remaining CPU operations
-python3 src/project.py run --parallel
+# parallel on N GPUs
+./project.sh N
 
 # check completion status while running
 python3 src/project.py status --pretty --full --stack
