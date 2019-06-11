@@ -83,4 +83,5 @@ On the local machine
 
 # Notes
 
+- all commands should be ran from the directory that contains this README file
 - simulation path on `CETAL` machine: `/Date2/andrei/runs/fbpic/signac-driven-fbpic/signac`
