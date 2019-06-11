@@ -9,11 +9,6 @@ import logging
 import signac
 from scipy.constants import physical_constants
 
-# TODO test small sims on parallel multi-cores
-# TODO adapt parameters to large injection run
-# TODO test multiple large injection runs on parallel GPUs @ CETAL
-# TODO use scaling laws to estimate some of the input params
-
 c_light = physical_constants["speed of light in vacuum"][0]
 
 
