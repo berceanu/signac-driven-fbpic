@@ -22,7 +22,7 @@ python3 src/dashboard.py run --host 0.0.0.0 --port 7777
 
 - create a `ssh` tunnel on your local machine, via
   ```console
-  $ ssh -f cetal -L 9999:localhost:7777 -N
+  ssh -f cetal -L 9999:localhost:7777 -N
   ```
   where `cetal` is a host present in your ` ~/.ssh/config`
 
