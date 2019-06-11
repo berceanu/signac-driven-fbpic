@@ -25,10 +25,6 @@ sudo apt install ffmpeg
 
 See [`signac/README.md`](https://github.com/berceanu/signac-driven-fbpic/blob/master/signac/README.md).
 
-## TODO
-
-- [ ] [unit testing](http://katyhuff.github.io/python-testing/)
-
 ## Notes
 
 - you can remove a previous version of the `conda` environment via `conda remove --name signac-driven-fbpic --all`

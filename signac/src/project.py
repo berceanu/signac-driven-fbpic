@@ -32,6 +32,7 @@ m_e = physical_constants["electron mass"][0]
 q_e = physical_constants["elementary charge"][0]
 mc2 = m_e * c_light ** 2 / (q_e * 1e6)  # 0.511 MeV
 
+# todo replace type annotations with :type docstrings
 
 #####################
 # UTILITY FUNCTIONS #

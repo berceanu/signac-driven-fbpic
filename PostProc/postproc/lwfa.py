@@ -21,6 +21,8 @@ import numpy as np
 import unyt as u
 
 # TODO add betatron estimation from Thomas paper
+# todo [unit testing](http://katyhuff.github.io/python-testing/)
+# todo add example jupyter notebook
 
 # %% [markdown]
 # ## Constants
