@@ -41,5 +41,3 @@ if __name__ == "__main__":
         config=config,
     )
     dashboard.main()
-
-# TODO test and document web interface from CETAL
