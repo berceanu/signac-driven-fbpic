@@ -5,24 +5,18 @@ Iterates over all defined state points and initializes
 the associated job workspace directories."""
 import logging
 
-# import numpy as np
+import postproc.lwfa as lwfa
 import signac
-from scipy.constants import physical_constants
 import unyt as u
-import postproc.LaserWakefieldAcceleration as lwfa
 
-# TODO test small sims on parallel multi-cores
-# TODO adapt parameters to large injection run
-# TODO test multiple large injection runs on parallel GPUs @ CETAL
+
 # TODO use scaling laws to estimate some of the input params
-
-c_light = physical_constants["speed of light in vacuum"][0]
 
 
 def main():
-    project = signac.init_project("fbpic-minimal-project")
+    project = signac.init_project("fbpic-project")
 
-    for Nm in (2,):
+    for Nm in (2, 3, 4):
         sp = dict(
             # The simulation box
             Nz=4096,  # Number of gridpoints along z
@@ -71,17 +65,14 @@ def main():
         laser = lwfa.Laser.from_a0(
             a0=sp["a0"],
             τL=(sp["ctau"] * u.meter) / u.clight,
-            beam=lwfa.GaussianBeam(w0=sp["w0"] * u.meter, λL=sp["lambda0"]*u.meter),
+            beam=lwfa.GaussianBeam(w0=sp["w0"] * u.meter, λL=sp["lambda0"] * u.meter),
         )
         sp["n_c"] = laser.ncrit.to_value('1/m**3')
 
-        sp["L_interact"] = 900.0e-6 - (
-            sp["zmax"] - sp["zmin"]
-        )  # 50.e-6 in fbpic LWFA example
-        sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / c_light
-        sp["T_interact"] = (sp["L_interact"] + (sp["zmax"] - sp["zmin"])) / c_light
+        sp["L_interact"] = 900.0e-6 - (sp["zmax"] - sp["zmin"])
+        sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value('m/s')
+        sp["T_interact"] = (sp["L_interact"] + (sp["zmax"] - sp["zmin"])) / u.clight.to_value('m/s')
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
-        # sp["diag_period"] = int(sp["N_step"] / 4)
 
         project.open_job(sp).init()
 

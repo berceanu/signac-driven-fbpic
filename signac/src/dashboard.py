@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""This module contains the web-based data visualization functions for this project.
+
+The workflow defined in this file can be executed from the command
+line with
+
+    $ python src/dashboard.py run
+
+See also: $ python src/dashboard.py --help
+"""
 from signac_dashboard import Dashboard
 from signac_dashboard.modules import VideoViewer
 from signac_dashboard.modules.document_list import DocumentList
@@ -34,4 +43,3 @@ if __name__ == "__main__":
     dashboard.main()
 
 # TODO test web interface from CETAL
-# TODO add file docstring
