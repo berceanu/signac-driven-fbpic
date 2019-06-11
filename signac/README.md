@@ -80,3 +80,7 @@ On the local machine
   ```
 
 - open a web browser and point it to `localhost:9999`
+
+# Notes
+
+- simulation path on `CETAL` machine: `/Date2/andrei/runs/fbpic/signac-driven-fbpic/signac`
