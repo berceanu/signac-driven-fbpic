@@ -33,6 +33,7 @@ q_e = physical_constants["elementary charge"][0]
 mc2 = m_e * c_light ** 2 / (q_e * 1e6)  # 0.511 MeV
 
 # todo replace type annotations with :type docstrings
+# todo add betatron post-processing via Igor's lib
 
 #####################
 # UTILITY FUNCTIONS #
