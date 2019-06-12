@@ -26,7 +26,7 @@ $ pip install -e PostProc
 $ python3 minimal_fbpic_script.py
 ```
 
-Installation instructions for developers can be found in `devINSTALL.md`.
+Installation instructions for developers can be found in [`devINSTALL.md`](https://github.com/berceanu/signac-driven-fbpic/blob/master/devINSTALL.md).
 
 ## Usage
 
