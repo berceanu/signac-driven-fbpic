@@ -1,7 +1,7 @@
 name: signac-driven-fbpic
 channels:
-  - conda-forge
   - defaults
+  - conda-forge
 dependencies:
   - argon2_cffi=19.1.0=py37h14c3975_1000
   - asn1crypto=0.24.0=py37_1003
@@ -13,7 +13,6 @@ dependencies:
   - click=7.0=py_0
   - cloudpickle=1.2.1=py_0
   - cryptography=2.7=py37h72c5cf5_0
-  - cudatoolkit=10.0.130=0
   - cycler=0.10.0=py37_0
   - dbus=1.13.6=h746ee38_0
   - deprecation=2.0.6=py_0
@@ -103,5 +102,5 @@ dependencies:
     - fastrlock==0.4
     - fbpic==0.13.0
     - openpmd-viewer==0.9.0
-prefix: /home/andrei/anaconda3/envs/signac-driven-fbpic
+prefix: /home/berceanu/anaconda3/envs/signac-driven-fbpic
 
