@@ -1,9 +1,5 @@
 # Create fbpic conda environment with dependencies
 
-Download and install the [Anaconda](https://www.anaconda.com) Python 3
-Distribution for your OS.
-
-
 ```console
 conda create -n signac-driven-fbpic -c defaults numba scipy h5py mkl cudatoolkit=10.0 matplotlib pandas
 conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard unyt
