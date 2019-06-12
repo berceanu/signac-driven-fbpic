@@ -12,8 +12,8 @@ Integration of the [`fbpic`](https://fbpic.github.io) particle-in-cell code with
 Download and install the [Anaconda](https://www.anaconda.com) (or Miniconda) Python 3
 Distribution for your OS.
 
-*Note*: in case you have an older version of the `signac-driven-fbpic` `conda` environment already,
-remove it with `conda remove --name signac-driven-fbpic --all`.
+*Note*: in case you have an older version of the `signac-driven-fbpic` `conda` environment
+already, remove it with `conda env remove --name signac-driven-fbpic --all`.
 
 ```console
 $ conda env create -f environment.yml

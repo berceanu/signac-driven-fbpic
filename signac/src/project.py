@@ -301,6 +301,9 @@ def run_fbpic(job: Job) -> None:
     # Add a laser to the fields of the simulation
     add_laser(sim, job.sp.a0, job.sp.w0, job.sp.ctau, job.sp.z0, lambda0=job.sp.lambda0)
 
+    # Track electrons (species 0 corresponds to the electrons)
+    sim.ptcl[0].track(sim.comm)
+
     # Configure the moving window
     sim.set_moving_window(v=c_light)
 

@@ -1,14 +1,14 @@
 # Create fbpic conda environment with dependencies
 
 ```console
-conda create -n signac-driven-fbpic -c defaults numba scipy h5py mkl cudatoolkit=10.0 matplotlib pandas
-conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard unyt
+$ conda create -n signac-driven-fbpic -c defaults numba scipy h5py mkl cudatoolkit=10.0 matplotlib pandas
+$ conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard unyt
 # conda install -n signac-driven-fbpic -c rlehe openpmd_viewer
 
-conda activate signac-driven-fbpic
-pip install cupy-cuda100 openPMD-viewer fbpic --no-cache-dir
+$ conda activate signac-driven-fbpic
+$ pip install cupy-cuda100 openPMD-viewer fbpic --no-cache-dir
 
-conda env export > environment.yml
+$ conda env export > environment.yml
 ```
 
 See [Managing conda environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) for more info on using conda environments.
@@ -18,32 +18,32 @@ Which GPUs are supported by the [latest NVIDIA drivers](https://www.nvidia.com/o
 ## Clone your fork from Github, and update it
 
 ```console
-git clone git@github.com:berceanu/fbpic.git ✔️
-cd fbpic ️✔
-git checkout dev ✔
-git checkout master ✔
+$ git clone git@github.com:berceanu/fbpic.git
+$ cd fbpic
+$ git checkout dev
+$ git checkout master
 ```
 
 ```console
-git remote add upstream https://github.com/fbpic/fbpic.git ✅
-git checkout master ✔
-git pull --ff-only upstream master ✔
-git push origin master ✔
-git checkout dev ✔
-git pull --ff-only upstream dev ✔
-git push origin dev ✔
+$ git remote add upstream https://github.com/fbpic/fbpic.git
+$ git checkout master
+$ git pull --ff-only upstream master
+$ git push origin master
+$ git checkout dev
+$ git pull --ff-only upstream dev
+$ git push origin dev
 ```
 
 ### Install `fbpic`
 
 ```console
-python setup.py develop
-python setup.py test # optional
+$ python setup.py develop
+$ python setup.py test # optional
 ```
 
-**Outcome**: installed `fbpic` in `~/anaconda3/envs/signac-driven-fbpic/lib/python3.6/site-packages/fbpic-0.12.0-py3.6.egg/`.
+**Outcome**: installed `fbpic` in `~/anaconda3/envs/signac-driven-fbpic/lib/python3.6/site-packages/fbpic-0.12.0-py3.6.egg/`
 
-**Usage**: `python3 fbpic_script.py`
+<!-- todo remove below this line -->
 
 ### Python files
 
