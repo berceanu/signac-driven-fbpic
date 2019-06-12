@@ -13,7 +13,7 @@ Download and install the [Anaconda](https://www.anaconda.com) (or Miniconda) Pyt
 Distribution for your OS.
 
 *Note*: in case you have an older version of the `signac-driven-fbpic` `conda` environment
-already, remove it with `conda env remove --name signac-driven-fbpic --all`.
+already, remove it with `conda remove --name signac-driven-fbpic --all`.
 
 ```console
 $ conda env create -f environment.yml
@@ -31,4 +31,3 @@ Installation instructions for developers can be found in [`devINSTALL.md`](https
 ## Usage
 
 See [`signac/README.md`](https://github.com/berceanu/signac-driven-fbpic/blob/master/signac/README.md).
-
