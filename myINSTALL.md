@@ -5,12 +5,12 @@ Distribution for your OS.
 
 
 ```console
-conda create -n signac-driven-fbpic -c defaults numba scipy h5py mkl matplotlib pandas
+conda create -n signac-driven-fbpic -c defaults numba scipy h5py mkl cudatoolkit=10.0 matplotlib pandas
 conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard unyt
 # conda install -n signac-driven-fbpic -c rlehe openpmd_viewer
 
 conda activate signac-driven-fbpic
-pip install cupy-cuda100 openPMD-viewer fbpic
+pip install cupy-cuda100 openPMD-viewer fbpic --no-cache-dir
 
 conda env export > environment.yml
 ```

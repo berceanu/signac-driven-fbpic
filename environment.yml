@@ -13,6 +13,7 @@ dependencies:
   - click=7.0=py_0
   - cloudpickle=1.2.1=py_0
   - cryptography=2.7=py37h72c5cf5_0
+  - cudatoolkit=10.0.130=0
   - cycler=0.10.0=py37_0
   - dbus=1.13.6=h746ee38_0
   - deprecation=2.0.6=py_0
