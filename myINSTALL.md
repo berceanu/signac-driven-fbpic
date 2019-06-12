@@ -5,7 +5,7 @@ Distribution for your OS.
 
 
 ```console
-conda create -n signac-driven-fbpic -c defaults numba scipy h5py mkl cudatoolkit=10.0 matplotlib pandas
+conda create -n signac-driven-fbpic -c defaults numba scipy h5py mkl matplotlib pandas
 conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow signac-dashboard unyt
 # conda install -n signac-driven-fbpic -c rlehe openpmd_viewer
 
@@ -16,8 +16,8 @@ conda env export > environment.yml
 ```
 
 See [Managing conda environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) for more info on using conda environments.
-For matching NVIDIA drivers to particular CUDA versions, see [Anaconda's GPU software requirements](https://docs.anaconda.com/anaconda/user-guide/tasks/gpu-packages/#software-requirements).
-Which GPUs are supported by the [latest NVIDIA drivers](https://www.nvidia.com/object/unix.html) and how to install the latest driver on [Ubuntu 18.04](https://askubuntu.com/questions/1054954/how-to-install-nvidia-driver-in-ubuntu-18-04).
+For matching NVIDIA drivers to particular CUDA versions, see [CUDA Toolkit and Compatible Driver Versions](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#major-components__table-cuda-toolkit-driver-versions).
+Which GPUs are supported by the [latest NVIDIA drivers](https://www.nvidia.com/object/unix.html) and how to install the latest driver on [Ubuntu 18.04](https://www.linuxbabe.com/ubuntu/install-nvidia-driver-ubuntu-18-04).
 
 ## Clone your fork from Github, and update it
 
