@@ -12,3 +12,5 @@ python3 src/project.py submit --bundle=$1 --parallel --test | /bin/bash
 # complete remaining CPU operations, using all cores
 python3 src/project.py run --parallel
 
+# todo use https://github.com/glotzerlab/signac-flow/pull/114
+
