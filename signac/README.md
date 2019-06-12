@@ -25,6 +25,8 @@ $ python3 src/init.py
 
 ## Run the project operations
 
+### parallel execution
+
 To run the `fbpic` simulations defined in `src/init.py`, in parallel, using `N`
 GPUs and all CPU cores available on the machine:
 
@@ -37,6 +39,16 @@ It is convenient to run the project under a `screen` session, as the `fbpic`
 simulations might take a few hours to complete. The optional `time` command will
 give the total runtime once the project operations are all completed.
 
+### serial execution
+
+To run the simulations on a single GPU, in a serial manner, do
+
+```console
+$ screen -S fbpic
+$ conda activate signac-driven-fbpic
+$ python3 src/project.py run
+```
+
 ## Check completion status
 
 To check the status of currently running operations, one can (periodically)
@@ -47,7 +59,7 @@ $ ./status.sh
 ```
 
 Where available, the command [`nvtop`](https://github.com/Syllo/nvtop) can be
-used to check the usage of the machine's GPUs.
+used to check the usage of the machine's GPUs. Otherwise, use `nvidia-smi`.
 
 ## Visualize post-processed results via the web interface
 
