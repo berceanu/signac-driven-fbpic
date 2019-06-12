@@ -722,7 +722,6 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
 
     :param iteration: iteration number to pass to ``plot_snapshots`` and its conditions
     """
-
     @Project.operation(f"plot_snapshots_{iteration:06d}")
     @Project.pre.after(run_fbpic)
     @Project.post(
