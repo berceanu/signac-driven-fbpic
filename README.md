@@ -31,3 +31,7 @@ Installation instructions for developers can be found in [`devINSTALL.md`](https
 ## Usage
 
 See [`signac/README.md`](https://github.com/berceanu/signac-driven-fbpic/blob/master/signac/README.md).
+
+## Todo
+
+- [ ] convert to `.rst` and add screen captures
