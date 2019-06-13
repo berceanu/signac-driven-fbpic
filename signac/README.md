@@ -32,12 +32,11 @@ GPUs and all CPU cores available on the machine:
 
 ```console
 $ screen -S fbpic
-$ [time] ./project.sh N
+$ ./project.sh N
 ```
 
 It is convenient to run the project under a `screen` session, as the `fbpic`
-simulations might take a few hours to complete. The optional `time` command will
-give the total runtime once the project operations are all completed.
+simulations might take a few hours to complete.
 
 ### serial execution
 
@@ -46,8 +45,11 @@ To run the simulations on a single GPU, in a serial manner, do
 ```console
 $ screen -S fbpic
 $ conda activate signac-driven-fbpic
-$ python3 src/project.py run
+$ [time] python3 src/project.py run
 ```
+
+The optional `time` command will give the total runtime once the project
+operations are all completed.
 
 ## Check completion status
 
