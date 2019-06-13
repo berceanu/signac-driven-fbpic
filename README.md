@@ -34,4 +34,4 @@ See [`signac/README.md`](https://github.com/berceanu/signac-driven-fbpic/blob/ma
 
 ## Todo
 
-- [ ] convert to `.rst` and add screen captures
+- [ ] convert to `.rst` and add screen captures -- see [`README.rst`](https://github.com/hansec/fortran-language-server/blob/master/README.rst)
