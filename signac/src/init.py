@@ -5,7 +5,7 @@ Iterates over all defined state points and initializes
 the associated job workspace directories."""
 import logging
 
-import postproc.lwfa as lwfa
+import prepic.lwfa as lwfa
 import signac
 import unyt as u
 import numpy as np

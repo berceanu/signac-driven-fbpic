@@ -6,7 +6,7 @@ $ conda install -n signac-driven-fbpic -c conda-forge mpi4py signac signac-flow 
 # conda install -n signac-driven-fbpic -c rlehe openpmd_viewer
 
 $ conda activate signac-driven-fbpic
-$ pip install cupy-cuda100 openPMD-viewer fbpic sliceplots --no-cache-dir
+$ pip install cupy-cuda100 openPMD-viewer fbpic sliceplots prepic --no-cache-dir
 
 $ conda env export > environment.yml
 ```
