@@ -19,9 +19,6 @@ already, remove it with `conda remove --name signac-driven-fbpic --all`.
 $ conda env create -f environment.yml
 $ conda activate signac-driven-fbpic
 
-# install post-processing modules
-$ pip install -e PostProc
-
 # test `fbpic`
 $ python3 minimal_fbpic_script.py
 ```
