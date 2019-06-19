@@ -17,7 +17,7 @@ from typing import List, Optional, Tuple, Union, Callable, Iterable
 
 import numpy as np
 import pandas as pd
-import postproc.plotz as plotz
+import sliceplots.two_dimensional as two_d
 from flow import FlowProject
 from opmd_viewer import OpenPMDTimeSeries
 from scipy.constants import physical_constants
@@ -415,7 +415,7 @@ def field_snapshot(
 
     field *= normalization_factor
 
-    plot = plotz.Plot2D(
+    plot = two_d.Plot2D(
         field,
         info.z * 1e6,
         info.r * 1e6,
@@ -639,7 +639,7 @@ def plot_2d_hist(job: Job) -> None:
     z_0 = df_diags.loc[:, "z₀[μm]"]
 
     # plot 2D energy-charge histogram
-    hist2d = plotz.Plot2D(
+    hist2d = two_d.Plot2D(
         all_hist.T,  # 2D data
         z_0.values,  # x-axis
         hist_edges[1:],  # y-axis
@@ -670,7 +670,7 @@ def plot_1d_diags(job: Job) -> None:
     w_0 = df_diags.loc[:, "w₀[μm]"].values
     c_tau = df_diags.loc[:, "cτ[μm]"].values
 
-    a0_vs_z0 = plotz.Plot1D(
+    a0_vs_z0 = two_d.Plot1D(
         a_0,  # y-axis
         z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
@@ -681,7 +681,7 @@ def plot_1d_diags(job: Job) -> None:
     )
     a0_vs_z0.canvas.print_figure(job.fn("a0.png"))
 
-    w0_vs_z0 = plotz.Plot1D(
+    w0_vs_z0 = two_d.Plot1D(
         w_0,  # y-axis
         z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
@@ -690,7 +690,7 @@ def plot_1d_diags(job: Job) -> None:
     )
     w0_vs_z0.canvas.print_figure(job.fn("w0.png"))
 
-    ctau_vs_z0 = plotz.Plot1D(
+    ctau_vs_z0 = two_d.Plot1D(
         c_tau,  # y-axis
         z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
@@ -800,7 +800,7 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
         y_axis = np.array([energy_hist, energy_hist]).T.flatten()
         #
         # plot it
-        hist = plotz.Plot1D(
+        hist = two_d.Plot1D(
             y_axis,
             x_axis,
             xlabel=r"E (MeV)",
