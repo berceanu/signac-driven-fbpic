@@ -43,27 +43,3 @@ $ python setup.py test # optional
 
 **Outcome**: installed `fbpic` in `~/anaconda3/envs/signac-driven-fbpic/lib/python3.6/site-packages/fbpic-0.12.0-py3.6.egg/`
 
-<!-- todo remove below this line -->
-
-### Python files
-
-```console
-# fbpic scripts
-calder/no_injection/calder_no_injection.py
-calder/high_density/fbpic_script.py
-calder/injection/fbpic_script.py ⭐️
-
-# jupyter notebooks
-cetal/calder_no_injection.py
-cetal/calder_high_density.py
-
-# analysis
-calder/high_density/analysis.py
-calder/injection/analysis.py ⭐️
-
-# crap
-calder/experiment_2012/calder_experiment.py
-cetal/calder_experiment.py
-```
-
-**Previous runs** from CETAL server are stored on `ra5_berceanu/runs/fbpic`.
