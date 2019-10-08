@@ -16,7 +16,7 @@ import numpy as np
 
 def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
-    project = signac.init_project("fbpic-project")
+    project = signac.init_project("fbpic-project", root="/Date2/alessio/runs/signac-driven-fbpic/")
 
     for a0 in np.linspace(start=0.5, stop=5.0, num=6):
         sp = dict(

@@ -10,7 +10,4 @@ rm -f signac_statepoints.json
 rm -f .signac_sp_cache.json.gz
 rm -rf workspace/
 
-eval "$(conda shell.bash hook)"
-conda activate signac-driven-fbpic
-
-python3 src/init.py
+python src/init.py
