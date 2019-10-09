@@ -16,7 +16,7 @@ import numpy as np
 
 def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
-    project = signac.init_project("fbpic-project", root="/Date2/alessio/runs/signac-driven-fbpic/")
+    project = signac.init_project("fbpic-project", workspace="/Date2/alessio/runs/signac-driven-fbpic/workspace/")
 
     for a0 in np.linspace(start=0.5, stop=5.0, num=6):
         sp = dict(
@@ -65,7 +65,7 @@ def main():
         )
 
         laser = lwfa.Laser.from_a0(
-            a0=sp["a0"],
+            a0=sp["a0"] * u.dimensionless,
             τL=(sp["ctau"] * u.meter) / u.clight,
             beam=lwfa.GaussianBeam(w0=sp["w0"] * u.meter, λL=sp["lambda0"] * u.meter),
         )
