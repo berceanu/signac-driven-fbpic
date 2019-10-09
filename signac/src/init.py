@@ -45,8 +45,6 @@ def main():
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             # do not change below this line ##############
             p_zmax=2250.0e-6,  # Position of the end of the plasma (meters)
-            # Minimal radial position of the plasma (meters)
-            p_rmin=0.0,
             # The density profile
             ramp_start=0.0e-6,
             ramp_length=375.0e-6,  # increase (up to `p_zmax`) !
