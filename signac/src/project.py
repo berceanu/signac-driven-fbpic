@@ -416,9 +416,9 @@ def field_snapshot(
     field *= normalization_factor
 
     plot = two_d.Plot2D(
-        field,
-        info.z * 1e6,
-        info.r * 1e6,
+        arr2d=field,
+        h_axis=info.z * 1e6,
+        v_axis=info.r * 1e6,
         xlabel=r"${} \;(\mu m)$".format(info.axes[1]),
         ylabel=r"${} \;(\mu m)$".format(info.axes[0]),
         extent=(
@@ -640,9 +640,9 @@ def plot_2d_hist(job: Job) -> None:
 
     # plot 2D energy-charge histogram
     hist2d = two_d.Plot2D(
-        all_hist.T,  # 2D data
-        z_0.values,  # x-axis
-        hist_edges[1:],  # y-axis
+        arr2d=all_hist.T,  # 2D data
+        h_axis=z_0.values,  # x-axis
+        v_axis=hist_edges[1:],  # y-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"E (MeV)",
         zlabel=r"dQ/dE (pC/MeV)",
