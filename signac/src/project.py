@@ -17,7 +17,7 @@ from typing import List, Optional, Tuple, Union, Callable, Iterable
 
 import numpy as np
 import pandas as pd
-import sliceplots.two_dimensional as two_d
+import sliceplots
 from flow import FlowProject
 from opmd_viewer import OpenPMDTimeSeries
 from scipy.constants import physical_constants
@@ -415,7 +415,7 @@ def field_snapshot(
 
     field *= normalization_factor
 
-    plot = two_d.Plot2D(
+    plot = sliceplots.Plot2D(
         arr2d=field,
         h_axis=info.z * 1e6,
         v_axis=info.r * 1e6,
@@ -639,7 +639,7 @@ def plot_2d_hist(job: Job) -> None:
     z_0 = df_diags.loc[:, "z₀[μm]"]
 
     # plot 2D energy-charge histogram
-    hist2d = two_d.Plot2D(
+    hist2d = sliceplots.Plot2D(
         arr2d=all_hist.T,  # 2D data
         h_axis=z_0.values,  # x-axis
         v_axis=hist_edges[1:],  # y-axis
@@ -670,9 +670,9 @@ def plot_1d_diags(job: Job) -> None:
     w_0 = df_diags.loc[:, "w₀[μm]"].values
     c_tau = df_diags.loc[:, "cτ[μm]"].values
 
-    a0_vs_z0 = two_d.Plot1D(
-        a_0,  # y-axis
-        z_0,  # x-axis
+    a0_vs_z0 = sliceplots.plot1d(
+        v_axis=a_0,  # y-axis
+        h_axis=z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$%s$" % "a_0",
         xlim=[0, 900],  # TODO: hard-coded magic number
@@ -681,18 +681,18 @@ def plot_1d_diags(job: Job) -> None:
     )
     a0_vs_z0.canvas.print_figure(job.fn("a0.png"))
 
-    w0_vs_z0 = two_d.Plot1D(
-        w_0,  # y-axis
-        z_0,  # x-axis
+    w0_vs_z0 = sliceplots.plot1d(
+        v_axis=w_0,  # y-axis
+        h_axis=z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$%s \;(\mu m)$" % "w_0",
         figsize=(10, 6),
     )
     w0_vs_z0.canvas.print_figure(job.fn("w0.png"))
 
-    ctau_vs_z0 = two_d.Plot1D(
-        c_tau,  # y-axis
-        z_0,  # x-axis
+    ctau_vs_z0 = sliceplots.plot1d(
+        v_axis=c_tau,  # y-axis
+        h_axis=z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$c \tau \;(\mu m)$",
         figsize=(10, 6),
@@ -800,9 +800,9 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
         y_axis = np.array([energy_hist, energy_hist]).T.flatten()
         #
         # plot it
-        hist = two_d.Plot1D(
-            y_axis,
-            x_axis,
+        hist = sliceplots.plot1d(
+            v_axis=y_axis,
+            h_axis=x_axis,
             xlabel=r"E (MeV)",
             ylabel=r"dQ/dE (pC/MeV)",
             figsize=(10, 6),
