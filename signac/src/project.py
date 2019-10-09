@@ -13,6 +13,7 @@ import os
 import shutil
 import subprocess
 import sys
+from matplotlib import pyplot
 from typing import List, Optional, Tuple, Union, Callable, Iterable
 
 import numpy as np
@@ -670,34 +671,37 @@ def plot_1d_diags(job: Job) -> None:
     w_0 = df_diags.loc[:, "w₀[μm]"].values
     c_tau = df_diags.loc[:, "cτ[μm]"].values
 
-    a0_vs_z0 = sliceplots.plot1d(
+    fig, ax = pyplot.subplots(figsize=(10, 6))
+    sliceplots.plot1d(
+        ax=ax,
         v_axis=a_0,  # y-axis
         h_axis=z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$%s$" % "a_0",
         xlim=[0, 900],  # TODO: hard-coded magic number
         ylim=[0, 10],  # TODO: hard-coded magic number
-        figsize=(10, 6),
     )
-    a0_vs_z0.canvas.print_figure(job.fn("a0.png"))
+    fig.savefig(job.fn("a0.png"))
 
-    w0_vs_z0 = sliceplots.plot1d(
+    fig, ax = pyplot.subplots(figsize=(10, 6))
+    sliceplots.plot1d(
+        ax=ax,
         v_axis=w_0,  # y-axis
         h_axis=z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$%s \;(\mu m)$" % "w_0",
-        figsize=(10, 6),
     )
-    w0_vs_z0.canvas.print_figure(job.fn("w0.png"))
+    fig.savefig(job.fn("w0.png"))
 
-    ctau_vs_z0 = sliceplots.plot1d(
+    fig, ax = pyplot.subplots(figsize=(10, 6))
+    sliceplots.plot1d(
+        ax=ax,
         v_axis=c_tau,  # y-axis
         h_axis=z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$c \tau \;(\mu m)$",
-        figsize=(10, 6),
     )
-    ctau_vs_z0.canvas.print_figure(job.fn("ctau.png"))
+    fig.savefig(job.fn("ctau.png"))
 
 
 @Project.operation
@@ -800,17 +804,19 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
         y_axis = np.array([energy_hist, energy_hist]).T.flatten()
         #
         # plot it
-        hist = sliceplots.plot1d(
+
+        fig, ax = pyplot.subplots(figsize=(10, 6))
+        sliceplots.plot1d(
+            ax=ax,
             v_axis=y_axis,
             h_axis=x_axis,
             xlabel=r"E (MeV)",
             ylabel=r"dQ/dE (pC/MeV)",
-            figsize=(10, 6),
             xlim=[1.0, 350.0],  # TODO: hard-coded magic number
             ylim=[0.0, 10.0],  # TODO: hard-coded magic number
             text=f"iteration = {iteration}",
         )  # save to disk
-        hist.canvas.print_figure(job.fn(f"hist{iteration:06d}.png"))
+        fig.savefig(job.fn(f"hist{iteration:06d}.png"))
 
 
 for iteration_number in (35100,):
