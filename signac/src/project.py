@@ -283,6 +283,7 @@ def run_fbpic(job: Job) -> None:
         job.sp.rmax,
         job.sp.Nm,
         job.sp.dt,
+        n_e=None,  # no electrons
         zmin=job.sp.zmin,
         boundaries="open",
         n_order=-1,
@@ -290,14 +291,14 @@ def run_fbpic(job: Job) -> None:
         verbose_level=2,
     )
 
+    # Add a laser to the fields of the simulation
+    add_laser(sim, job.sp.a0, job.sp.w0, job.sp.ctau, job.sp.z0, lambda0=job.sp.lambda0)
+
     # Create the plasma electrons
     elec = sim.add_new_species(q=-q_e, m=m_e, n=job.sp.n_e,
                                dens_func=dens_func, p_zmin=job.sp.p_zmin, p_zmax=job.sp.p_zmax,
                                p_rmax=job.sp.p_rmax,
                                p_nz=job.sp.p_nz, p_nr=job.sp.p_nr, p_nt=job.sp.p_nt)
-
-    # Add a laser to the fields of the simulation
-    add_laser(sim, job.sp.a0, job.sp.w0, job.sp.ctau, job.sp.z0, lambda0=job.sp.lambda0)
 
     # Track electrons (species 0 corresponds to the electrons)
     elec.track(sim.comm)
@@ -307,7 +308,6 @@ def run_fbpic(job: Job) -> None:
 
     # Add diagnostics
     write_dir = os.path.join(job.ws, "diags")
-
     sim.diags = [
         FieldDiagnostic(
             job.sp.diag_period, sim.fld, comm=sim.comm, write_dir=write_dir
