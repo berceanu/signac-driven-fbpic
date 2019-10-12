@@ -272,21 +272,42 @@ def run_fbpic(job: Job) -> None:
 
     # plot density profile for checking
     all_z = np.linspace(job.sp.zmin, job.sp.p_zmax, 1000)
-    dens = dens_func(all_z, 0)
-    pyplot.plot(all_z, dens)
+    dens = dens_func(all_z, 0.0)
 
-    fig, ax = pyplot.subplots(figsize=(10, 6))
-    sliceplots.plot1d(
-        ax=ax,
-        v_axis=dens,  # y-axis
-        h_axis=all_z,  # x-axis
-        xlabel=r"$%s \;(\mu m)$" % "z",
-        # ylabel=r"$%s$" % "a_0",
-        # xlim=[0, 900],  # TODO: hard-coded magic number
-        # ylim=[0, 10],  # TODO: hard-coded magic number
-    )
+    width_inch = job.sp.p_zmax / 1e-5
+    major_locator = pyplot.MultipleLocator(10)
+    minor_locator = pyplot.MultipleLocator(5)
+    major_locator.MAXTICKS = 10000
+    minor_locator.MAXTICKS = 10000
+
+    def mark_on_plot(*, ax, parameter: str, y=1.1):
+        ax.annotate(s=parameter, xy=(job.sp[parameter]*1e6, y), xycoords="data")
+        ax.axvline(x=job.sp[parameter]*1e6, linestyle="--", color="red")
+        return ax
+
+    fig, ax = pyplot.subplots(figsize=(width_inch, 4.8))
+    ax.plot(all_z*1e6, dens)
+    ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
+    ax.set_ylim(-0.1, 1.2)
+    ax.set_xlim(job.sp.zmin*1e6 - 20, job.sp.p_zmax*1e6 + 20)
+    ax.set_ylabel("Density profile $n$")
+    ax.xaxis.set_major_locator(major_locator)
+    ax.xaxis.set_minor_locator(minor_locator)
+
+    mark_on_plot(ax=ax, parameter="zmin")
+    mark_on_plot(ax=ax, parameter="zmax")
+    mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
+    mark_on_plot(ax=ax, parameter="z0", y=0.8)
+    mark_on_plot(ax=ax, parameter="ramp_start", y=0.7)
+    mark_on_plot(ax=ax, parameter="L_interact")
+    mark_on_plot(ax=ax, parameter="p_zmax")
+
+    ax.annotate(s="ramp_start + ramp_length", xy=(job.sp.ramp_start*1e6 + job.sp.ramp_length*1e6, 1.1), xycoords="data")
+    ax.axvline(x=job.sp.ramp_start*1e6 + job.sp.ramp_length*1e6, linestyle="--", color="red")
+
+    ax.fill_between(all_z*1e6, dens, alpha=0.5)
+
     fig.savefig(job.fn("check_density.png"))
-
 
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
@@ -343,7 +364,7 @@ def run_fbpic(job: Job) -> None:
     np.random.seed(0)
 
     # Run the simulation
-    sim.step(job.sp.N_step, show_progress=True)
+    # sim.step(job.sp.N_step, show_progress=True)
 
     # redirect stdout back and close "stdout.txt"
     sys.stdout = orig_stdout
