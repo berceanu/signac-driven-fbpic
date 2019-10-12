@@ -270,6 +270,24 @@ def run_fbpic(job: Job) -> None:
 
         return n
 
+    # plot density profile for checking
+    all_z = np.linspace(job.sp.zmin, job.sp.p_zmax, 1000)
+    dens = dens_func(all_z, 0)
+    pyplot.plot(all_z, dens)
+
+    fig, ax = pyplot.subplots(figsize=(10, 6))
+    sliceplots.plot1d(
+        ax=ax,
+        v_axis=dens,  # y-axis
+        h_axis=all_z,  # x-axis
+        xlabel=r"$%s \;(\mu m)$" % "z",
+        # ylabel=r"$%s$" % "a_0",
+        # xlim=[0, 900],  # TODO: hard-coded magic number
+        # ylim=[0, 10],  # TODO: hard-coded magic number
+    )
+    fig.savefig(job.fn("check_density.png"))
+
+
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
     f = open(job.fn("stdout.txt"), "w")
