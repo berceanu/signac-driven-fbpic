@@ -12,7 +12,6 @@ import numpy as np
 
 
 # TODO use scaling laws to estimate some of the input params
-# todo remove `deprecated.py` and `init_minimal.py`
 
 def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
