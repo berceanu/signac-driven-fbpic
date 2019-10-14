@@ -244,7 +244,7 @@ def run_fbpic(job: Job) -> None:
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     from fbpic.main import Simulation
-    from fbpic.lpa_utils.laser import add_laser
+    from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
     from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
 
     # The density profile
@@ -330,8 +330,14 @@ def run_fbpic(job: Job) -> None:
         verbose_level=2,
     )
 
-    # Add a laser to the fields of the simulation
-    add_laser(sim, job.sp.a0, job.sp.w0, job.sp.ctau, job.sp.z0, lambda0=job.sp.lambda0)
+    # Create a Gaussian laser profile
+    laser_profile = GaussianLaser(a0=job.sp.a0, waist=job.sp.w0, tau=job.sp.ctau / c_light, z0=job.sp.z0,
+                                  zf=None, theta_pol=0., lambda0=job.sp.lambda0,
+                                  cep_phase=0., phi2_chirp=0.,
+                                  propagation_direction=1)
+
+    # Add it to the simulation
+    add_laser_pulse(sim, laser_profile, gamma_boost=None, method='direct', z0_antenna=None, v_antenna=0.)
 
     # Create the plasma electrons
     elec = sim.add_new_species(q=-q_e, m=m_e, n=job.sp.n_e,
