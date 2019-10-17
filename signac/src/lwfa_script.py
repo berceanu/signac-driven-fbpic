@@ -193,8 +193,8 @@ if __name__ == '__main__':
         vmax=2,
         hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
     )
-    fig.savefig('mylaser.png')
+    fig.savefig('check_laser.png')
 
     # Run the simulation
-    # sim.step( N_step )
+    sim.step( N_step )
     print('')
