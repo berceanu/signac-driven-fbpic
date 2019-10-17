@@ -18,16 +18,19 @@ where fbpic_object is any of the objects or function of FBPIC.
 # Imports
 # -------
 import numpy as np
-from scipy.constants import c, e, m_e
+from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
 # Import the relevant structures in FBPIC
 from fbpic.main import Simulation
-from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
 from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic, \
     set_periodic_checkpoint, restart_from_checkpoint
+from matplotlib import pyplot
+from scipy.constants import c, e, m_e
+from sliceplots import Plot2D
 
 # ----------
 # Parameters
 # ----------
+
 
 # Whether to use the GPU
 use_cuda = True
@@ -95,8 +98,10 @@ def dens_func( z, r ) :
     n = np.where( z<ramp_start, 0., n )
     return(n)
 
+
 # The interaction length of the simulation (meters)
-L_interact = 900.e-6 - (zmax - zmin) # increase to simulate longer distance!
+L_interact = 900.e-6 - (zmax - zmin)  # increase to simulate longer distance!
+
 # Interaction time (seconds) (to calculate number of PIC iterations)
 T_interact = ( L_interact + (zmax-zmin) ) / v_window
 # (i.e. the time it takes for the moving window to slide across the plasma)
@@ -149,6 +154,47 @@ if __name__ == '__main__':
     # Number of iterations to perform
     N_step = int(T_interact/sim.dt)
 
-    ### Run the simulation
+    # Get the fields in the half-plane theta=0 (Sum mode 0 and mode 1)
+    gathered_grids = [sim.comm.gather_grid(sim.fld.interp[m]) for m in range(Nm)]
+
+    rgrid = gathered_grids[0].r
+    zgrid = gathered_grids[0].z
+
+    # Check the Er field
+    Er = gathered_grids[0].Er.T.real
+
+    for m in range(1, Nm):
+        # There is a factor 2 here so as to comply with the convention in
+        # Lifschitz et al., which is also the convention adopted in Warp Circ
+        Er += 2 * gathered_grids[m].Er.T.real
+
+    # wavevector
+    k0 = 2 * np.pi / lambda0
+    # field amplitude
+    e0 = m_e * c ** 2 * k0 / e
+
+    fig = pyplot.figure(figsize=(8, 8))
+    Plot2D(
+        fig=fig,
+        arr2d=Er / e0,
+        h_axis=zgrid * 1e6,
+        v_axis=rgrid * 1e6,
+        zlabel=r"$E_r/E_0$",
+        xlabel=r"$z \;(\mu m)$",
+        ylabel=r"$r \;(\mu m)$",
+        extent=(
+            zgrid[0] * 1e6,  # + 40
+            zgrid[-1] * 1e6,  # - 20
+            rgrid[0] * 1e6,
+            rgrid[-1] * 1e6,  # - 15,
+        ),
+        cbar=True,
+        vmin=-2,
+        vmax=2,
+        hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
+    )
+    fig.savefig('mylaser.png')
+
+    # Run the simulation
     # sim.step( N_step )
     print('')
