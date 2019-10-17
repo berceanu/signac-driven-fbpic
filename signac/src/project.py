@@ -345,8 +345,8 @@ def run_fbpic(job: Job) -> None:
                                p_rmax=job.sp.p_rmax,
                                p_nz=job.sp.p_nz, p_nr=job.sp.p_nr, p_nt=job.sp.p_nt)
 
-    # Track electrons (species 0 corresponds to the electrons)
-    elec.track(sim.comm)
+    # Track electrons, useful for betatron radiation
+    # elec.track(sim.comm)
 
     # Configure the moving window
     sim.set_moving_window(v=c_light)
@@ -355,7 +355,8 @@ def run_fbpic(job: Job) -> None:
     write_dir = os.path.join(job.ws, "diags")
     sim.diags = [
         FieldDiagnostic(
-            job.sp.diag_period, sim.fld, comm=sim.comm, write_dir=write_dir
+            job.sp.diag_period, sim.fld, comm=sim.comm, write_dir=write_dir,
+            fieldtypes=["rho", "E"]
         ),
         ParticleDiagnostic(
             job.sp.diag_period,
@@ -363,14 +364,54 @@ def run_fbpic(job: Job) -> None:
             select={"uz": [1., None]},
             comm=sim.comm,
             write_dir=write_dir,
+            particle_data=["momentum", "weighting"]
         ),
     ]
+
+    # Plot the Ex component of the laser
+    # Get the fields in the half-plane theta=0 (Sum mode 0 and mode 1)
+    gathered_grids = [sim.comm.gather_grid(sim.fld.interp[m]) for m in range(job.sp.Nm)]
+
+    rgrid = gathered_grids[0].r
+    zgrid = gathered_grids[0].z
+
+    # construct the Er field for theta=0
+    Er = gathered_grids[0].Er.T.real
+
+    for m in range(1, job.sp.Nm):
+        # There is a factor 2 here so as to comply with the convention in
+        # Lifschitz et al., which is also the convention adopted in Warp Circ
+        Er += 2 * gathered_grids[m].Er.T.real
+
+    e0 = electric_field_amplitude_norm(lambda0=job.sp.lambda0)
+
+    fig = pyplot.figure(figsize=(8, 8))
+    sliceplots.Plot2D(
+        fig=fig,
+        arr2d=Er / e0,
+        h_axis=zgrid * 1e6,
+        v_axis=rgrid * 1e6,
+        zlabel=r"$E_r/E_0$",
+        xlabel=r"$z \;(\mu m)$",
+        ylabel=r"$r \;(\mu m)$",
+        extent=(
+            zgrid[0] * 1e6,  # + 40
+            zgrid[-1] * 1e6,  # - 20
+            rgrid[0] * 1e6,
+            rgrid[-1] * 1e6,  # - 15,
+        ),
+        cbar=True,
+        vmin=-3,
+        vmax=3,
+        hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
+    )
+    fig.savefig(job.fn('check_laser.png'))
 
     # set deterministic random seed
     np.random.seed(0)
 
     # Run the simulation
-    # sim.step(job.sp.N_step, show_progress=True)
+    sim.step(job.sp.N_step, show_progress=True)
 
     # redirect stdout back and close "stdout.txt"
     sys.stdout = orig_stdout
