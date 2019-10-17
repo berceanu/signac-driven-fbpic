@@ -25,7 +25,7 @@ def main():
             zmax=30.0e-6,  # Right end of the simulation box (meters)
             Nr=256,  # Number of gridpoints along r
             rmax=30.0e-6,  # Length of the box along r (meters)
-            Nm=2,  # Number of modes used
+            Nm=3,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
