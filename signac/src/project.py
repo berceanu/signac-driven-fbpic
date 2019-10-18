@@ -33,9 +33,6 @@ m_e = physical_constants["electron mass"][0]
 q_e = physical_constants["elementary charge"][0]
 mc2 = m_e * c_light ** 2 / (q_e * 1e6)  # 0.511 MeV
 
-# todo replace type annotations with :type docstrings
-# todo add betatron post-processing via Igor's lib
-
 #####################
 # UTILITY FUNCTIONS #
 #####################
@@ -439,29 +436,38 @@ def electric_field_amplitude_norm(lambda0=0.8e-6):
 
 
 def particle_energy_histogram(
-    tseries: OpenPMDTimeSeries, it: int, energy_min=1.0, energy_max=300.0, nbins=100
-) -> Tuple[np.ndarray, np.ndarray]:
+    tseries: OpenPMDTimeSeries, it: int,
+        energy_min=1, energy_max=800, delta_energy=1, cutoff=1,
+):
     """
     Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
 
     :param tseries: whole simulation time series
     :param it: time step in the simulation
-    :param energy_min: lower energy threshold
-    :param energy_max: upper energy threshold
-    :param nbins: number of bins
+    :param energy_min: lower energy threshold (MeV)
+    :param energy_max: upper energy threshold (MeV)
+    :param delta_energy: size of each energy bin (MeV)
+    :param cutoff: upper threshold for the histogram, in pC / MeV
     :return: histogram values and bin edges
     """
-    delta_energy = (energy_max - energy_min) / nbins
+    nbins = (energy_max - energy_min) // delta_energy
     energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
 
     ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=it)
     energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
 
-    hist, bin_edges = np.histogram(
+    # Explanation of weights:
+    #     1. convert electron charge from C to pC (factor 1e12)
+    #     2. multiply by weight w to get real number of electrons
+    #     3. divide by energy bin size delta_energy to get charge / MeV
+    hist, _ = np.histogram(
         energy, bins=energy_bins, weights=q_e * 1e12 / delta_energy * w
-    )  # todo explain weighting
+    )
 
-    return hist, bin_edges
+    # cut off histogram
+    np.clip(hist, a_min=None, a_max=cutoff, out=hist)
+
+    return hist, energy_bins, nbins
 
 
 def field_snapshot(
@@ -616,9 +622,13 @@ def post_process_results(job: Job) -> None:
     time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
     number_of_iterations: int = time_series.iterations.size
 
-    nbins = 349  # TODO: hard-coded magic number
-    all_hist = np.empty(shape=(number_of_iterations, nbins), dtype=np.float64)
-    hist_edges = np.empty(shape=(nbins + 1,), dtype=np.float64)
+    # Do a mock histogram in order to get the number of bins
+    _, _, nrbins = particle_energy_histogram(
+        tseries=time_series,
+        it=0,
+    )
+    all_hist = np.empty(shape=(number_of_iterations, nrbins), dtype=np.float64)
+    hist_edges = np.empty(shape=(nrbins + 1,), dtype=np.float64)
 
     diags_file = open(job.fn("diags.txt"), "w")
     diags_file.write("iteration,time[fs],z₀[μm],a₀,w₀[μm],cτ[μm]\n")
@@ -636,12 +646,9 @@ def post_process_results(job: Job) -> None:
         )
 
         # generate 1D energy histogram
-        energy_hist, bin_edges = particle_energy_histogram(
+        energy_hist, bin_edges, _ = particle_energy_histogram(
             tseries=time_series,
             it=it,
-            energy_min=1.0,  # TODO hard-coded magic number
-            energy_max=350.0,  # TODO hard-coded magic number
-            nbins=nbins,
         )
         # build up arrays for 2D energy histogram
         all_hist[idx, :] = energy_hist
@@ -701,9 +708,6 @@ def add_create_dir_workflow(path: str) -> None:
 
 add_create_dir_workflow(path=os.path.join("diags", "rhos"))
 
-# TODO move .png and .mp4 from {job_dir} to {job_dir}/diags
-
-
 @Project.operation
 @Project.pre(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
 @Project.post.isfile("hist2d.png")
@@ -733,8 +737,6 @@ def plot_2d_hist(job: Job) -> None:
         zlabel=r"dQ/dE (pC/MeV)",
         vslice_val=z_0.loc[35100],  # TODO: hard-coded magic number
         extent=(z_0.iloc[0], z_0.iloc[-1], hist_edges[1], hist_edges[-1]),
-        vmin=0,  # TODO: hard-coded magic number
-        vmax=10,  # TODO: hard-coded magic number
     )
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
@@ -877,12 +879,9 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
         )
 
         # compute 1D histogram
-        energy_hist, bin_edges = particle_energy_histogram(
+        energy_hist, bin_edges, _ = particle_energy_histogram(
             tseries=time_series,
             it=iteration,
-            energy_min=1.0,  # TODO: hard-coded magic number
-            energy_max=350.0,  # TODO: hard-coded magic number
-            nbins=349,  # TODO: hard-coded magic number
         )
         x_axis = np.array([bin_edges[:-1], bin_edges[1:]]).T.flatten()
         y_axis = np.array([energy_hist, energy_hist]).T.flatten()
@@ -896,8 +895,6 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
             h_axis=x_axis,
             xlabel=r"E (MeV)",
             ylabel=r"dQ/dE (pC/MeV)",
-            xlim=[1.0, 350.0],  # TODO: hard-coded magic number
-            ylim=[0.0, 10.0],  # TODO: hard-coded magic number
             text=f"iteration = {iteration}",
         )  # save to disk
         fig.savefig(job.fn(f"hist{iteration:06d}.png"))
@@ -906,8 +903,6 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
 for iteration_number in (35100,):
     add_plot_snapshots_workflow(iteration=iteration_number)
 
-
-# TODO animation of the whole plot panel: energy histogram, rho field, electric field
 
 if __name__ == "__main__":
     logging.basicConfig(
