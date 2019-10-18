@@ -11,8 +11,6 @@ import unyt as u
 import numpy as np
 
 
-# TODO use scaling laws to estimate some of the input params
-
 def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
     project = signac.init_project("fbpic-project", workspace="/Date2/alessio/runs/signac-driven-fbpic/workspace/")

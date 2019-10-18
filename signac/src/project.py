@@ -7,6 +7,8 @@ line with
     $ python src/project.py run [job_id [job_id ...]]
 
 See also: $ python src/project.py --help
+
+Note: All the lines marked with the CHANGEME comment contain customizable parameters.
 """
 import logging
 import os
@@ -101,7 +103,7 @@ def sh(*cmd, **kwargs) -> str:
 
 
 def ffmpeg_command(
-    frame_rate: float = 4.0,
+    frame_rate: float = 10.0,  # CHANGEME
     input_files: str = "pic%04d.png",  # pic0001.png, pic0002.png, ...
     output_file: str = "test.mp4",
 ) -> str:
@@ -437,7 +439,7 @@ def electric_field_amplitude_norm(lambda0=0.8e-6):
 
 def particle_energy_histogram(
     tseries: OpenPMDTimeSeries, it: int,
-        energy_min=1, energy_max=800, delta_energy=1, cutoff=1,
+        energy_min=1, energy_max=800, delta_energy=1, cutoff=1,  # CHANGEME
 ):
     """
     Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
@@ -474,7 +476,7 @@ def field_snapshot(
     tseries: OpenPMDTimeSeries,
     it: int,
     field_name: str,
-    normalization_factor: float,
+    normalization_factor=1,
     coord: Optional[str] = None,
     m="all",
     theta=0.0,
@@ -497,8 +499,8 @@ def field_snapshot(
     :param kwargs: extra plotting arguments, eg. labels, data limits etc.
     :return: saves field plot image to disk
     """
-    if chop is None:
-        chop = [0.0, 0.0, 0.0, 0.0]
+    if chop is None:  # how much to cut out from simulation domain
+        chop = [40, -20, 15, -15]  # CHANGEME
 
     field, info = tseries.get_field(
         field=field_name, coord=coord, iteration=it, m=m, theta=theta
@@ -661,13 +663,18 @@ def post_process_results(job: Job) -> None:
             it=it,
             field_name="rho",
             normalization_factor=1.0
-            / (-q_e * job.sp.n_e),  # m^3/C  # todo explain rho normalization
-            chop=[40, -20, 15, -15],  # TODO hard-coded magic number
+            / (-q_e * job.sp.n_c),
             path=rho_path,
-            zlabel=r"$n/n_e$",
-            vmin=0,  # TODO hard-coded magic number
-            vmax=3,  # TODO hard-coded magic number
+            zlabel=r"$n/n_c$",
+            vmin=0,
+            vmax=0.1,  # CHANGEME
+            hslice_val=0,
         )
+
+    # the field "rho" has (SI) units of charge/volume (Q/V), C/(m^3)
+    # the critical density n_c has units of N/V, N = electron number
+    # multiply by electron charge -q_e to get (N e) / V
+    # so we get Q / N e, which is C/C, i.e. dimensionless
 
     diags_file.close()
 
@@ -765,8 +772,7 @@ def plot_1d_diags(job: Job) -> None:
         h_axis=z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$%s$" % "a_0",
-        xlim=[0, 900],  # TODO: hard-coded magic number
-        ylim=[0, 10],  # TODO: hard-coded magic number
+        ylim=[0, 10],  # CHANGEME
     )
     fig.savefig(job.fn("a0.png"))
 
@@ -802,7 +808,6 @@ def generate_movie(job: Job) -> None:
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     command = ffmpeg_command(
-        frame_rate=10.0,  # TODO: hard-coded magic number
         input_files=os.path.join(job.ws, "diags", "rhos", "rho*.png"),
         output_file=job.fn("rho.mp4"),
     )
@@ -822,7 +827,6 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
         are_files(
             (
                 f"E{iteration:06d}.png",
-                f"rho{iteration:06d}.png",
                 f"hist{iteration:06d}.png",
             )
         )
@@ -833,7 +837,6 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
 
         a. the electric field Ex
         b. the 1D weighted particle energy histogram
-        c. plasma density field ``rho``
 
         corresponding to ``iteration``.
 
@@ -855,28 +858,11 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
             field_name="E",
             coord="x",
             normalization_factor=1.0 / e0,
-            chop=[40, -20, 15, -15],  # TODO: hard-coded magic number
             path=job.ws,
             zlabel=r"$E_x/E_0$",
-            vmin=-8,  # TODO: hard-coded magic number
-            vmax=8,  # TODO: hard-coded magic number
+            vmin=-4,  # CHANGEME
+            vmax=4,  # CHANGEME
             hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
-        )
-
-        # plot plasma density and save to disk
-        field_snapshot(
-            tseries=time_series,
-            it=iteration,
-            field_name="rho",
-            normalization_factor=1.0
-            / (-q_e * job.sp.n_c),  # m^3/C
-            chop=[40, -20, 15, -15],  # TODO: hard-coded magic number
-            path=job.ws,
-            zlabel=r"$n_e/n_c$",
-            vmin=0.0,  # TODO: hard-coded magic number
-            vmax=0.1,  # TODO: hard-coded magic number
-            hslice_val=0,  # do a 1D slice through the middle of the simulation box
-            vslice_val=840.5,  # TODO: hard-coded magic number
         )
 
         # compute 1D histogram
@@ -901,7 +887,7 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
         fig.savefig(job.fn(f"hist{iteration:06d}.png"))
 
 
-for iteration_number in (0,):  # add more numbers here
+for iteration_number in (85200,):  # add more numbers here
     add_plot_snapshots_workflow(iteration=iteration_number)
 
 
