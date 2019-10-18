@@ -708,6 +708,7 @@ def add_create_dir_workflow(path: str) -> None:
 
 add_create_dir_workflow(path=os.path.join("diags", "rhos"))
 
+
 @Project.operation
 @Project.pre(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
 @Project.post.isfile("hist2d.png")
@@ -735,7 +736,7 @@ def plot_2d_hist(job: Job) -> None:
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"E (MeV)",
         zlabel=r"dQ/dE (pC/MeV)",
-        vslice_val=z_0.loc[35100],  # TODO: hard-coded magic number
+        vslice_val=z_0.iloc[-1],  # can be changed to z_0.loc[iteration]
         extent=(z_0.iloc[0], z_0.iloc[-1], hist_edges[1], hist_edges[-1]),
     )
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
@@ -900,7 +901,7 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
         fig.savefig(job.fn(f"hist{iteration:06d}.png"))
 
 
-for iteration_number in (35100,):
+for iteration_number in (0,):  # add more numbers here
     add_plot_snapshots_workflow(iteration=iteration_number)
 
 
