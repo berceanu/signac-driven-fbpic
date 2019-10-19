@@ -23,7 +23,7 @@ def main():
             zmax=30.0e-6,  # Right end of the simulation box (meters)
             Nr=256,  # Number of gridpoints along r
             rmax=30.0e-6,  # Length of the box along r (meters)
-            Nm=3,  # Number of modes used
+            Nm=2,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
@@ -49,7 +49,7 @@ def main():
             # increase (up to `p_zmax`) to simulate longer distance!
             L_interact=None,
             # Period in number of timesteps
-            diag_period=100,
+            diag_period=200,
             # Timestep (seconds)
             dt=None,
             # Interaction time (seconds) (to calculate number of PIC iterations)
