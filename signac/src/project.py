@@ -11,17 +11,17 @@ See also: $ python src/project.py --help
 Note: All the lines marked with the CHANGEME comment contain customizable parameters.
 """
 import logging
+import math
 import os
-import shutil
 import subprocess
 import sys
-from matplotlib import pyplot
 from typing import List, Optional, Tuple, Union, Callable, Iterable
 
 import numpy as np
 import pandas as pd
 import sliceplots
 from flow import FlowProject
+from matplotlib import pyplot
 from opmd_viewer import OpenPMDTimeSeries
 from scipy.constants import physical_constants
 from scipy.signal import hilbert
@@ -35,30 +35,10 @@ m_e = physical_constants["electron mass"][0]
 q_e = physical_constants["elementary charge"][0]
 mc2 = m_e * c_light ** 2 / (q_e * 1e6)  # 0.511 MeV
 
+
 #####################
 # UTILITY FUNCTIONS #
 #####################
-
-
-def read_last_line(file_name: str) -> str:
-    """
-    Returns the last line of ``file_name``.
-    See: `Stack Overflow <https://stackoverflow.com/questions/3346430/what-is-the-most-efficient-way-to-get-first-and-last-line-of-a-text-file/18603065#18603065>`_.
-
-    :param file_name: name of input file
-    :return: last line of text in the input file
-    """
-    with open(file_name, "rb") as f:
-        _ = f.readline()  # Read the first line.
-        f.seek(-2, os.SEEK_END)  # Jump to the second last byte.
-
-        while f.read(1) != b"\n":  # Until EOL is found...
-            # ...jump back the read byte plus one more.
-            f.seek(-2, os.SEEK_CUR)
-
-        last = f.readline()  # Read last line.
-
-    return last.decode("utf-8")
 
 
 def are_files(file_names: Iterable[str]) -> Callable[[Job], bool]:
@@ -95,17 +75,17 @@ def sh(*cmd, **kwargs) -> str:
         subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs
         )
-        .communicate()[0]
-        .decode("utf-8")
+            .communicate()[0]
+            .decode("utf-8")
     )
     logger.info(stdout)
     return stdout
 
 
 def ffmpeg_command(
-    frame_rate: float = 10.0,  # CHANGEME
-    input_files: str = "pic%04d.png",  # pic0001.png, pic0002.png, ...
-    output_file: str = "test.mp4",
+        frame_rate: float = 10.0,  # CHANGEME
+        input_files: str = "pic%04d.png",  # pic0001.png, pic0002.png, ...
+        output_file: str = "test.mp4",
 ) -> str:
     """
     Build up the command string for running ``ffmpeg``.
@@ -135,56 +115,20 @@ class Project(FlowProject):
 ####################
 
 
-# todo replace this mess with a simple counter for written/total .h5 files
-def data_to_ascii(file_name: str) -> str:
-    """
-    Runs a series of ``sed`` substitions on ``file_name``, saving it as ``output_file_name``.
-
-    :param file_name: input file name
-    :return: output file name, poiting to modified file
-    """
-    stem, _ = os.path.splitext(file_name)
-    output_file_name = stem + ".progress"
-
-    shutil.copy(file_name, output_file_name)
-
-    # replace '\r' by '\n'
-    sh(rf"sed -i 's/\x0d/\x0a/g' {output_file_name}", shell=True)
-
-    # replace '\u2588'(█) by '-'
-    sh(rf"sed -i 's/\xe2\x96\x88/-/g' {output_file_name}", shell=True)
-
-    # remove '<ESC>[K'
-    sh(
-        rf"sed -i -e $(echo -e 's/\033\[K//g') {output_file_name}",
-        shell=True,
-        executable="/bin/bash",
-    )
-
-    return output_file_name
-
-
 @Project.label
-def progress(job: Job) -> str:
-    """
-    Prints a progress bar showing the completion status of a certain ``fbpic`` run.
+def progress(job) -> str:
+    # get last iteration based on input parameters
+    number_of_iterations = math.ceil((job.sp.N_step - 0) / job.sp.diag_period)
 
-    :param job: the job instance is a handle to the data of a unique statepoint
-    :return: |--------------              |
-    """
-    stdout_file = "stdout.txt"
-    if job.isfile(stdout_file):
-        output_file_name = data_to_ascii(job.fn(stdout_file))
+    h5_path = os.path.join(job.ws, "diags", "hdf5")
+    if not os.path.isdir(h5_path):
+        # {job_dir}/diags/hdf5 not present, ``fbpic`` didn't run
+        return "0/%s" % number_of_iterations
 
-        last_line = read_last_line(output_file_name)
-        if last_line.startswith("|"):
-            percentage = last_line
-        else:  # already finished
-            percentage = "100.00"
-    else:  # didn't yet start
-        percentage = "0.00"
+    time_series = OpenPMDTimeSeries(h5_path, check_all_files=False)
+    current_iteration = time_series.iterations[-1]
 
-    return percentage
+    return f"{current_iteration}/{number_of_iterations}"
 
 
 ###############################
@@ -280,15 +224,15 @@ def run_fbpic(job: Job) -> None:
     minor_locator.MAXTICKS = 10000
 
     def mark_on_plot(*, ax, parameter: str, y=1.1):
-        ax.annotate(s=parameter, xy=(job.sp[parameter]*1e6, y), xycoords="data")
-        ax.axvline(x=job.sp[parameter]*1e6, linestyle="--", color="red")
+        ax.annotate(s=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
+        ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
         return ax
 
     fig, ax = pyplot.subplots(figsize=(width_inch, 4.8))
-    ax.plot(all_z*1e6, dens)
+    ax.plot(all_z * 1e6, dens)
     ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
     ax.set_ylim(-0.1, 1.2)
-    ax.set_xlim(job.sp.zmin*1e6 - 20, job.sp.p_zmax*1e6 + 20)
+    ax.set_xlim(job.sp.zmin * 1e6 - 20, job.sp.p_zmax * 1e6 + 20)
     ax.set_ylabel("Density profile $n$")
     ax.xaxis.set_major_locator(major_locator)
     ax.xaxis.set_minor_locator(minor_locator)
@@ -301,10 +245,11 @@ def run_fbpic(job: Job) -> None:
     mark_on_plot(ax=ax, parameter="L_interact")
     mark_on_plot(ax=ax, parameter="p_zmax")
 
-    ax.annotate(s="ramp_start + ramp_length", xy=(job.sp.ramp_start*1e6 + job.sp.ramp_length*1e6, 1.1), xycoords="data")
-    ax.axvline(x=job.sp.ramp_start*1e6 + job.sp.ramp_length*1e6, linestyle="--", color="red")
+    ax.annotate(s="ramp_start + ramp_length", xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
+                xycoords="data")
+    ax.axvline(x=job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, linestyle="--", color="red")
 
-    ax.fill_between(all_z*1e6, dens, alpha=0.5)
+    ax.fill_between(all_z * 1e6, dens, alpha=0.5)
 
     fig.savefig(job.fn("check_density.png"))
 
@@ -410,7 +355,7 @@ def run_fbpic(job: Job) -> None:
     np.random.seed(0)
 
     # Run the simulation
-    sim.step(job.sp.N_step, show_progress=True)
+    sim.step(job.sp.N_step, show_progress=False)
 
     # redirect stdout back and close "stdout.txt"
     sys.stdout = orig_stdout
@@ -438,7 +383,7 @@ def electric_field_amplitude_norm(lambda0=0.8e-6):
 
 
 def particle_energy_histogram(
-    tseries: OpenPMDTimeSeries, it: int,
+        tseries: OpenPMDTimeSeries, it: int,
         energy_min=1, energy_max=800, delta_energy=1, cutoff=1,  # CHANGEME
 ):
     """
@@ -473,16 +418,16 @@ def particle_energy_histogram(
 
 
 def field_snapshot(
-    tseries: OpenPMDTimeSeries,
-    it: int,
-    field_name: str,
-    normalization_factor=1,
-    coord: Optional[str] = None,
-    m="all",
-    theta=0.0,
-    chop: Optional[List[float]] = None,
-    path="./",
-    **kwargs,
+        tseries: OpenPMDTimeSeries,
+        it: int,
+        field_name: str,
+        normalization_factor=1,
+        coord: Optional[str] = None,
+        m="all",
+        theta=0.0,
+        chop: Optional[List[float]] = None,
+        path="./",
+        **kwargs,
 ) -> None:
     """
     Plot the ``field_name`` field from ``tseries`` at step ``iter``.
@@ -530,14 +475,14 @@ def field_snapshot(
 
 
 def get_a0(
-    tseries: OpenPMDTimeSeries,
-    t: Optional[float] = None,
-    it: Optional[int] = None,
-    coord="x",
-    m="all",
-    slicing_dir="y",
-    theta=0.0,
-    lambda0=0.8e-6,
+        tseries: OpenPMDTimeSeries,
+        t: Optional[float] = None,
+        it: Optional[int] = None,
+        coord="x",
+        m="all",
+        slicing_dir="y",
+        theta=0.0,
+        lambda0=0.8e-6,
 ) -> Tuple[float, float, float, float]:
     """
     Compute z₀, a₀, w₀, cτ.
@@ -580,13 +525,13 @@ def get_a0(
 
     # FWHM perpendicular size of beam, proportional to w0
     fwhm_a0_w0 = (
-        np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2))
-        * info_electric_field_x.dr
+            np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2))
+            * info_electric_field_x.dr
     )
 
     # FWHM longitudinal size of the beam, proportional to ctau
     fwhm_a0_ctau = (
-        np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_electric_field_x.dz
+            np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_electric_field_x.dz
     )
 
     return z0, a0_max, fwhm_a0_w0, fwhm_a0_ctau
@@ -662,19 +607,19 @@ def post_process_results(job: Job) -> None:
             tseries=time_series,
             it=it,
             field_name="rho",
-            normalization_factor=1.0
-            / (-q_e * job.sp.n_c),
+            normalization_factor=1.0 / (-q_e * job.sp.n_e),
             path=rho_path,
-            zlabel=r"$n/n_c$",
+            zlabel=r"$n/n_e$",
             vmin=0,
-            vmax=0.1,  # CHANGEME
+            vmax=2,  # CHANGEME
             hslice_val=0,
         )
 
     # the field "rho" has (SI) units of charge/volume (Q/V), C/(m^3)
-    # the critical density n_c has units of N/V, N = electron number
+    # the initial density n_e has units of N/V, N = electron number
     # multiply by electron charge -q_e to get (N e) / V
     # so we get Q / N e, which is C/C, i.e. dimensionless
+    # Note: one can also normalize by the critical density n_c
 
     diags_file.close()
 
@@ -694,6 +639,7 @@ def add_create_dir_workflow(path: str) -> None:
 
     :param path: path to pass to ``create_dir``, and its pre- and post-conditions
     """
+
     # Make sure to make the operation-name a function of the parameter(s)!
     @Project.operation(f"create_dir_{path}".replace("/", "_"))
     @Project.pre(path_exists(os.path.dirname(path)))
@@ -821,13 +767,14 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
 
     :param iteration: iteration number to pass to ``plot_snapshots`` and its conditions
     """
+
     @Project.operation(f"plot_snapshots_{iteration:06d}")
     @Project.pre.after(run_fbpic)
     @Project.post(
         are_files(
             (
-                f"E{iteration:06d}.png",
-                f"hist{iteration:06d}.png",
+                    f"E{iteration:06d}.png",
+                    f"hist{iteration:06d}.png",
             )
         )
     )
@@ -865,31 +812,9 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
             hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
         )
 
-        # compute 1D histogram
-        energy_hist, bin_edges, _ = particle_energy_histogram(
-            tseries=time_series,
-            it=iteration,
-        )
-        x_axis = np.array([bin_edges[:-1], bin_edges[1:]]).T.flatten()
-        y_axis = np.array([energy_hist, energy_hist]).T.flatten()
-        #
-        # plot it
 
-        fig, ax = pyplot.subplots(figsize=(10, 6))
-        sliceplots.plot1d(
-            ax=ax,
-            v_axis=y_axis,
-            h_axis=x_axis,
-            xlabel=r"E (MeV)",
-            ylabel=r"dQ/dE (pC/MeV)",
-            text=f"iteration = {iteration}",
-        )  # save to disk
-        fig.savefig(job.fn(f"hist{iteration:06d}.png"))
-
-
-for iteration_number in (85200,):  # add more numbers here
+for iteration_number in (0,):  # add more numbers here
     add_plot_snapshots_workflow(iteration=iteration_number)
-
 
 if __name__ == "__main__":
     logging.basicConfig(
