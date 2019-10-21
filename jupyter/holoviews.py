@@ -1,48 +1,44 @@
----
-jupyter:
-  jupytext:
-    formats: ipynb,md
-    text_representation:
-      extension: .md
-      format_name: markdown
-      format_version: '1.1'
-      jupytext_version: 1.2.4
-  kernelspec:
-    display_name: Python 3
-    language: python
-    name: python3
----
+# ---
+# jupyter:
+#   jupytext:
+#     formats: ipynb,py:percent
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.2'
+#       jupytext_version: 1.2.4
+#   kernelspec:
+#     display_name: Python 3
+#     language: python
+#     name: python3
+# ---
 
-```python
+# %%
 import numpy as np
 import holoviews as hv
 
 hv.extension('bokeh')
-```
 
-```python
+# %%
 from holoviews import streams
-```
 
-```python
+# %%
 from holoviews import opts
-```
 
-## 2D plots with interactive slicing
+# %% [markdown]
+# ## 2D plots with interactive slicing
 
-```python
-ls = np.linspace(0, 10, 200)
+# %%
+# ls = np.linspace(0, 10, 200)
 xx, yy = np.meshgrid(ls, ls)
 bounds=(0,0,10,10)   # Coordinate system: (left, bottom, right, top)
-```
 
-```python
+# %%
 energy = hv.Dimension('energy', label='E', unit='MeV')
 distance = hv.Dimension('distance', label='d', unit='m')
 charge = hv.Dimension('charge', label='Q', unit='pC')
-```
 
-```python
+# %%
 image = hv.Image(np.sin(xx)*np.cos(yy), bounds=bounds, kdims=[energy, distance], vdims=charge)
 pointer = streams.PointerXY(x=5,y=5, source=image)
 
@@ -64,21 +60,21 @@ layout.opts(
     opts.HLine(color='lightsalmon'),
     opts.Points(color='red', marker='o', size=10)
 ).cols(3)
-```
 
-## Interactive integration
+# %% [markdown]
+# ## Interactive integration
 
-```python
+# %%
 xs = np.linspace(-3, 3, 400)
-```
 
-```python
+
+# %%
 def function(xs, time):
     "Some time varying function"
     return np.exp(np.sin(xs+np.pi/time))
-```
 
-```python
+
+# %%
 def integral(limit_a, limit_b, y, time):
     limit_a = -3 if limit_a is None else np.clip(limit_a,-3,3)
     limit_b = 3 if limit_b is None else np.clip(limit_b,-3,3)
@@ -86,39 +82,31 @@ def integral(limit_a, limit_b, y, time):
     area  = hv.Area ((xs, function(xs, time)))[limit_a:limit_b]
     summed = area.dimension_values('y').sum() * 0.015  # Numeric approximation
     return (area * curve * hv.VLine(limit_a) * hv.VLine(limit_b) * hv.Text(limit_b - 0.8, 2.0, '%.2f' % summed))
-```
 
-```python
+
+# %%
 integral_streams = [
     streams.Stream.define('Time', time=1.0)(),
     streams.PointerX().rename(x='limit_b'),
     streams.Tap().rename(x='limit_a')
 ]
-```
 
-```python
+# %%
 integral_dmap = hv.DynamicMap(integral, streams=integral_streams)
-```
 
-```python
+# %%
 integral_dmap.opts(
     opts.Area(color='#fff8dc', line_width=2),
     opts.Curve(color='black'),
     opts.VLine(color='red'))
-```
 
-```python
+# %%
 image.dimensions()
-```
 
-```python
+# %%
 dim('charge').min().apply(image)
-```
 
-```python
+# %%
 dim('charge').max().apply(image)
-```
 
-```python
-
-```
+# %%
