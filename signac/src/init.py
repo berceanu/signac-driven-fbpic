@@ -38,6 +38,7 @@ def main():
             w0=9.0e-6,  # Laser waist
             ctau=9.0e-6,  # Laser duration
             z0=0.0e-6,  # Laser centroid
+            zf=0.0e-6,  # Laser focal plane position
             lambda0=0.8e-6,  # Laser wavelength (meters)
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             # do not change below this line ##############
