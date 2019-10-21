@@ -55,10 +55,12 @@ print(h5_path)
 time_series = OpenPMDTimeSeries(h5_path, check_all_files=True)
 print(time_series.iterations)
 
+# your code here
+
 # compute 1D histogram
 energy_hist, bin_edges, nbins = particle_energy_histogram(
     tseries=time_series,
-    it=iteration,
+    it=4600,
     cutoff=np.inf,  # no cutoff
 )
 
@@ -70,18 +72,16 @@ count = hv.Dimension('frequency', label='dQ/dE', unit='pC/MeV')
 histogram = hv.Histogram((bin_edges, energy_hist), kdims=energy, vdims=count)
 curve = hv.Curve(histogram)
 
-# +
 e_min = dim('energy').min().apply(curve)
 e_max = dim('energy').max().apply(curve)
-
+print(e_min, e_max)
 
 def integral(limit_a, limit_b, y, iteration):
     limit_a = e_min if limit_a is None else np.clip(limit_a, e_min, e_max)
     limit_b = e_max if limit_b is None else np.clip(limit_b, e_min, e_max)
     area = hv.Area((curve.dimension_values('energy'), curve.dimension_values('frequency')))[limit_a:limit_b]
-    charge = delta_E * histogram[limit_a:limit_b].dimension_values('frequency').sum()
+    charge = np.sum(np.diff(bin_edges[limit_a:limit_b]) * histogram[limit_a:limit_b].dimension_values('frequency'))
     return curve * area * hv.VLine(limit_a) * hv.VLine(limit_b) * hv.Text(limit_b - 2., 5, 'Q = %.0f pC' % charge)
-# -
 
 integral_streams = [
     streams.Stream.define('Iteration', iteration=param.Integer(default=4600, doc='Time step in the simulation'))(),
