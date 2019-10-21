@@ -17,6 +17,7 @@
 # %%
 import holoviews as hv
 from holoviews import dim, opts, streams, param
+
 hv.extension('bokeh')
 
 # %%
@@ -25,7 +26,6 @@ import numpy as np
 import signac
 
 from opmd_viewer import OpenPMDTimeSeries
-import sliceplots
 
 # %%
 np.set_printoptions(precision=2, linewidth=80)
@@ -33,6 +33,7 @@ np.set_printoptions(precision=2, linewidth=80)
 # %%
 # ugly hack to import project.py from 'signac/src'
 import sys
+
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.abspath('')), 'signac', 'src'))
 from project import particle_energy_histogram
@@ -41,17 +42,12 @@ del sys.path[0], sys
 
 # %%
 pr = signac.get_project(root="../signac", search=False)
-pr
-
-# %%
-# What does the project's parameter space look like?
-print(pr.detect_schema())
 
 # %%
 # We see there are a few values of a0 in the project. We now want the job id of the job with a certain a0 value.
 job_id_set = pr.find_job_ids({'a0': 3})
 job_id = next(iter(job_id_set))
-print(job_id) # this is also the name of the job's workspace folder
+print(job_id)  # this is also the name of the job's workspace folder
 
 # %%
 # What are the full job parameters?
@@ -63,7 +59,7 @@ job = pr.open_job(id=job_id)
 
 # %%
 # We can now access individual parameters, like so
-job.sp.N_step
+print(job.sp.N_step)
 
 # %%
 # get path to job's hdf5 files
@@ -91,7 +87,7 @@ energy_hist, bin_edges, nbins = particle_energy_histogram(
 )
 
 # %%
-ΔE = bin_edges[1] - bin_edges[0]  # MeV
+delta_E = bin_edges[1] - bin_edges[0]  # MeV
 
 # %%
 energy = hv.Dimension('energy', label='E', unit='MeV')
@@ -105,12 +101,13 @@ curve = hv.Curve(histogram)
 e_min = dim('energy').min().apply(curve)
 e_max = dim('energy').max().apply(curve)
 
-def integral(limit_a, limit_b, y, iteration):
-    limit_a = e_min if limit_a is None else np.clip(limit_a,e_min,e_max)
-    limit_b = e_max if limit_b is None else np.clip(limit_b,e_min,e_max)
-    area  = hv.Area((curve.dimension_values('energy'), curve.dimension_values('frequency')))[limit_a:limit_b]
-    Q = ΔE * histogram[limit_a:limit_b].dimension_values('frequency').sum()
-    return (curve * area * hv.VLine(limit_a) * hv.VLine(limit_b) * hv.Text(limit_b - 2., 5, 'Q = %.0f pC' % Q))
+
+def integral(limit_a, limit_b, y):
+    limit_a = e_min if limit_a is None else np.clip(limit_a, e_min, e_max)
+    limit_b = e_max if limit_b is None else np.clip(limit_b, e_min, e_max)
+    area = hv.Area((curve.dimension_values('energy'), curve.dimension_values('frequency')))[limit_a:limit_b]
+    charge = delta_E * histogram[limit_a:limit_b].dimension_values('frequency').sum()
+    return curve * area * hv.VLine(limit_a) * hv.VLine(limit_b) * hv.Text(limit_b - 2., 5, 'Q = %.0f pC' % charge)
 
 
 # %%

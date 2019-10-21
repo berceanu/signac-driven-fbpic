@@ -17,6 +17,7 @@
 import numpy as np
 import holoviews as hv
 
+# %%
 hv.extension('bokeh')
 
 # %%
