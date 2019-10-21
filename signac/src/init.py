@@ -9,6 +9,11 @@ import prepic.lwfa as lwfa
 import signac
 import unyt as u
 import numpy as np
+import math
+
+# The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
+# easily fits in RAM
+NUMBER_OF_H5 = 250
 
 
 def main():
@@ -38,6 +43,7 @@ def main():
             w0=9.0e-6,  # Laser waist
             ctau=9.0e-6,  # Laser duration
             z0=0.0e-6,  # Laser centroid
+            zf=0.0e-6,  # Laser focal plane position
             lambda0=0.8e-6,  # Laser wavelength (meters)
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             # do not change below this line ##############
@@ -49,7 +55,7 @@ def main():
             # increase (up to `p_zmax`) to simulate longer distance!
             L_interact=None,
             # Period in number of timesteps
-            diag_period=200,
+            diag_period=None,
             # Timestep (seconds)
             dt=None,
             # Interaction time (seconds) (to calculate number of PIC iterations)
@@ -70,6 +76,7 @@ def main():
         sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value('m/s')
         sp["T_interact"] = (sp["L_interact"] + (sp["zmax"] - sp["zmin"])) / u.clight.to_value('m/s')
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
+        sp["diag_period"] = math.ceil(sp["N_step"] / NUMBER_OF_H5)
 
         project.open_job(sp).init()
 

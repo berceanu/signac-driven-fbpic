@@ -241,6 +241,7 @@ def run_fbpic(job: Job) -> None:
     mark_on_plot(ax=ax, parameter="zmax")
     mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
     mark_on_plot(ax=ax, parameter="z0", y=0.8)
+    mark_on_plot(ax=ax, parameter="zf", y=0.6)
     mark_on_plot(ax=ax, parameter="ramp_start", y=0.7)
     mark_on_plot(ax=ax, parameter="L_interact")
     mark_on_plot(ax=ax, parameter="p_zmax")
@@ -276,7 +277,7 @@ def run_fbpic(job: Job) -> None:
 
     # Create a Gaussian laser profile
     laser_profile = GaussianLaser(a0=job.sp.a0, waist=job.sp.w0, tau=job.sp.ctau / c_light, z0=job.sp.z0,
-                                  zf=None, theta_pol=0., lambda0=job.sp.lambda0,
+                                  zf=job.sp.zf, theta_pol=0., lambda0=job.sp.lambda0,
                                   cep_phase=0., phi2_chirp=0.,
                                   propagation_direction=1)
 
