@@ -93,9 +93,9 @@ integral_dmap.opts(
     opts.Curve(color='black', height=300, responsive=True, show_grid=True, xlim=(None, e_max), ylim=(None, 10)),
     opts.VLine(color='red'))
 
-integral_dmap.event(iteration=3800)
+integral_dmap.event(iteration=800)
 
 
-time_series.iterations
+print(time_series.iterations)
 
 
