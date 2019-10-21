@@ -116,3 +116,4 @@ signac.rc
 *.png
 *.mp4
 .signac_shell_history
+*.ipynb
