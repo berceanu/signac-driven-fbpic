@@ -19,6 +19,8 @@ import numpy as np
 import signac
 from opmd_viewer import OpenPMDTimeSeries
 
+# %autosave 0
+
 # ugly hack to import project.py from 'signac/src'
 import sys
 
@@ -39,23 +41,19 @@ pr = signac.get_project(root="../signac", search=False)
 # We see there are a few values of a0 in the project. We now want the job id of the job with a certain a0 value.
 job_id_set = pr.find_job_ids({'a0': 3})
 job_id = next(iter(job_id_set))
-print(job_id)  # this is also the name of the job's workspace folder
-
-# What are the full job parameters?
-print(pr.get_statepoint(job_id))
 
 # get the job handler
 job = pr.open_job(id=job_id)
 
 # get path to job's hdf5 files
 h5_path = os.path.join(job.ws, "diags", "hdf5")
-print(h5_path)
 
 # open the full time series and see iteration numbers
 time_series = OpenPMDTimeSeries(h5_path, check_all_files=True)
-print(time_series.iterations)
 
 # your code here
+def integrated_charge():
+    pass
 
 # compute 1D histogram
 energy_hist, bin_edges, nbins = particle_energy_histogram(
@@ -64,36 +62,34 @@ energy_hist, bin_edges, nbins = particle_energy_histogram(
     cutoff=np.inf,  # no cutoff
 )
 
-delta_E = bin_edges[1] - bin_edges[0]  # MeV
-
 energy = hv.Dimension('energy', label='E', unit='MeV')
 count = hv.Dimension('frequency', label='dQ/dE', unit='pC/MeV')
 
 histogram = hv.Histogram((bin_edges, energy_hist), kdims=energy, vdims=count)
 curve = hv.Curve(histogram)
 
-e_min = dim('energy').min().apply(curve)
-e_max = dim('energy').max().apply(curve)
-print(e_min, e_max)
+e_min = histogram.edges[0]
+e_max = 25
 
 def integral(limit_a, limit_b, y, iteration):
     limit_a = e_min if limit_a is None else np.clip(limit_a, e_min, e_max)
     limit_b = e_max if limit_b is None else np.clip(limit_b, e_min, e_max)
     area = hv.Area((curve.dimension_values('energy'), curve.dimension_values('frequency')))[limit_a:limit_b]
-    charge = np.sum(np.diff(bin_edges[limit_a:limit_b]) * histogram[limit_a:limit_b].dimension_values('frequency'))
+    charge = np.sum(np.diff(histogram[limit_a:limit_b].edges) * histogram[limit_a:limit_b].values)
     return curve * area * hv.VLine(limit_a) * hv.VLine(limit_b) * hv.Text(limit_b - 2., 5, 'Q = %.0f pC' % charge)
 
 integral_streams = [
     streams.Stream.define('Iteration', iteration=param.Integer(default=4600, doc='Time step in the simulation'))(),
-    streams.PointerX().rename(x='limit_b'),
-    streams.Tap().rename(x='limit_a')
+    streams.PointerX(rename={'x': 'limit_b'}),
+    streams.Tap(rename={'x': 'limit_a'})
 ]
 
 integral_dmap = hv.DynamicMap(integral, streams=integral_streams)
 
 integral_dmap.opts(
     opts.Area(color='#fff8dc', line_width=2),
-    opts.Curve(color='black', height=300, responsive=True, show_grid=True, xlim=(None, 25), ylim=(None, 10)),
+    opts.Curve(color='black', height=300, responsive=True, show_grid=True, xlim=(None, e_max), ylim=(None, 10)),
     opts.VLine(color='red'))
 
 integral_dmap.event(iteration=0)
+
