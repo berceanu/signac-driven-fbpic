@@ -15,6 +15,7 @@ import math
 import os
 import subprocess
 import sys
+import glob
 from typing import List, Optional, Tuple, Union, Callable, Iterable
 
 import numpy as np
@@ -125,10 +126,9 @@ def progress(job) -> str:
         # {job_dir}/diags/hdf5 not present, ``fbpic`` didn't run
         return "0/%s" % number_of_iterations
 
-    time_series = OpenPMDTimeSeries(h5_path, check_all_files=False)
-    current_iteration = time_series.iterations[-1]
+    h5_files = glob.glob(os.path.join(h5_path, "*.h5"))
 
-    return f"{current_iteration}/{number_of_iterations}"
+    return f"{len(h5_files)}/{number_of_iterations}"
 
 
 ###############################
