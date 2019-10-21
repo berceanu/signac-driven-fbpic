@@ -14,15 +14,11 @@
 #     name: python3
 # ---
 
-
-# +
 import os
 import numpy as np
 import signac
-
 from opmd_viewer import OpenPMDTimeSeries
 
-# +
 # ugly hack to import project.py from 'signac/src'
 import sys
 
@@ -31,7 +27,6 @@ sys.path.insert(0, os.path.join(
 from project import particle_energy_histogram
 
 del sys.path[0], sys
-# -
 
 import holoviews as hv
 from holoviews import dim, opts, streams, param
@@ -52,9 +47,6 @@ print(pr.get_statepoint(job_id))
 # get the job handler
 job = pr.open_job(id=job_id)
 
-# We can now access individual parameters, like so
-print(job.sp.N_step)
-
 # get path to job's hdf5 files
 h5_path = os.path.join(job.ws, "diags", "hdf5")
 print(h5_path)
@@ -62,10 +54,6 @@ print(h5_path)
 # open the full time series and see iteration numbers
 time_series = OpenPMDTimeSeries(h5_path, check_all_files=True)
 print(time_series.iterations)
-iteration = time_series.iterations[-1]
-print(iteration)
-
-help(particle_energy_histogram)
 
 # compute 1D histogram
 energy_hist, bin_edges, nbins = particle_energy_histogram(
@@ -93,8 +81,6 @@ def integral(limit_a, limit_b, y, iteration):
     area = hv.Area((curve.dimension_values('energy'), curve.dimension_values('frequency')))[limit_a:limit_b]
     charge = delta_E * histogram[limit_a:limit_b].dimension_values('frequency').sum()
     return curve * area * hv.VLine(limit_a) * hv.VLine(limit_b) * hv.Text(limit_b - 2., 5, 'Q = %.0f pC' % charge)
-
-
 # -
 
 integral_streams = [
@@ -109,3 +95,5 @@ integral_dmap.opts(
     opts.Area(color='#fff8dc', line_width=2),
     opts.Curve(color='black', height=300, responsive=True, show_grid=True, xlim=(None, 25), ylim=(None, 10)),
     opts.VLine(color='red'))
+
+integral_dmap.event(iteration=0)
