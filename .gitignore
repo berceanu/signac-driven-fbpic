@@ -117,3 +117,4 @@ signac.rc
 *.mp4
 .signac_shell_history
 *.ipynb
+*.npz
