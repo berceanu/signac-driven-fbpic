@@ -13,7 +13,7 @@ import math
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
-NUMBER_OF_H5 = 250
+NUMBER_OF_H5 = 200
 
 
 def main():
