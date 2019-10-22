@@ -37,7 +37,7 @@ energy_hist, bin_edges, nbins = particle_energy_histogram(
     cutoff=np.inf,  # no cutoff
 )
 
-print("%s/%s" % (time_series.iterations[-1], job.sp.N_step))
+print("%s/%s" % (iteration, job.sp.N_step))
 np.savez('histogram', edges=bin_edges, counts=energy_hist)
 
 npzfile = np.load('histogram.npz')
