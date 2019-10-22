@@ -2,8 +2,6 @@ import os
 import numpy as np
 import signac
 from opmd_viewer import OpenPMDTimeSeries
-import sliceplots
-from matplotlib import pyplot
 
 # ugly hack to import project.py from 'signac/src'
 import sys

@@ -1,8 +1,17 @@
+from cycler import cycler
 import numpy as np
-import matplotlib
-matplotlib.use('Qt5Agg')
 import sliceplots
 from matplotlib import pyplot
+from collections import defaultdict
+
+line_colors = ["C1", "C2", "C3", "C4", "C5", "C6"]
+line_styles = ["-", "--", ":", "-.", (0, (1, 10)), (0, (5, 10))]
+
+cyl = cycler(color=line_colors) + cycler(linestyle=line_styles)
+
+loop_cy_iter = cyl()
+
+STYLE = defaultdict(lambda: next(loop_cy_iter))
 
 
 class Peak:
@@ -68,7 +77,7 @@ counts = npzfile['counts']
 energy = np.array([edges[:-1], edges[1:]]).T.flatten()
 charge = np.array([counts, counts]).T.flatten()
 
-mask = energy > 100  # MeV
+mask = (energy > 90) & (energy < 710)  # MeV
 energy = energy[mask]
 charge = np.clip(charge, 0, 1)[mask]
 
@@ -82,15 +91,21 @@ sliceplots.plot1d(
     h_axis=energy,
     xlabel=r"E (MeV)",
     ylabel=r"dQ/dE (pC/MeV)",
+    ylim=[0, 1.1]
 )
-for peak_number, peak in enumerate(h[1:6]):  # go through first 4 peaks, in order of importance
-    peak_index = peak.right
+for peak_number, peak in enumerate(h[:6]):  # go through first peaks, in order of importance
+    peak_index = peak.born
     energy_position = energy[peak_index]
     charge_value = charge[peak_index]
     persistence = peak.get_persistence(charge)
     ymin = charge_value - persistence
     if persistence == float("inf"):
         ymin = 0
-    ax.annotate(s=f"{peak_number}", xy=(energy_position, charge_value + 0.01), xycoords="data", color='red', size=14)
-    ax.axvline(x=energy_position, ymax=charge_value, ymin=ymin, linestyle="--", color="red", linewidth=2)
-fig.show()
+    ax.annotate(s=f"{peak_number}", xy=(energy_position + 5, charge_value + 0.02), xycoords="data",
+                color=STYLE[str(peak_index)]["color"], size=14)
+    ax.axvline(x=energy_position, linestyle=STYLE[str(peak_index)]["linestyle"],
+               color=STYLE[str(peak_index)]["color"], linewidth=2)
+    ax.fill_between(energy, charge, ymin, where=(energy > energy[peak.left]) & (energy <= energy[peak.right]),
+                    color=STYLE[str(peak_index)]["color"], alpha=0.9)
+
+fig.savefig('peak_detection.png')
