@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="andrei@89.34.160.106:22" createEmptyFolders="true">
+  <component name="PublishConfigData" autoUpload="Always" serverName="ServerS" createEmptyFolders="true">
     <serverData>
-      <paths name="andrei@89.34.160.106:22">
+      <paths name="ServerS">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/andrei/Deployment/signac-driven-fbpic" local="$PROJECT_DIR$" />
+            <mapping deploy="/home/andrei/Deployment/signac-driven-fbpic" local="$PROJECT_DIR$" web="" />
           </mappings>
         </serverdata>
       </paths>
