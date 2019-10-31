@@ -5,7 +5,7 @@
       <paths name="ServerS">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/andrei/Deployment/signac-driven-fbpic" local="$PROJECT_DIR$" web="" />
+            <mapping deploy="/home/andrei/Deployment/signac-driven-fbpic" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
