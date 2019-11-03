@@ -198,18 +198,7 @@ def run_fbpic(job: Job) -> None:
         :param r: radial positions, 1d array
         :return: a 1d array ``n`` containing the density (between 0 and 1) at the given positions (z, r)
         """
-        # Allocate relative density
-        n = np.ones_like(z)
-
-        # Make linear ramp
-        n = np.where(
-            z < job.sp.ramp_start + job.sp.ramp_length,
-            (z - job.sp.ramp_start) / job.sp.ramp_length,
-            n,
-        )
-
-        # Supress density before the ramp
-        n = np.where(z < job.sp.ramp_start, 0.0, n)
+        n = np.interp(z, [0, 40e-6, 60e-6, 80e-6], [0, 1, 1, 0.7], left=0, right=0.7)
 
         return n
 
@@ -291,17 +280,25 @@ def run_fbpic(job: Job) -> None:
                                p_nz=job.sp.p_nz, p_nr=job.sp.p_nr, p_nt=job.sp.p_nt)
 
     # Track electrons, useful for betatron radiation
-    # elec.track(sim.comm)
+    elec.track(sim.comm)
 
     # Configure the moving window
     sim.set_moving_window(v=c_light)
 
     # Add diagnostics
     write_dir = os.path.join(job.ws, "diags")
+    tracks_dir = os.path.join(job.ws, "diags_track")
     sim.diags = [
         FieldDiagnostic(
             job.sp.diag_period, sim.fld, comm=sim.comm, write_dir=write_dir,
             fieldtypes=["rho", "E"]
+        ),
+        ParticleDiagnostic(
+            job.sp.diag_period_track,
+            {"electrons": elec},
+            select={"uz": [40.0, None]},
+            comm=sim.comm,
+            write_dir=tracks_dir,
         ),
         ParticleDiagnostic(
             job.sp.diag_period,
