@@ -1,12 +1,12 @@
 import os
 
 from matplotlib import pyplot
-from opmd_viewer.openpmd_timeseries.data_reader.field_reader import read_field_circ
-from opmd_viewer.openpmd_timeseries.utilities import combine_cylindrical_components
+from openpmd_viewer.openpmd_timeseries.data_reader.field_reader import read_field_circ
+from openpmd_viewer.openpmd_timeseries.utilities import combine_cylindrical_components
 from sliceplots import Plot2D
 
 import numpy as np
-from opmd_viewer import OpenPMDTimeSeries, FieldMetaInformation
+from openpmd_viewer import OpenPMDTimeSeries, FieldMetaInformation
 from scipy.constants import physical_constants
 
 import h5py

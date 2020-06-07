@@ -18,7 +18,7 @@ NUMBER_OF_H5 = 200
 
 def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
-    project = signac.init_project("fbpic-project", workspace="/Date2/alessio/runs/signac-driven-fbpic/workspace/")
+    project = signac.init_project("fbpic-project", workspace="/Date2/andrei/runs/signac-driven-fbpic/workspace/")
 
     for a0 in np.linspace(start=0.5, stop=5.0, num=6):
         sp = dict(

@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     # Initialize the simulation object
     sim = Simulation( Nz, zmax, Nr, rmax, Nm, dt, n_e=None, zmin=zmin,
-        boundaries='open', n_order=n_order, use_cuda=use_cuda, verbose_level=2, )
+            boundaries={"z":"open", "r":"reflective"}, n_order=n_order, use_cuda=use_cuda, verbose_level=2, )
 
     # Create a Gaussian laser profile
     laser_profile = GaussianLaser(a0=a0, waist=w0, tau=ctau / c, z0=z0,

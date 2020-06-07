@@ -23,7 +23,7 @@ import pandas as pd
 import sliceplots
 from flow import FlowProject
 from matplotlib import pyplot
-from opmd_viewer import OpenPMDTimeSeries
+from openpmd_viewer import OpenPMDTimeSeries
 from scipy.constants import physical_constants
 from scipy.signal import hilbert
 from signac.contrib.job import Job
@@ -269,7 +269,7 @@ def run_fbpic(job: Job) -> None:
         job.sp.dt,
         n_e=None,  # no electrons
         zmin=job.sp.zmin,
-        boundaries="open",
+        boundaries={"z":"open", "r":"reflective"},
         n_order=-1,
         use_cuda=True,
         verbose_level=2,
