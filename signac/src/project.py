@@ -38,6 +38,31 @@ q_e = physical_constants["elementary charge"][0]
 mc2 = m_e * c_light ** 2 / (q_e * 1e6)  # 0.511 MeV
 
 
+class OdinEnvironment(DefaultSlurmEnvironment):
+    """Environment profile for the LGED cluster.
+    https://docs.signac.io/projects/flow/en/latest/supported_environments/comet.html#flow.environments.xsede.CometEnvironment
+    """
+    hostname_pattern = r'.*\.ra5\.eli-np\.ro$'
+    template = 'odin.sh'
+    cores_per_node = 48
+    mpi_cmd = 'mpiexec'
+
+    @classmethod
+    def add_args(cls, parser):
+        super(OdinEnvironment, cls).add_args(parser)
+        parser.add_argument(
+          '--partition',
+          choices=['cpu', 'gpu'],
+          default='gpu',
+          help="Specify the partition to submit to.")
+
+        parser.add_argument(
+                    '--job-output',
+                    help=('What to name the job output file. '
+                          'If omitted, uses the system default '
+                          '(slurm default is "slurm-%%j.out").'))
+
+
 class x470Environment(DefaultSlurmEnvironment):
     """Environment profile for the Quadro P6000 computer.
     https://docs.signac.io/projects/flow/en/latest/supported_environments/comet.html#flow.environments.xsede.CometEnvironment
