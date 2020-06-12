@@ -31,7 +31,7 @@
 {% set nn = nn|default((nn_cpu, nn_gpu)|max, true) %}
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node={{ (gpu_tasks * 3, cpu_tasks)|max }}
-#SBATCH --gres=gpu:{{ (gpu_tasks, 1)|min }}
+#SBATCH --gres=gpu:{{ (gpu_tasks, 16)|min }}
 {% endblock %}
 
 {% endblock %}
