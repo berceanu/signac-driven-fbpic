@@ -8,6 +8,6 @@ rm -f fbpic-project.log
 rm -f signac.rc
 rm -f signac_statepoints.json
 rm -f .signac_sp_cache.json.gz
-rm -rf /Date2/andrei/runs/signac-driven-fbpic/workspace/
+rm -rf /scratch/berceanu/runs/signac-driven-fbpic/workspace/
 
 python src/init.py

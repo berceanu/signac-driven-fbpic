@@ -21,7 +21,8 @@ from typing import List, Optional, Tuple, Union, Callable, Iterable
 import numpy as np
 import pandas as pd
 import sliceplots
-from flow import FlowProject
+from flow import FlowProject, directives
+from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot
 from openpmd_viewer import OpenPMDTimeSeries
 from scipy.constants import physical_constants
@@ -36,6 +37,30 @@ m_e = physical_constants["electron mass"][0]
 q_e = physical_constants["elementary charge"][0]
 mc2 = m_e * c_light ** 2 / (q_e * 1e6)  # 0.511 MeV
 
+
+class x470Environment(DefaultSlurmEnvironment):
+    """Environment profile for the Quadro P6000 computer.
+    https://docs.signac.io/projects/flow/en/latest/supported_environments/comet.html#flow.environments.xsede.CometEnvironment
+    """
+    hostname_pattern = 'x470'
+    template = 'x470.sh'
+    cores_per_node = 6
+    mpi_cmd = 'mpiexec'
+
+    @classmethod
+    def add_args(cls, parser):
+        super(x470Environment, cls).add_args(parser)
+        parser.add_argument(
+          '--partition',
+          choices=['defaultpart'],
+          default='defaultpart',
+          help="Specify the partition to submit to.")
+
+        parser.add_argument(
+                    '--job-output',
+                    help=('What to name the job output file. '
+                          'If omitted, uses the system default '
+                          '(slurm default is "slurm-%%j.out").'))
 
 #####################
 # UTILITY FUNCTIONS #
@@ -179,6 +204,7 @@ def are_rho_pngs(job: Job) -> bool:
 
 
 @Project.operation
+@directives(ngpu=1)
 @Project.post(fbpic_ran)
 def run_fbpic(job: Job) -> None:
     """
