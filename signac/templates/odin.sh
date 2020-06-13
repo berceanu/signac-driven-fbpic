@@ -61,5 +61,4 @@ wait
 {% endif %}
 
 ### . endjob
-s
 {% endblock %}
