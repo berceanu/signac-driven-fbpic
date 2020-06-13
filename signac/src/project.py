@@ -826,7 +826,7 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
         are_files(
             (
                     f"E{iteration:06d}.png",
-                    f"hist{iteration:06d}.png",
+                    # f"hist{iteration:06d}.png",
             )
         )
     )
