@@ -87,6 +87,32 @@ class x470Environment(DefaultSlurmEnvironment):
                           'If omitted, uses the system default '
                           '(slurm default is "slurm-%%j.out").'))
 
+class work_5049A_T(DefaultSlurmEnvironment):
+    """Environment profile for the Quadro P6000 computer.
+    https://docs.signac.io/projects/flow/en/latest/supported_environments/comet.html#flow.environments.xsede.CometEnvironment
+    """
+    hostname_pattern = '5049A-T'
+    template = '5049A_T.sh'
+    cores_per_node = 32
+    mpi_cmd = 'mpiexec'
+
+    @classmethod
+    def add_args(cls, parser):
+        super(work_5049A_T, cls).add_args(parser)
+        parser.add_argument(
+          '--partition',
+          choices=['debug'],
+          default='debug',
+          help="Specify the partition to submit to.")
+
+        parser.add_argument(
+                    '--job-output',
+                    help=('What to name the job output file. '
+                          'If omitted, uses the system default '
+                          '(slurm default is "slurm-%%j.out").'))
+
+
+
 #####################
 # UTILITY FUNCTIONS #
 #####################
