@@ -41,7 +41,15 @@ ne = dens_func_ext(xvals,0,'density_16.txt')
 class Job:
     sp : dict
 
-job = Job(dict(zmin=-70.0e-6, zmax=30.0e-6, p_zmin=0.0e-6, z0=0.0e-6, zf=0.0e-6, ramp_start=0.0e-6, L_interact=800e-6, p_zmax=2250.0e-6))
+job = Job(dict(zmin=-70.0e-6,
+               zmax=30.0e-6,
+               p_zmin=0.0e-6,
+               z0=0.0e-6,
+               zf=0.0e-6,
+               ramp_start=0.0e-6,
+               ramp_length=7.0e-6,
+               L_interact=800e-6,
+               p_zmax=2250.0e-6))
 
 # plot density profile for checking
 # all_z = np.linspace(-70.0e-6, 2250.0e-6, 1000)
@@ -49,18 +57,43 @@ job = Job(dict(zmin=-70.0e-6, zmax=30.0e-6, p_zmin=0.0e-6, z0=0.0e-6, zf=0.0e-6,
 
 data = pd.read_csv("density_16.txt", delim_whitespace=True, names=["position_mu", "density_cm_3"])
 data["position_m"] = data["position_mu"] * 1e-6
+interp_z_min = data["position_m"].min()
+interp_z_max = data["position_m"].max()
+
 data["norm_density"] = data["density_cm_3"] / data["density_cm_3"].max()
-f = interpolate.interp1d(data.position_m.values, data.norm_density.values)
+# check density values between 0 and 1
+if not data["norm_density"].between(0, 1).any():
+    raise ValueError("The density contains values outside the range [0,1].")
+
+f = interpolate.interp1d(data.position_m.values, data.norm_density.values, bounds_error=False, fill_value=(0.,0.))
 all_z = np.linspace(-70.0e-6, 2250.0e-6, 1000)
-dens = f(all_z)
 
 
-def dens_func( z, r ):
-    return
+def dens_func(z, r):
+    # Allocate relative density
+    n = np.ones_like(z)
+
+    # only compute n if z is inside the interpolation bounds
+    n = np.where(np.logical_and(z > interp_z_min, z < interp_z_max), f(z), n)
+
+    # Make linear ramp
+    n = np.where(
+        z < job.sp["ramp_start"] + job.sp["ramp_length"],
+        (z - job.sp["ramp_start"]) / job.sp["ramp_length"],
+        n,
+    )
+
+    # Supress density before the ramp
+    n = np.where(z < job.sp["ramp_start"], 0.0, n)
+
+    return n
+
+
+dens = dens_func(all_z, 0.0)
 
 
 width_inch = 2250.0e-6 / 1e-5
-major_locator = pypl0ot.MultipleLocator(10)
+major_locator = pyplot.MultipleLocator(10)
 minor_locator = pyplot.MultipleLocator(5)
 major_locator.MAXTICKS = 10000
 minor_locator.MAXTICKS = 10000
