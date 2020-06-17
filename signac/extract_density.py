@@ -79,7 +79,7 @@ def dens_func(z, r):
     # Make linear ramp
     n = np.where(
         z < job.sp["ramp_start"] + job.sp["ramp_length"],
-        (z - job.sp["ramp_start"]) / job.sp["ramp_length"],
+        (z - job.sp["ramp_start"]) / job.sp["ramp_length"] * f(interp_z_min),
         n,
     )
 
@@ -122,9 +122,9 @@ mark_on_plot(ax=ax, parameter="ramp_start", y=0.7)
 mark_on_plot(ax=ax, parameter="L_interact")
 mark_on_plot(ax=ax, parameter="p_zmax")
 
-ax.annotate(s="ramp_start + ramp_length", xy=(0.0e-6 * 1e6 + 375.0e-6 * 1e6, 1.1),
+ax.annotate(s="ramp_start + ramp_length", xy=(0.0e-6 * 1e6 + 7.0e-6 * 1e6, 1.1),
             xycoords="data")
-ax.axvline(x=0.0e-6 * 1e6 + 375.0e-6 * 1e6, linestyle="--", color="red")
+ax.axvline(x=0.0e-6 * 1e6 + 7.0e-6 * 1e6, linestyle="--", color="red")
 
 ax.fill_between(all_z * 1e6, dens, alpha=0.5)
 fig.savefig("check_density.png")
