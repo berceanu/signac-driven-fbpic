@@ -51,16 +51,16 @@ class OdinEnvironment(DefaultSlurmEnvironment):
     def add_args(cls, parser):
         super(OdinEnvironment, cls).add_args(parser)
         parser.add_argument(
-          '--partition',
-          choices=['cpu', 'gpu'],
-          default='gpu',
-          help="Specify the partition to submit to.")
+            '--partition',
+            choices=['cpu', 'gpu'],
+            default='gpu',
+            help="Specify the partition to submit to.")
 
         parser.add_argument(
-                    '--job-output',
-                    help=('What to name the job output file. '
-                          'If omitted, uses the system default '
-                          '(slurm default is "slurm-%%j.out").'))
+            '--job-output',
+            help=('What to name the job output file. '
+                  'If omitted, uses the system default '
+                  '(slurm default is "slurm-%%j.out").'))
 
 
 class x470Environment(DefaultSlurmEnvironment):
@@ -76,16 +76,17 @@ class x470Environment(DefaultSlurmEnvironment):
     def add_args(cls, parser):
         super(x470Environment, cls).add_args(parser)
         parser.add_argument(
-          '--partition',
-          choices=['defaultpart'],
-          default='defaultpart',
-          help="Specify the partition to submit to.")
+            '--partition',
+            choices=['defaultpart'],
+            default='defaultpart',
+            help="Specify the partition to submit to.")
 
         parser.add_argument(
-                    '--job-output',
-                    help=('What to name the job output file. '
-                          'If omitted, uses the system default '
-                          '(slurm default is "slurm-%%j.out").'))
+            '--job-output',
+            help=('What to name the job output file. '
+                  'If omitted, uses the system default '
+                  '(slurm default is "slurm-%%j.out").'))
+
 
 class work_5049A_T(DefaultSlurmEnvironment):
     """Environment profile for the Quadro P6000 computer.
@@ -100,17 +101,16 @@ class work_5049A_T(DefaultSlurmEnvironment):
     def add_args(cls, parser):
         super(work_5049A_T, cls).add_args(parser)
         parser.add_argument(
-          '--partition',
-          choices=['debug'],
-          default='debug',
-          help="Specify the partition to submit to.")
+            '--partition',
+            choices=['debug'],
+            default='debug',
+            help="Specify the partition to submit to.")
 
         parser.add_argument(
-                    '--job-output',
-                    help=('What to name the job output file. '
-                          'If omitted, uses the system default '
-                          '(slurm default is "slurm-%%j.out").'))
-
+            '--job-output',
+            help=('What to name the job output file. '
+                  'If omitted, uses the system default '
+                  '(slurm default is "slurm-%%j.out").'))
 
 
 #####################
@@ -266,6 +266,20 @@ def run_fbpic(job: Job) -> None:
     from fbpic.main import Simulation
     from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
     from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
+    import pandas as pd
+    from scipy import interpolate
+
+    data = pd.read_csv("density_16.txt", delim_whitespace=True, names=["position_mu", "density_cm_3"])
+    data["position_m"] = data["position_mu"] * 1e-6
+    interp_z_min = data["position_m"].min()
+    interp_z_max = data["position_m"].max()
+
+    data["norm_density"] = data["density_cm_3"] / data["density_cm_3"].max()
+    # check density values between 0 and 1
+    if not data["norm_density"].between(0, 1).any():
+        raise ValueError("The density contains values outside the range [0,1].")
+
+    f = interpolate.interp1d(data.position_m.values, data.norm_density.values, bounds_error=False, fill_value=(0., 0.))
 
     # The density profile
     def dens_func(z: np.ndarray, r: np.ndarray) -> np.ndarray:
@@ -278,10 +292,13 @@ def run_fbpic(job: Job) -> None:
         # Allocate relative density
         n = np.ones_like(z)
 
+        # only compute n if z is inside the interpolation bounds
+        n = np.where(np.logical_and(z > interp_z_min, z < interp_z_max), f(z), n)
+
         # Make linear ramp
         n = np.where(
             z < job.sp.ramp_start + job.sp.ramp_length,
-            (z - job.sp.ramp_start) / job.sp.ramp_length,
+            (z - job.sp.ramp_start) / job.sp.ramp_length * f(interp_z_min),
             n,
         )
 
@@ -346,7 +363,7 @@ def run_fbpic(job: Job) -> None:
         job.sp.dt,
         n_e=None,  # no electrons
         zmin=job.sp.zmin,
-        boundaries={"z":"open", "r":"reflective"},
+        boundaries={"z": "open", "r": "reflective"},
         n_order=-1,
         use_cuda=True,
         verbose_level=2,
