@@ -10,6 +10,7 @@ import signac
 import unyt as u
 import numpy as np
 import math
+import shutil
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
@@ -50,7 +51,7 @@ def main():
             p_zmax=2250.0e-6,  # Position of the end of the plasma (meters)
             # The density profile
             ramp_start=0.0e-6,
-            ramp_length=375.0e-6,  # increase (up to `p_zmax`) !
+            ramp_length=7.0e-6,  # increase (up to `p_zmax`) !
             # The interaction length of the simulation (meters)
             # increase (up to `p_zmax`) to simulate longer distance!
             L_interact=None,
@@ -81,6 +82,9 @@ def main():
         project.open_job(sp).init()
 
     project.write_statepoints()
+
+    for job in project:
+        shutil.copy("density_16.txt", job.fn("density_16.txt"))
 
 
 if __name__ == "__main__":
