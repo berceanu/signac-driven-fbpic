@@ -11,6 +11,7 @@ import unyt as u
 import numpy as np
 import math
 import shutil
+import pandas as pd
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
@@ -18,10 +19,23 @@ NUMBER_OF_H5 = 200
 
 
 def main():
+    data = pd.read_csv("density_16.txt", delim_whitespace=True, names=["position_mu", "density_cm_3"])
+    # convert to meters
+    data["position_m"] = data["position_mu"] * 1e-6
+    interp_z_min = data["position_m"].min()
+    interp_z_max = data["position_m"].max()
+
+    # normalize density
+    data["norm_density"] = data["density_cm_3"] / data["density_cm_3"].max()
+    # check density values between 0 and 1
+    if not data["norm_density"].between(0, 1).any():
+        raise ValueError("The density contains values outside the range [0,1].")
+    rho = data["density_cm_3"].max()
+
     """Main function, for defining the parameter(s) to be varied in the simulations."""
     project = signac.init_project("fbpic-project", workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/")
 
-    for a0 in np.linspace(start=0.5, stop=5.0, num=2):
+    for zf in np.linspace(start=0, stop=400, num=6) * 1e-6:
         sp = dict(
             # The simulation box
             Nz=4096,  # Number of gridpoints along z
@@ -35,23 +49,23 @@ def main():
             p_zmin=0.0e-6,
             # Maximal radial position of the plasma (meters)
             p_rmax=27.0e-6,
-            n_e=7.5e18 * 1.0e6,  # Density (electrons.meters^-3)
+            n_e=rho * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
             p_nt=4,  # Number of particles per cell along theta
             # The laser
-            a0=a0,  # Laser amplitude
-            w0=9.0e-6,  # Laser waist
+            a0=2.5,  # Laser amplitude
+            w0=15.0e-6,  # Laser waist
             ctau=9.0e-6,  # Laser duration
             z0=0.0e-6,  # Laser centroid
-            zf=0.0e-6,  # Laser focal plane position
+            zf=zf,  # Laser focal plane position
             lambda0=0.8e-6,  # Laser wavelength (meters)
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             # do not change below this line ##############
             p_zmax=2250.0e-6,  # Position of the end of the plasma (meters)
             # The density profile
             ramp_start=0.0e-6,
-            ramp_length=7.0e-6,  # increase (up to `p_zmax`) !
+            ramp_length=interp_z_min,  # increase (up to `p_zmax`) !
             # The interaction length of the simulation (meters)
             # increase (up to `p_zmax`) to simulate longer distance!
             L_interact=None,
