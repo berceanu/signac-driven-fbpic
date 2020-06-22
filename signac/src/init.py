@@ -62,7 +62,7 @@ def main():
             lambda0=0.8e-6,  # Laser wavelength (meters)
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             # do not change below this line ##############
-            p_zmax=2250.0e-6,  # Position of the end of the plasma (meters)
+            p_zmax=3000.0e-6,  # Position of the end of the plasma (meters)
             # The density profile
             ramp_start=0.0e-6,
             ramp_length=interp_z_min,  # increase (up to `p_zmax`) !
@@ -87,7 +87,7 @@ def main():
         )
         sp["n_c"] = laser.ncrit.to_value('1/m**3')
 
-        sp["L_interact"] = 900.0e-6 - (sp["zmax"] - sp["zmin"])
+        sp["L_interact"] = 2600.0e-6 - (sp["zmax"] - sp["zmin"])
         sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value('m/s')
         sp["T_interact"] = (sp["L_interact"] + (sp["zmax"] - sp["zmin"])) / u.clight.to_value('m/s')
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
