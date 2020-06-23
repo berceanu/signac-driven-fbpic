@@ -481,7 +481,7 @@ def electric_field_amplitude_norm(lambda0=0.8e-6):
 
 def particle_energy_histogram(
         tseries: OpenPMDTimeSeries, it: int,
-        energy_min=1, energy_max=800, delta_energy=1, cutoff=3,  # CHANGEME
+        energy_min=1, energy_max=800, delta_energy=1, cutoff=5,  # CHANGEME
 ):
     """
     Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
