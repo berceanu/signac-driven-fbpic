@@ -60,6 +60,8 @@ data["position_m"] = data["position_mu"] * 1e-6
 interp_z_min = data["position_m"].min()
 interp_z_max = data["position_m"].max()
 
+print(data["density_cm_3"].median())
+
 data["norm_density"] = data["density_cm_3"] / data["density_cm_3"].max()
 # check density values between 0 and 1
 if not data["norm_density"].between(0, 1).any():
