@@ -266,22 +266,6 @@ def run_fbpic(job: Job) -> None:
     from fbpic.main import Simulation
     from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
     from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
-    import pandas as pd
-    from scipy import interpolate
-
-    data = pd.read_csv("density_16.txt", delim_whitespace=True, names=["position_mu", "density_cm_3"])
-    # convert to meters
-    data["position_m"] = data["position_mu"] * 1e-6
-    interp_z_min = data["position_m"].min()
-    interp_z_max = data["position_m"].max()
-
-    # normalize density
-    data["norm_density"] = data["density_cm_3"] / data["density_cm_3"].max()
-    # check density values between 0 and 1
-    if not data["norm_density"].between(0, 1).any():
-        raise ValueError("The density contains values outside the range [0,1].")
-
-    rho = interpolate.interp1d(data.position_m.values, data.norm_density.values, bounds_error=False, fill_value=(0., 0.))
 
     # The density profile
     def dens_func(z: np.ndarray, r: np.ndarray) -> np.ndarray:
@@ -294,13 +278,10 @@ def run_fbpic(job: Job) -> None:
         # Allocate relative density
         n = np.ones_like(z)
 
-        # only compute n if z is inside the interpolation bounds
-        n = np.where(np.logical_and(z > interp_z_min, z < interp_z_max), rho(z), n)
-
         # Make linear ramp
         n = np.where(
             z < job.sp.ramp_start + job.sp.ramp_length,
-            (z - job.sp.ramp_start) / job.sp.ramp_length * rho(interp_z_min),
+            (z - job.sp.ramp_start) / job.sp.ramp_length,
             n,
         )
 
