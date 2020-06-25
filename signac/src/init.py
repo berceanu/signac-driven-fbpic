@@ -20,7 +20,7 @@ def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
     project = signac.init_project("fbpic-project", workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/")
 
-    for zf in np.linspace(start=0, stop=400, num=6) * 1e-6:
+    for _ in range(1):
         sp = dict(
             # The simulation box
             Nz=4096,  # Number of gridpoints along z
