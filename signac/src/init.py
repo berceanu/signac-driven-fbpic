@@ -34,7 +34,7 @@ def main():
             p_zmin=0.0e-6,
             # Maximal radial position of the plasma (meters)
             p_rmax=27.0e-6,
-            n_e=6.5e18 * 1.0e6,  # Density (electrons.meters^-3)
+            n_e=1.1e19 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
             p_nt=4,  # Number of particles per cell along theta
@@ -43,7 +43,7 @@ def main():
             w0=15.0e-6,  # Laser waist
             ctau=9.0e-6,  # Laser duration
             z0=0.0e-6,  # Laser centroid
-            zf=zf,  # Laser focal plane position
+            zf=80e-6,  # Laser focal plane position
             lambda0=0.8e-6,  # Laser wavelength (meters)
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             # do not change below this line ##############
@@ -56,6 +56,8 @@ def main():
             L_interact=None,
             # Period in number of timesteps
             diag_period=None,
+            # Period for the electron track diagnostics, in nr of timesteps
+            diag_period_track=2,
             # Timestep (seconds)
             dt=None,
             # Interaction time (seconds) (to calculate number of PIC iterations)

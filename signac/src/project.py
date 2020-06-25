@@ -368,25 +368,23 @@ def run_fbpic(job: Job) -> None:
                                p_nz=job.sp.p_nz, p_nr=job.sp.p_nr, p_nt=job.sp.p_nt)
 
     # Track electrons, useful for betatron radiation
-    # elec.track(sim.comm)
+    elec.track(sim.comm)
 
     # Configure the moving window
     sim.set_moving_window(v=c_light)
 
     # Add diagnostics
-    write_dir = os.path.join(job.ws, "diags")
     sim.diags = [
         FieldDiagnostic(
-            job.sp.diag_period, sim.fld, comm=sim.comm, write_dir=write_dir,
+            job.sp.diag_period, sim.fld, comm=sim.comm, write_dir=os.path.join(job.ws, "diags"),
             fieldtypes=["rho", "E"]
         ),
         ParticleDiagnostic(
-            job.sp.diag_period,
+            job.sp.diag_period_track,
             {"electrons": elec},
             select={"uz": [1., None]},
             comm=sim.comm,
-            write_dir=write_dir,
-            particle_data=["momentum", "weighting"]
+            write_dir=os.path.join(job.ws, "diags_track"),
         ),
     ]
 
