@@ -306,12 +306,13 @@ def run_fbpic(job: Job) -> None:
     mark_on_plot(ax=ax, parameter="zmax")
     mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
     mark_on_plot(ax=ax, parameter="z0", y=0.8)
-    mark_on_plot(ax=ax, parameter="zf", y=0.6)
+    if job.sp["zf"] is not None:
+        mark_on_plot(ax=ax, parameter="zf", y=0.6)
     mark_on_plot(ax=ax, parameter="ramp_start", y=0.7)
     mark_on_plot(ax=ax, parameter="L_interact")
     mark_on_plot(ax=ax, parameter="p_zmax")
 
-    ax.annotate(s="ramp_start + ramp_length", xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
+    ax.annotate(text="ramp_start + ramp_length", xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
                 xycoords="data")
     ax.axvline(x=job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, linestyle="--", color="red")
 
