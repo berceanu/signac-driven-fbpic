@@ -36,23 +36,38 @@ v_window = c  # Speed of the window
 # The diagnostics
 diag_period = 1000  # Period of the diagnostics in number of timesteps
 
+
+def read_density(txt_file, every_nth=20):
+    import pandas as pd
+
+    df = pd.read_csv(txt_file, delim_whitespace=True, names=["position_mu", "density_cm_3", "TODO_ask_alessio"])
+
+    # convert to meters
+    df["position_m"] = df.position_mu * 1e-6
+
+    # substract offset
+    df.position_m = df.position_m - df.position_m.iloc[0]
+
+    # normalize density
+    df["norm_density"] = df.density_cm_3 / df.density_cm_3.max()
+    # check density values between 0 and 1
+    if not df.norm_density.between(0, 1).any():
+        raise ValueError("The density contains values outside the range [0,1].")
+
+    # return every nth item
+    df = df.iloc[::every_nth, :]
+
+    # return data as numpy arrays
+    return df.position_m.to_numpy(), df.norm_density.to_numpy()
+
+position_m, norm_density = read_density("../density_1_inlet_spacers.txt")
+
 # The density profile
 def dens_func(z, r):
     # Allocate relative density
     n = np.ones_like(z)
-    # Read density data and nomalize
-    filedata = "../density_1_inlet_spacers.txt"
-    l = np.loadtxt(filedata, usecols=(0))
-    ne = np.loadtxt(filedata, usecols=(1))
-    l = (l - l[0]) * 1e-3
-    ne = ne / np.amax(ne)
-    # Take only some point to keep the profile not too irregular
-    numElems = 56
-    idx = np.round(np.linspace(0, len(l) - 1, numElems)).astype(int)
-    l = l[idx]
-    ne = ne[idx]
     # Interpolate data
-    n = np.interp(z, l, ne)
+    n = np.interp(z, position_m, norm_density)
     return n
 
 
@@ -124,7 +139,7 @@ if __name__ == "__main__":
     sim.diags = [
         FieldDiagnostic(dt_period=diag_period, fieldtypes=["rho", "E"], fldobject=sim.fld, comm=sim.comm),
         ParticleDiagnostic(dt_period=diag_period, species={"electrons": plasma_elec, "bunch": bunch}, comm=sim.comm),
-        # TODO select based on particle velocity?
+        # TODO select based on particle velocity? see slack #fbpic
     ]
 
     # Number of iterations to perform
