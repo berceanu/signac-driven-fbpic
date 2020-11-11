@@ -289,7 +289,7 @@ def run_fbpic(job: Job) -> None:
     minor_locator.MAXTICKS = 10000
 
     def mark_on_plot(*, ax, parameter: str, y=1.1):
-        ax.annotate(s=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
+        ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
         ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
         return ax
 
