@@ -554,7 +554,7 @@ def get_a0(
         it: Optional[int] = None,
         coord="x",
         m="all",
-        slice_across="y",
+        slice_across=None,
         theta=0.0,
         lambda0=0.8e-6,
 ) -> Tuple[float, float, float, float]:
@@ -610,6 +610,7 @@ def get_a0(
 
     return z0, a0_max, fwhm_a0_w0, fwhm_a0_ctau
 
+# FIXME why do I have to re-run the project in order to get the analysis
 
 @Project.operation
 @Project.pre(path_exists(os.path.join("diags", "rhos")))
