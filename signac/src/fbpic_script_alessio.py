@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.constants import c, e, m_e, m_p
+from scipy import interpolate
 
 # Import the relevant structures in FBPIC
 from fbpic.main import Simulation
@@ -37,16 +38,21 @@ v_window = c  # Speed of the window
 diag_period = 1000  # Period of the diagnostics in number of timesteps
 
 
-def read_density(txt_file, every_nth=20):
+def read_density(txt_file, every_nth=20, offset=True):
     import pandas as pd
 
-    df = pd.read_csv(txt_file, delim_whitespace=True, names=["position_mu", "density_cm_3", "TODO_ask_alessio"])
+    df = pd.read_csv(
+        txt_file,
+        delim_whitespace=True,
+        names=["position_mu", "density_cm_3", "TODO_ask_alessio"],
+    )
 
     # convert to meters
     df["position_m"] = df.position_mu * 1e-6
 
     # substract offset
-    df.position_m = df.position_m - df.position_m.iloc[0]
+    if not offset:
+        df.position_m = df.position_m - df.position_m.iloc[0]
 
     # normalize density
     df["norm_density"] = df.density_cm_3 / df.density_cm_3.max()
@@ -60,14 +66,19 @@ def read_density(txt_file, every_nth=20):
     # return data as numpy arrays
     return df.position_m.to_numpy(), df.norm_density.to_numpy()
 
-position_m, norm_density = read_density("../density_1_inlet_spacers.txt")
+
+position_m, norm_density = read_density("../density_1_inlet_spacers.txt", offset=False)
+
+rho = interpolate.interp1d(
+    position_m, norm_density, bounds_error=False, fill_value=(0.0, 0.0)
+)
 
 # The density profile
 def dens_func(z, r):
     # Allocate relative density
     n = np.ones_like(z)
     # Interpolate data
-    n = np.interp(z, position_m, norm_density)
+    n = rho(z)
     return n
 
 
@@ -94,7 +105,6 @@ if __name__ == "__main__":
     )
     # 'r': 'open' can also be used, but is more computationally expensive
 
-    
     # Add the plasma electron and plasma ions
     plasma_elec = sim.add_new_species(
         q=-e,
@@ -137,8 +147,17 @@ if __name__ == "__main__":
 
     # Add diagnostics
     sim.diags = [
-        FieldDiagnostic(dt_period=diag_period, fieldtypes=["rho", "E"], fldobject=sim.fld, comm=sim.comm),
-        ParticleDiagnostic(dt_period=diag_period, species={"electrons": plasma_elec, "bunch": bunch}, comm=sim.comm),
+        FieldDiagnostic(
+            dt_period=diag_period,
+            fieldtypes=["rho", "E"],
+            fldobject=sim.fld,
+            comm=sim.comm,
+        ),
+        ParticleDiagnostic(
+            dt_period=diag_period,
+            species={"electrons": plasma_elec, "bunch": bunch},
+            comm=sim.comm,
+        ),
         # TODO select based on particle velocity? see slack #fbpic
     ]
 
