@@ -17,7 +17,7 @@
 import os
 import numpy as np
 import signac
-from opmd_viewer import OpenPMDTimeSeries
+from openpmd_viewer import OpenPMDTimeSeries
 
 # %autosave 0
 

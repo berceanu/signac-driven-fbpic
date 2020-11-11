@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import signac
-from opmd_viewer import OpenPMDTimeSeries
+from openpmd_viewer import OpenPMDTimeSeries
 
 # ugly hack to import project.py from 'signac/src'
 import sys
