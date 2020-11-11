@@ -369,6 +369,13 @@ def run_fbpic(job: Job) -> None:
             fieldtypes=["rho", "E"]
         ),
         ParticleDiagnostic(
+            job.sp.diag_period,
+            {"electrons": elec},
+            select={"uz": [40.0, None]},
+            comm=sim.comm,
+            write_dir=os.path.join(job.ws, "diags"),
+        ),
+        ParticleDiagnostic(
             job.sp.diag_period_track,
             {"electrons": elec},
             select={"uz": [40.0, None]},
@@ -376,8 +383,6 @@ def run_fbpic(job: Job) -> None:
             write_dir=os.path.join(job.ws, "diags_track"),
         ),
     ]
-    # TODO set parameters for fast run
-    # TODO export particle diagnostics in diags/
 
     # Plot the Ex component of the laser
     # Get the fields in the half-plane theta=0 (Sum mode 0 and mode 1)
