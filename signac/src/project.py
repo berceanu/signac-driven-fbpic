@@ -275,19 +275,7 @@ def run_fbpic(job: Job) -> None:
         :param r: radial positions, 1d array
         :return: a 1d array ``n`` containing the density (between 0 and 1) at the given positions (z, r)
         """
-        # Allocate relative density
-        n = np.ones_like(z)
-
-        # Make linear ramp
-        n = np.where(
-            z < job.sp.ramp_start + job.sp.ramp_length,
-            (z - job.sp.ramp_start) / job.sp.ramp_length,
-            n,
-        )
-
-        # Supress density before the ramp
-        n = np.where(z < job.sp.ramp_start, 0.0, n)
-
+        n = np.interp(z, [0, 40e-6, 60e-6, 80e-6], [0, 1, 1, 0.7], left=0, right=0.7)
         return n
 
     # plot density profile for checking
@@ -382,7 +370,7 @@ def run_fbpic(job: Job) -> None:
         ParticleDiagnostic(
             job.sp.diag_period_track,
             {"electrons": elec},
-            select={"uz": [1., None]},
+            select={"uz": [40.0, None]},
             comm=sim.comm,
             write_dir=os.path.join(job.ws, "diags_track"),
         ),
