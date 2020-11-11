@@ -1,5 +1,3 @@
-# TODO remove boosted frame
-
 import numpy as np
 from scipy.constants import c, e, m_e, m_p
 # Import the relevant structures in FBPIC
@@ -18,18 +16,9 @@ zmin = -30.e-6
 Nr = 75          # Number of gridpoints along r
 rmax = 150.e-6   # Length of the box along r (meters)
 Nm = 2           # Number of modes used
-
-# The simulation timestep
-# FIXME
-dt = min( rmax/(2*boost.gamma0*Nr)/c, (zmax-zmin)/Nz/c )  # Timestep (seconds)
-
-# The laser (conversion to boosted frame is done inside 'add_laser')
-a0 = 2.          # Laser amplitude
-w0 = 50.e-6      # Laser waist
-ctau = 5.e-6     # Laser duration
 z0 = -10.e-6     # Laser centroid
-zfoc = 0.e-6     # Focal position
-lambda0 = 0.8e-6 # Laser wavelength
+# The simulation timestep
+dt = (zmax-zmin)/Nz/c # Timestep (seconds)
 
 # The density profile
 w_matched = 50.e-6
@@ -88,8 +77,8 @@ v_window = c*( 1 - 0.5*n_e/1.75e27 )
 
 # The interaction length of the simulation, in the lab frame (meters)
 L_interact = (p_zmax-p_zmin) # the plasma length
-# Interaction time, in the boosted frame (seconds)
-T_interact = boost.interaction_time( L_interact, (zmax-zmin), v_window )
+# Interaction time (seconds)
+T_interact = ( L_interact + (zmax-zmin) ) / v_window
 # (i.e. the time it takes for the moving window to slide across the plasma)
 
 ## The diagnostics
@@ -138,10 +127,6 @@ if __name__ == '__main__':
         bunch_n, bunch_zmin, bunch_zmax, 0, bunch_rmax )
     if track_bunch:
         bunch.track( sim.comm )
-
-    # Add a laser to the fields of the simulation
-    add_laser( sim, a0, w0, ctau, z0, lambda0=lambda0,
-           zf=zfoc )
 
     # Configure the moving window
     sim.set_moving_window( v=v_window )

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from openpmd_viewer import OpenPMDTimeSeries
 
 # Replace the string below, to point to your data
-ts = OpenPMDTimeSeries('./7e13/diags/hdf5/')
+ts = OpenPMDTimeSeries('./diags/hdf5/')
 
 z=ts.get_particle(['z'],iteration=21000) 
 x=ts.get_particle(['x'],iteration=21000)  
@@ -60,7 +60,7 @@ for i in range(0,nbz):
 plt.plot(centroid_z,centroid) 
 plt.xlabel('z (m)',fontsize=20)
 plt.ylabel('x (m)',fontsize=20)
-plt.show()
+plt.savefig('ale.png')
 
 mean_head = np.mean(centroid[len(centroid)-5:len(centroid)])
 print(abs(np.mean(centroid)-mean_head))
