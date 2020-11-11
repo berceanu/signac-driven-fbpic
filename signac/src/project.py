@@ -387,6 +387,8 @@ def run_fbpic(job: Job) -> None:
             write_dir=os.path.join(job.ws, "diags_track"),
         ),
     ]
+    # TODO set parameters for fast run
+    # TODO export particle diagnostics in diags/
 
     # Plot the Ex component of the laser
     # Get the fields in the half-plane theta=0 (Sum mode 0 and mode 1)
@@ -476,6 +478,7 @@ def particle_energy_histogram(
     nbins = (energy_max - energy_min) // delta_energy
     energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
 
+    #FIXME get_particle now returns particle positions in meters instead of microns
     ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=it)
     energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
 
@@ -523,6 +526,7 @@ def field_snapshot(
     if chop is None:  # how much to cut out from simulation domain
         chop = [40, -20, 15, -15]  # CHANGEME
 
+    #FIXME does this return 3D field now?
     field, info = tseries.get_field(
         field=field_name, coord=coord, iteration=it, m=m, theta=theta
     )
@@ -556,7 +560,7 @@ def get_a0(
         it: Optional[int] = None,
         coord="x",
         m="all",
-        slicing_dir="y",
+        slice_across="y",
         theta=0.0,
         lambda0=0.8e-6,
 ) -> Tuple[float, float, float, float]:
@@ -568,7 +572,7 @@ def get_a0(
     :param it: time step at which to obtain the data
     :param coord: which component of the field to extract
     :param m: 'all' for extracting the sum of all the modes
-    :param slicing_dir: the direction along which to slice the data eg., 'x', 'y' or 'z'
+    :param slice_across: the direction along which to slice the data eg., 'x', 'y' or 'z'
     :param theta: the angle of the plane of observation, with respect to the 'x' axis
     :param lambda0: laser wavelength (meters)
     :return: z₀, a₀, w₀, cτ
@@ -581,7 +585,7 @@ def get_a0(
         iteration=it,
         m=m,
         theta=theta,
-        slicing_dir=slicing_dir,
+        slice_across=slice_across,
     )
 
     # normalized vector potential
