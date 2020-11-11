@@ -5,12 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "cwd": "${fileDirname}",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python: project.py",
             "type": "python",
             "request": "launch",
             "cwd": "${workspaceFolder}/signac",
             "program": "src/project.py",
-            "args" : ["run"],
+            "args": [
+                "run"
+            ],
             "console": "integratedTerminal"
         }
     ]
