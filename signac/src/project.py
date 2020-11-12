@@ -360,7 +360,7 @@ def run_fbpic(job: Job) -> None:
         job.sp.Nm,
         job.sp.dt,
         zmin=job.sp.zmin,
-        boundaries={"z": "open", "r": "open"},
+        boundaries={"z": "open", "r": "reflective"},
         n_order=-1,
         use_cuda=True,
         verbose_level=2,
@@ -401,13 +401,13 @@ def run_fbpic(job: Job) -> None:
 
     # particles beam from txt file
     bunch = add_particle_bunch_file(
-        sim,
+        sim=sim,
         q=-q_e,
         m=m_e,
         filename="exp_4deg.txt",
         n_physical_particles=Qtot / q_e,
-        z_off=0.0,
-        z_injection_plane=L0,
+        z_off=1798e-6,
+        # z_injection_plane=L0,
     )
 
     # Configure the moving window
