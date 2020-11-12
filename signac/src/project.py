@@ -396,7 +396,7 @@ def run_fbpic(job: Job) -> None:
     # Track electrons, useful for betatron radiation
     # elec.track(sim.comm)
     # The electron beam
-    L0 = 100.0e-6  # Position at which the beam should be "unfreezed"
+    # L0 = 100.0e-6  # Position at which the beam should be "unfreezed"
     Qtot = 200.0e-12  # Charge in Coulomb
 
     # particles beam from txt file
@@ -446,19 +446,6 @@ def run_fbpic(job: Job) -> None:
 ############
 
 
-def electric_field_amplitude_norm(lambda0=0.8e-6):
-    """
-    Computes the laser electric field amplitude for :math:`a_0=1`.
-
-    :param lambda0: laser wavelength (meters)
-    """
-    # wavevector
-    k0 = 2 * np.pi / lambda0
-
-    # field amplitude
-    e0 = m_e * c_light ** 2 * k0 / q_e
-
-    return e0
 
 
 def particle_energy_histogram(
@@ -479,7 +466,7 @@ def particle_energy_histogram(
     nbins = (energy_max - energy_min) // delta_energy
     energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
 
-    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=it)
+    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=it, species="bunch")
     energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
 
     # Explanation of weights:
@@ -553,73 +540,12 @@ def field_snapshot(
     plot.canvas.print_figure(filename)
 
 
-def get_a0(
-        tseries: OpenPMDTimeSeries,
-        t: Optional[float] = None,
-        it: Optional[int] = None,
-        coord="x",
-        m="all",
-        slicing_dir="y",
-        theta=0.0,
-        lambda0=0.8e-6,
-) -> Tuple[float, float, float, float]:
-    """
-    Compute z₀, a₀, w₀, cτ.
-
-    :param tseries: whole simulation time series
-    :param t: time (in seconds) at which to obtain the data
-    :param it: time step at which to obtain the data
-    :param coord: which component of the field to extract
-    :param m: 'all' for extracting the sum of all the modes
-    :param slicing_dir: the direction along which to slice the data eg., 'x', 'y' or 'z'
-    :param theta: the angle of the plane of observation, with respect to the 'x' axis
-    :param lambda0: laser wavelength (meters)
-    :return: z₀, a₀, w₀, cτ
-    """
-    # get E_x field in V/m
-    electric_field_x, info_electric_field_x = tseries.get_field(
-        field="E",
-        coord=coord,
-        t=t,
-        iteration=it,
-        m=m,
-        theta=theta,
-        slicing_dir=slicing_dir,
-    )
-
-    # normalized vector potential
-    e0 = electric_field_amplitude_norm(lambda0=lambda0)
-    a0 = electric_field_x / e0
-
-    # get pulse envelope
-    envelope = np.abs(hilbert(a0, axis=1))
-    envelope_z = envelope[envelope.shape[0] // 2, :]
-
-    a0_max = np.amax(envelope_z)
-
-    # index of peak
-    z_idx = np.argmax(envelope_z)
-    # pulse peak position
-    z0 = info_electric_field_x.z[z_idx]
-
-    # FWHM perpendicular size of beam, proportional to w0
-    fwhm_a0_w0 = (
-            np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2))
-            * info_electric_field_x.dr
-    )
-
-    # FWHM longitudinal size of the beam, proportional to ctau
-    fwhm_a0_ctau = (
-            np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_electric_field_x.dz
-    )
-
-    return z0, a0_max, fwhm_a0_w0, fwhm_a0_ctau
 
 
 @Project.operation
 @Project.pre(path_exists(os.path.join("diags", "rhos")))
 @Project.pre.after(run_fbpic)
-@Project.post(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
+@Project.post(are_files(("all_hist.txt", "hist_edges.txt")))
 @Project.post(are_rho_pngs)
 def post_process_results(job: Job) -> None:
     """
@@ -656,20 +582,10 @@ def post_process_results(job: Job) -> None:
     all_hist = np.empty(shape=(number_of_iterations, nrbins), dtype=np.float64)
     hist_edges = np.empty(shape=(nrbins + 1,), dtype=np.float64)
 
-    diags_file = open(job.fn("diags.txt"), "w")
-    diags_file.write("iteration,time[fs],z₀[μm],a₀,w₀[μm],cτ[μm]\n")
 
     # loop through all the iterations in the job's time series
     for idx, it in enumerate(time_series.iterations):
         it_time = it * job.sp.dt
-
-        z_0, a_0, w_0, c_tau = get_a0(
-            time_series, it=it, lambda0=job.sp.lambda0
-        )
-
-        diags_file.write(
-            f"{it:06d},{it_time * 1e15:.3e},{z_0 * 1e6:.3e},{a_0:.3e},{w_0 * 1e6:.3e},{c_tau * 1e6:.3e}\n"
-        )
 
         # generate 1D energy histogram
         energy_hist, bin_edges, _ = particle_energy_histogram(
@@ -700,7 +616,6 @@ def post_process_results(job: Job) -> None:
     # so we get Q / N e, which is C/C, i.e. dimensionless
     # Note: one can also normalize by the critical density n_c
 
-    diags_file.close()
 
     np.savetxt(
         job.fn("all_hist.txt"),
@@ -740,86 +655,6 @@ def add_create_dir_workflow(path: str) -> None:
 
 add_create_dir_workflow(path=os.path.join("diags", "rhos"))
 
-
-@Project.operation
-@Project.pre(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
-@Project.post.isfile("hist2d.png")
-def plot_2d_hist(job: Job) -> None:
-    """
-    Plot the 2D histogram, composed of the 1D slices for each iteration.
-
-    :param job: the job instance is a handle to the data of a unique statepoint
-    """
-    df_diags = pd.read_csv(job.fn("diags.txt"), header=0, index_col=0, comment="#")
-    all_hist = np.loadtxt(
-        job.fn("all_hist.txt"), dtype=np.float64, comments="#", ndmin=2
-    )
-    hist_edges = np.loadtxt(
-        job.fn("hist_edges.txt"), dtype=np.float64, comments="#", ndmin=1
-    )
-
-    z_0 = df_diags.loc[:, "z₀[μm]"]
-
-    # plot 2D energy-charge histogram
-    hist2d = sliceplots.Plot2D(
-        arr2d=all_hist.T,  # 2D data
-        h_axis=z_0.values,  # x-axis
-        v_axis=hist_edges[1:],  # y-axis
-        xlabel=r"$%s \;(\mu m)$" % "z",
-        ylabel=r"E (MeV)",
-        zlabel=r"dQ/dE (pC/MeV)",
-        vslice_val=z_0.iloc[-1],  # can be changed to z_0.loc[iteration]
-        extent=(z_0.iloc[0], z_0.iloc[-1], hist_edges[1], hist_edges[-1]),
-    )
-    hist2d.canvas.print_figure(job.fn("hist2d.png"))
-
-
-@Project.operation
-@Project.pre.isfile("diags.txt")
-@Project.post(are_files(("a0.png", "w0.png", "ctau.png")))
-def plot_1d_diags(job: Job) -> None:
-    """
-    Plot the 1D diagnostics, ``a_0``, ``w_0`` and ``c_tau`` vs ``z_0``.
-
-    :param job: the job instance is a handle to the data of a unique statepoint
-    """
-    df_diags = pd.read_csv(job.fn("diags.txt"), header=0, index_col=0, comment="#")
-
-    z_0 = df_diags.loc[:, "z₀[μm]"].values
-    a_0 = df_diags.loc[:, "a₀"].values
-    w_0 = df_diags.loc[:, "w₀[μm]"].values
-    c_tau = df_diags.loc[:, "cτ[μm]"].values
-
-    fig, ax = pyplot.subplots(figsize=(10, 6))
-    sliceplots.plot1d(
-        ax=ax,
-        v_axis=a_0,  # y-axis
-        h_axis=z_0,  # x-axis
-        xlabel=r"$%s \;(\mu m)$" % "z",
-        ylabel=r"$%s$" % "a_0",
-        ylim=[0, 10],  # CHANGEME
-    )
-    fig.savefig(job.fn("a0.png"))
-
-    fig, ax = pyplot.subplots(figsize=(10, 6))
-    sliceplots.plot1d(
-        ax=ax,
-        v_axis=w_0,  # y-axis
-        h_axis=z_0,  # x-axis
-        xlabel=r"$%s \;(\mu m)$" % "z",
-        ylabel=r"$%s \;(\mu m)$" % "w_0",
-    )
-    fig.savefig(job.fn("w0.png"))
-
-    fig, ax = pyplot.subplots(figsize=(10, 6))
-    sliceplots.plot1d(
-        ax=ax,
-        v_axis=c_tau,  # y-axis
-        h_axis=z_0,  # x-axis
-        xlabel=r"$%s \;(\mu m)$" % "z",
-        ylabel=r"$c \tau \;(\mu m)$",
-    )
-    fig.savefig(job.fn("ctau.png"))
 
 
 @Project.operation
@@ -868,10 +703,6 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
 
         :param job: the job instance is a handle to the data of a unique statepoint
         """
-        e0 = electric_field_amplitude_norm(
-            lambda0=job.sp.lambda0
-        )
-
         h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
         time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(
             h5_path, check_all_files=False
@@ -883,7 +714,7 @@ def add_plot_snapshots_workflow(iteration: int) -> None:
             it=iteration,
             field_name="E",
             coord="x",
-            normalization_factor=1.0 / e0,
+            normalization_factor=1.0,
             path=job.ws,
             zlabel=r"$E_x/E_0$",
             vmin=-4,  # CHANGEME
