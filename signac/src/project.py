@@ -28,7 +28,7 @@ from openpmd_viewer import OpenPMDTimeSeries
 from scipy.constants import physical_constants
 from scipy.signal import hilbert
 from signac.contrib.job import Job
-from .reader import read_density
+from reader import read_density
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -273,8 +273,8 @@ def run_fbpic(job: Job) -> None:
 
     position_m, norm_density = read_density("density_1_inlet_spacers.txt")
 
-    interp_z_min = position_m.min()
-    interp_z_max = position_m.max()
+    # interp_z_min = position_m.min()
+    # interp_z_max = position_m.max()
 
     rho = interpolate.interp1d(
         position_m, norm_density, bounds_error=False, fill_value=(0.0, 0.0)
@@ -292,18 +292,19 @@ def run_fbpic(job: Job) -> None:
         n = np.ones_like(z)
 
         # only compute n if z is inside the interpolation bounds
-        n = np.where(np.logical_and(z > interp_z_min, z < interp_z_max), rho(z), n)
+        # n = np.where(np.logical_and(z > interp_z_min, z < interp_z_max), rho(z), n)
 
         # Make linear ramp
-        n = np.where(
-            z < job.sp.ramp_start + job.sp.ramp_length,
-            (z - job.sp.ramp_start) / job.sp.ramp_length * rho(interp_z_min),
-            n,
-        )
+        # n = np.where(
+        #     z < job.sp.ramp_start + job.sp.ramp_length,
+        #     (z - job.sp.ramp_start) / job.sp.ramp_length * rho(interp_z_min),
+        #     n,
+        # )
 
         # Supress density before the ramp
-        n = np.where(z < job.sp.ramp_start, 0.0, n)
+        # n = np.where(z < job.sp.ramp_start, 0.0, n)
 
+        n = rho(z)
         return n
 
     # plot density profile for checking
@@ -317,7 +318,7 @@ def run_fbpic(job: Job) -> None:
     minor_locator.MAXTICKS = 10000
 
     def mark_on_plot(*, ax, parameter: str, y=1.1):
-        ax.annotate(s=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
+        ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
         ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
         return ax
 
@@ -333,19 +334,17 @@ def run_fbpic(job: Job) -> None:
     mark_on_plot(ax=ax, parameter="zmin")
     mark_on_plot(ax=ax, parameter="zmax")
     mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
-    mark_on_plot(ax=ax, parameter="z0", y=0.8)
-    mark_on_plot(ax=ax, parameter="zf", y=0.6)
-    mark_on_plot(ax=ax, parameter="ramp_start", y=0.7)
+    # mark_on_plot(ax=ax, parameter="ramp_start", y=0.7)
     mark_on_plot(ax=ax, parameter="L_interact")
     mark_on_plot(ax=ax, parameter="p_zmax")
 
-    ax.annotate(s="ramp_start + ramp_length", xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
-                xycoords="data")
-    ax.axvline(x=job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, linestyle="--", color="red")
+    # ax.annotate(text="ramp_start + ramp_length", xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
+    #             xycoords="data")
+    # ax.axvline(x=job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, linestyle="--", color="red")
 
-    ax.fill_between(all_z * 1e6, dens, alpha=0.5)
+    # ax.fill_between(all_z * 1e6, dens, alpha=0.5)
 
-    fig.savefig(job.fn("check_density.png"))
+    # fig.savefig(job.fn("check_density.png"))
 
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout

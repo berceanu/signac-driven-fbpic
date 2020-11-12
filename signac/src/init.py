@@ -10,7 +10,6 @@ import unyt as u
 import numpy as np
 import math
 import shutil
-from .reader import read_density
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
@@ -18,37 +17,32 @@ NUMBER_OF_H5 = 22
 
 
 def main():
-    position_m, _ = read_density("density_1_inlet_spacers.txt")
-
-    interp_z_min = position_m.min()
-    # interp_z_max = position_m.max()
-
     """Main function, for defining the parameter(s) to be varied in the simulations."""
     project = signac.init_project("fbpic-project", workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/")
 
     for _ in range(1):
         sp = dict(
             # The simulation box
-            Nz=8400,  # Number of gridpoints along z
-            zmin=-39000.0e-6,  # Left end of the simulation box (meters)
-            zmax=3000.0e-6,  # Right end of the simulation box (meters)
-            Nr=250,  # Number of gridpoints along r
-            rmax=500.0e-6,  # Length of the box along r (meters)
+            Nz=4096,  # Number of gridpoints along z
+            zmin=-70.0e-6,  # Left end of the simulation box (meters)
+            zmax=4000.0e-6,  # Right end of the simulation box (meters)
+            Nr=256,  # Number of gridpoints along r
+            rmax=300.0e-6,  # Length of the box along r (meters)
             Nm=3,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
-            p_zmin=30.0e-6,
+            p_zmin=0.0e-6,
             # Maximal radial position of the plasma (meters)
-            p_rmax=400.0e-6,
+            p_rmax=290.0e-6,
             n_e=5.0e13 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
             p_nt=6,  # Number of particles per cell along theta
             # do not change below this line ##############
-            p_zmax=68000.0e-6,  # Position of the end of the plasma (meters)
+            p_zmax=68400.0e-6,  # Position of the end of the plasma (meters)
             # The density profile
-            ramp_start=0.0e-6,
-            ramp_length=interp_z_min,  # increase (up to `p_zmax`) !
+            # ramp_start=0.0e-6,
+            # ramp_length=0.0e-6,  # increase (up to `p_zmax`) !
             # The interaction length of the simulation (meters)
             # increase (up to `p_zmax`) to simulate longer distance!
             L_interact=None,
