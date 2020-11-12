@@ -28,12 +28,14 @@ from openpmd_viewer import OpenPMDTimeSeries
 from scipy.constants import physical_constants
 from scipy.signal import hilbert
 from signac.contrib.job import Job
+from .reader import read_density
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
 
 c_light = physical_constants["speed of light in vacuum"][0]
 m_e = physical_constants["electron mass"][0]
+m_p = physical_constants["proton mass"][0]
 q_e = physical_constants["elementary charge"][0]
 mc2 = m_e * c_light ** 2 / (q_e * 1e6)  # 0.511 MeV
 
@@ -266,6 +268,17 @@ def run_fbpic(job: Job) -> None:
     from fbpic.main import Simulation
     from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
     from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
+    from fbpic.lpa_utils.bunch import add_particle_bunch_file
+    from scipy import interpolate
+
+    position_m, norm_density = read_density("density_1_inlet_spacers.txt")
+
+    interp_z_min = position_m.min()
+    interp_z_max = position_m.max()
+
+    rho = interpolate.interp1d(
+        position_m, norm_density, bounds_error=False, fill_value=(0.0, 0.0)
+    )
 
     # The density profile
     def dens_func(z: np.ndarray, r: np.ndarray) -> np.ndarray:
@@ -275,7 +288,22 @@ def run_fbpic(job: Job) -> None:
         :param r: radial positions, 1d array
         :return: a 1d array ``n`` containing the density (between 0 and 1) at the given positions (z, r)
         """
-        n = np.interp(z, [0, 40e-6, 60e-6, 80e-6], [0, 1, 1, 0.7], left=0, right=0.7)
+        # Allocate relative density
+        n = np.ones_like(z)
+
+        # only compute n if z is inside the interpolation bounds
+        n = np.where(np.logical_and(z > interp_z_min, z < interp_z_max), rho(z), n)
+
+        # Make linear ramp
+        n = np.where(
+            z < job.sp.ramp_start + job.sp.ramp_length,
+            (z - job.sp.ramp_start) / job.sp.ramp_length * rho(interp_z_min),
+            n,
+        )
+
+        # Supress density before the ramp
+        n = np.where(z < job.sp.ramp_start, 0.0, n)
+
         return n
 
     # plot density profile for checking
@@ -289,7 +317,7 @@ def run_fbpic(job: Job) -> None:
     minor_locator.MAXTICKS = 10000
 
     def mark_on_plot(*, ax, parameter: str, y=1.1):
-        ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
+        ax.annotate(s=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
         ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
         return ax
 
@@ -306,13 +334,12 @@ def run_fbpic(job: Job) -> None:
     mark_on_plot(ax=ax, parameter="zmax")
     mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
     mark_on_plot(ax=ax, parameter="z0", y=0.8)
-    if job.sp["zf"] is not None:
-        mark_on_plot(ax=ax, parameter="zf", y=0.6)
+    mark_on_plot(ax=ax, parameter="zf", y=0.6)
     mark_on_plot(ax=ax, parameter="ramp_start", y=0.7)
     mark_on_plot(ax=ax, parameter="L_interact")
     mark_on_plot(ax=ax, parameter="p_zmax")
 
-    ax.annotate(text="ramp_start + ramp_length", xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
+    ax.annotate(s="ramp_start + ramp_length", xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
                 xycoords="data")
     ax.axvline(x=job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, linestyle="--", color="red")
 
@@ -333,54 +360,74 @@ def run_fbpic(job: Job) -> None:
         job.sp.rmax,
         job.sp.Nm,
         job.sp.dt,
-        n_e=None,  # no electrons
         zmin=job.sp.zmin,
-        boundaries={"z": "open", "r": "reflective"},
+        boundaries={"z": "open", "r": "open"},
         n_order=-1,
         use_cuda=True,
         verbose_level=2,
     )
+    # 'r': 'open' can also be used, but is more computationally expensive
 
-    # Create a Gaussian laser profile
-    laser_profile = GaussianLaser(a0=job.sp.a0, waist=job.sp.w0, tau=job.sp.ctau / c_light, z0=job.sp.z0,
-                                  zf=job.sp.zf, theta_pol=0., lambda0=job.sp.lambda0,
-                                  cep_phase=0., phi2_chirp=0.,
-                                  propagation_direction=1)
-
-    # Add it to the simulation
-    add_laser_pulse(sim, laser_profile, gamma_boost=None, method='direct', z0_antenna=None, v_antenna=0.)
-
-    # Create the plasma electrons
-    elec = sim.add_new_species(q=-q_e, m=m_e, n=job.sp.n_e,
-                               dens_func=dens_func, p_zmin=job.sp.p_zmin, p_zmax=job.sp.p_zmax,
-                               p_rmax=job.sp.p_rmax,
-                               p_nz=job.sp.p_nz, p_nr=job.sp.p_nr, p_nt=job.sp.p_nt)
+    # Add the plasma electron and plasma ions
+    plasma_elec = sim.add_new_species(
+        q=-q_e,
+        m=m_e,
+        n=job.sp.n_e,
+        dens_func=dens_func,
+        p_zmin=job.sp.p_zmin,
+        p_zmax=job.sp.p_zmax,
+        p_rmax=job.sp.p_rmax,
+        p_nz=job.sp.p_nz,
+        p_nr=job.sp.p_nr,
+        p_nt=job.sp.p_nt,
+    )
+    plasma_ions = sim.add_new_species(
+        q=q_e,
+        m=m_p,
+        n=job.sp.n_e,
+        dens_func=dens_func,
+        p_zmin=job.sp.p_zmin,
+        p_zmax=job.sp.p_zmax,
+        p_rmax=job.sp.p_rmax,
+        p_nz=job.sp.p_nz,
+        p_nr=job.sp.p_nr,
+        p_nt=job.sp.p_nt,
+    )
 
     # Track electrons, useful for betatron radiation
-    elec.track(sim.comm)
+    # elec.track(sim.comm)
+    # The electron beam
+    L0 = 100.0e-6  # Position at which the beam should be "unfreezed"
+    Qtot = 200.0e-12  # Charge in Coulomb
+
+    # particles beam from txt file
+    bunch = add_particle_bunch_file(
+        sim,
+        q=-q_e,
+        m=m_e,
+        filename="exp_4deg.txt",
+        n_physical_particles=Qtot / q_e,
+        z_off=0.0,
+        z_injection_plane=L0,
+    )
 
     # Configure the moving window
     sim.set_moving_window(v=c_light)
 
     # Add diagnostics
+    write_dir = os.path.join(job.ws, "diags")
     sim.diags = [
         FieldDiagnostic(
-            job.sp.diag_period, sim.fld, comm=sim.comm, write_dir=os.path.join(job.ws, "diags"),
+            period=job.sp.diag_period, fldobject=sim.fld, comm=sim.comm, write_dir=write_dir,
             fieldtypes=["rho", "E"]
         ),
         ParticleDiagnostic(
-            job.sp.diag_period,
-            {"electrons": elec},
-            select={"uz": [40.0, None]},
+            period=job.sp.diag_period,
+            species={"electrons": plasma_elec, "bunch": bunch},
+            # select={"uz": [1., None]},
             comm=sim.comm,
-            write_dir=os.path.join(job.ws, "diags"),
-        ),
-        ParticleDiagnostic(
-            job.sp.diag_period_track,
-            {"electrons": elec},
-            select={"uz": [40.0, None]},
-            comm=sim.comm,
-            write_dir=os.path.join(job.ws, "diags_track"),
+            write_dir=write_dir,
+            # particle_data=["momentum", "weighting"]
         ),
     ]
 
@@ -472,7 +519,6 @@ def particle_energy_histogram(
     nbins = (energy_max - energy_min) // delta_energy
     energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
 
-    #FIXME get_particle now returns particle positions in meters instead of microns
     ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=it)
     energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
 
@@ -520,7 +566,6 @@ def field_snapshot(
     if chop is None:  # how much to cut out from simulation domain
         chop = [40, -20, 15, -15]  # CHANGEME
 
-    #FIXME does this return 3D field now?
     field, info = tseries.get_field(
         field=field_name, coord=coord, iteration=it, m=m, theta=theta
     )
@@ -554,7 +599,7 @@ def get_a0(
         it: Optional[int] = None,
         coord="x",
         m="all",
-        slice_across=None,
+        slicing_dir="y",
         theta=0.0,
         lambda0=0.8e-6,
 ) -> Tuple[float, float, float, float]:
@@ -566,7 +611,7 @@ def get_a0(
     :param it: time step at which to obtain the data
     :param coord: which component of the field to extract
     :param m: 'all' for extracting the sum of all the modes
-    :param slice_across: the direction along which to slice the data eg., 'x', 'y' or 'z'
+    :param slicing_dir: the direction along which to slice the data eg., 'x', 'y' or 'z'
     :param theta: the angle of the plane of observation, with respect to the 'x' axis
     :param lambda0: laser wavelength (meters)
     :return: z₀, a₀, w₀, cτ
@@ -579,7 +624,7 @@ def get_a0(
         iteration=it,
         m=m,
         theta=theta,
-        slice_across=slice_across,
+        slicing_dir=slicing_dir,
     )
 
     # normalized vector potential
@@ -610,7 +655,6 @@ def get_a0(
 
     return z0, a0_max, fwhm_a0_w0, fwhm_a0_ctau
 
-# FIXME why do I have to re-run the project in order to get the analysis
 
 @Project.operation
 @Project.pre(path_exists(os.path.join("diags", "rhos")))
