@@ -1,11 +1,19 @@
 import numpy as np
+import pandas as pd
 from scipy.constants import c, e, m_e, m_p
+from scipy.constants import physical_constants
 from scipy import interpolate
 
 # Import the relevant structures in FBPIC
 from fbpic.main import Simulation
 from fbpic.lpa_utils.bunch import add_particle_bunch_file
 from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
+
+c_light = physical_constants["speed of light in vacuum"][0]
+m_e = physical_constants["electron mass"][0]
+q_e = physical_constants["elementary charge"][0]
+mc2 = m_e * c_light ** 2 / (q_e * 1e6)  # 0.511 MeV
+
 
 # The simulation box
 Nz = 8400  # Number of gridpoints along z
@@ -37,10 +45,33 @@ v_window = c  # Speed of the window
 # The diagnostics
 diag_period = 1000  # Period of the diagnostics in number of timesteps
 
+def read_bunch(txt_file):
+    df = pd.read_csv(
+        txt_file,
+        delim_whitespace=True,
+        names=["x_m", "y_m", "z_m", "ux", "uy", "uz"],
+    )
+    # convert to microns
+    df["x_mu"] = df.x_m * 1e+6
+    df["y_mu"] = df.y_m * 1e+6
+    df["z_mu"] = df.z_m * 1e+6
+
+    # remove first 3 columns
+    df = df.drop(["x_m", "y_m", "z_m"], axis=1)
+
+    # compute gamma factor
+    df["gamma"] = np.sqrt(1 + df.ux ** 2 + df.uy ** 2 + df.uz ** 2)
+
+    # compute energy
+    df["energy_MeV"] = mc2 * df.gamma
+
+    df["percent_c"] = np.sqrt(1 - 1 / df.gamma ** 2) * 100.0
+
+    return df
+
+df = read_bunch("../exp_4deg.txt")
 
 def read_density(txt_file, every_nth=20, offset=True):
-    import pandas as pd
-
     df = pd.read_csv(
         txt_file,
         delim_whitespace=True,
@@ -67,7 +98,7 @@ def read_density(txt_file, every_nth=20, offset=True):
     return df.position_m.to_numpy(), df.norm_density.to_numpy()
 
 
-position_m, norm_density = read_density("../density_1_inlet_spacers.txt", offset=False)
+position_m, norm_density = read_density("../density_1_inlet_spacers.txt")
 
 rho = interpolate.interp1d(
     position_m, norm_density, bounds_error=False, fill_value=(0.0, 0.0)
@@ -136,6 +167,7 @@ if __name__ == "__main__":
         sim,
         q=-e,
         m=m_e,
+        # x [m]  y [m]  z [m]  ux [unitless]  uy [unitless]  uz [unitless]
         filename="../exp_4deg.txt",
         n_physical_particles=Qtot / e,
         z_off=0.0,
@@ -148,13 +180,13 @@ if __name__ == "__main__":
     # Add diagnostics
     sim.diags = [
         FieldDiagnostic(
-            dt_period=diag_period,
+            period=diag_period,
             fieldtypes=["rho", "E"],
             fldobject=sim.fld,
             comm=sim.comm,
         ),
         ParticleDiagnostic(
-            dt_period=diag_period,
+            period=diag_period,
             species={"electrons": plasma_elec, "bunch": bunch},
             comm=sim.comm,
         ),

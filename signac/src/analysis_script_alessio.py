@@ -5,8 +5,8 @@ from openpmd_viewer import OpenPMDTimeSeries
 # Replace the string below, to point to your data
 ts = OpenPMDTimeSeries('./diags/hdf5/')
 
-z=ts.get_particle(['z'],iteration=21000) 
-x=ts.get_particle(['x'],iteration=21000)  
+z=ts.get_particle(['z'],iteration=21000, species='bunch') 
+x=ts.get_particle(['x'],iteration=21000, species='bunch')  
 
 z = z[0]
 x = x[0]
