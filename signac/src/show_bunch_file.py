@@ -25,7 +25,7 @@ def read_bunch(txt_file):
     df["z_mu"] = df.z_m * 1e+6
 
     # remove first 3 columns
-    df = df.drop(["x_m", "y_m", "z_m"], axis=1)
+    # df = df.drop(["x_m", "y_m", "z_m"], axis=1)
 
     # compute gamma factor
     df["gamma"] = np.sqrt(1 + df.ux ** 2 + df.uy ** 2 + df.uz ** 2)
