@@ -2,10 +2,7 @@ import pandas as pd
 import numpy as np
 from scipy.constants import physical_constants
 import datashader as ds
-import datashader.transfer_functions as tf
 from datashader.utils import export_image
-from functools import partial
-from datashader.colors import colormap_select
 from colorcet import fire
 
 c_light = physical_constants["speed of light in vacuum"][0]
@@ -42,17 +39,12 @@ def read_bunch(txt_file):
 def shade_bunch(coord1, coord2):
     cvs = ds.Canvas(plot_width=700, plot_height=700)
     agg = cvs.points(df, coord1, coord2)
-    img = tf.shade(agg, cmap=cm(fire, 0.2), how="linear")
-    export(img, f"bunch_{coord1}_{coord2}")
+    img = ds.tf.shade(agg, cmap=fire, how="linear")
+    export_image(img, f"bunch_{coord1}_{coord2}", background="black", export_path=".")
 
 
 if __name__ == "__main__":
     # plot via datashader
-    ds.transfer_functions.Image.border = 0
-    background = "black"
-    cm = partial(colormap_select, reverse=(background != "black"))
-    export = partial(export_image, background=background, export_path="img")
-
     df = read_bunch("../exp_4deg.txt")
     print(df[["x_mu","y_mu","z_mu"]].describe())
 
