@@ -5,11 +5,11 @@ def read_density(txt_file, every_nth=20, offset=True):
     df = pd.read_csv(
         txt_file,
         delim_whitespace=True,
-        names=["position_mu", "density_cm_3", "error_density_cm_3"],
+        names=["position_mm", "density_cm_3", "error_density_cm_3"],
     )
 
     # convert to meters
-    df["position_m"] = df.position_mu * 1e-6
+    df["position_m"] = df.position_mm * 1e-3
 
     # substract offset
     if not offset:
