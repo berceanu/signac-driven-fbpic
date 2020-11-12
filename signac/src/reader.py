@@ -12,7 +12,7 @@ def read_density(txt_file, every_nth=20, offset=True):
     df["position_m"] = df.position_mm * 1e-3
 
     # substract offset
-    if not offset:
+    if offset:
         df.position_m = df.position_m - df.position_m.iloc[0]
 
     # normalize density
@@ -31,5 +31,5 @@ def read_density(txt_file, every_nth=20, offset=True):
 if __name__ == "__main__":
     position_m, norm_density = read_density("../density_1_inlet_spacers.txt")
 
-    print(position_m)
-    print(norm_density)
+    print(position_m*1e6)
+    # print(norm_density)
