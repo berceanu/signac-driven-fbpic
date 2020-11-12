@@ -75,6 +75,7 @@ def main():
 
     for job in project:
         shutil.copy("density_1_inlet_spacers.txt", job.fn("density_1_inlet_spacers.txt"))
+        shutil.copy("exp_4deg.txt", job.fn("exp_4deg.txt"))
 
 
 if __name__ == "__main__":
