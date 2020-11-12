@@ -37,7 +37,7 @@ def read_bunch(txt_file):
 
 
 def shade_bunch(coord1, coord2):
-    cvs = ds.Canvas(plot_width=700, plot_height=700)
+    cvs = ds.Canvas(plot_width=4200, plot_height=700, x_range=(-1800, 1800), y_range=(-300, 300))
     agg = cvs.points(df, coord1, coord2)
     img = ds.tf.shade(agg, cmap=fire, how="linear")
     export_image(img, f"bunch_{coord1}_{coord2}", background="black", export_path=".")
@@ -50,6 +50,4 @@ if __name__ == "__main__":
     print(df.describe())
     print(df[["x_mu","y_mu","z_mu"]].describe())
 
-    shade_bunch("x_mu", "y_mu")
-    shade_bunch("y_mu", "z_mu")
-    shade_bunch("x_mu", "z_mu")
+    shade_bunch("z_mu", "x_mu")
