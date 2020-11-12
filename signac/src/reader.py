@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def read_density(txt_file, every_nth=20, offset=True):
     df = pd.read_csv(
         txt_file,
@@ -25,3 +26,10 @@ def read_density(txt_file, every_nth=20, offset=True):
 
     # return data as numpy arrays
     return df.position_m.to_numpy(), df.norm_density.to_numpy()
+
+
+if __name__ == "__main__":
+    position_m, norm_density = read_density("../density_1_inlet_spacers.txt")
+
+    print(position_m)
+    print(norm_density)
