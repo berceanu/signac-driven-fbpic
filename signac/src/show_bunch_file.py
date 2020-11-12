@@ -46,6 +46,8 @@ def shade_bunch(coord1, coord2):
 if __name__ == "__main__":
     # plot via datashader
     df = read_bunch("../exp_4deg.txt")
+
+    print(df.describe())
     print(df[["x_mu","y_mu","z_mu"]].describe())
 
     shade_bunch("x_mu", "y_mu")
