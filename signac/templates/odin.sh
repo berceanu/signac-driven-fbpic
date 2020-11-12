@@ -50,7 +50,7 @@ cd {{ project.config.project_dir }}
 {% block body %}
 {% set cmd_suffix = cmd_suffix|default('') ~ (' &' if parallel else '') %}
 {% for operation in operations %}
-export CUDA_VISIBLE_DEVICES={{ loop.index0 }}
+export CUDA_VISIBLE_DEVICES={{ 15 - loop.index0 }}
 # {{ "%s"|format(operation) }}
 {{ operation.cmd }}{{ cmd_suffix }}
 {% endfor %}
