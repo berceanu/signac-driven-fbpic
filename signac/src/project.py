@@ -19,14 +19,12 @@ import glob
 from typing import List, Optional, Tuple, Union, Callable, Iterable
 
 import numpy as np
-import pandas as pd
 import sliceplots
 from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot
 from openpmd_viewer import OpenPMDTimeSeries
 from scipy.constants import physical_constants
-from scipy.signal import hilbert
 from signac.contrib.job import Job
 from reader import read_density
 
@@ -64,55 +62,6 @@ class OdinEnvironment(DefaultSlurmEnvironment):
                   'If omitted, uses the system default '
                   '(slurm default is "slurm-%%j.out").'))
 
-
-class x470Environment(DefaultSlurmEnvironment):
-    """Environment profile for the Quadro P6000 computer.
-    https://docs.signac.io/projects/flow/en/latest/supported_environments/comet.html#flow.environments.xsede.CometEnvironment
-    """
-    hostname_pattern = 'x470'
-    template = 'x470.sh'
-    cores_per_node = 6
-    mpi_cmd = 'mpiexec'
-
-    @classmethod
-    def add_args(cls, parser):
-        super(x470Environment, cls).add_args(parser)
-        parser.add_argument(
-            '--partition',
-            choices=['defaultpart'],
-            default='defaultpart',
-            help="Specify the partition to submit to.")
-
-        parser.add_argument(
-            '--job-output',
-            help=('What to name the job output file. '
-                  'If omitted, uses the system default '
-                  '(slurm default is "slurm-%%j.out").'))
-
-
-class work_5049A_T(DefaultSlurmEnvironment):
-    """Environment profile for the Quadro P6000 computer.
-    https://docs.signac.io/projects/flow/en/latest/supported_environments/comet.html#flow.environments.xsede.CometEnvironment
-    """
-    hostname_pattern = '5049A-T'
-    template = '5049A_T.sh'
-    cores_per_node = 32
-    mpi_cmd = 'mpiexec'
-
-    @classmethod
-    def add_args(cls, parser):
-        super(work_5049A_T, cls).add_args(parser)
-        parser.add_argument(
-            '--partition',
-            choices=['debug'],
-            default='debug',
-            help="Specify the partition to submit to.")
-
-        parser.add_argument(
-            '--job-output',
-            help=('What to name the job output file. '
-                  'If omitted, uses the system default '
-                  '(slurm default is "slurm-%%j.out").'))
 
 
 #####################
@@ -266,15 +215,14 @@ def run_fbpic(job: Job) -> None:
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     from fbpic.main import Simulation
-    from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
     from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
     from fbpic.lpa_utils.bunch import add_particle_bunch_file
     from scipy import interpolate
 
     position_m, norm_density = read_density("density_1_inlet_spacers.txt")
 
-    # interp_z_min = position_m.min()
-    # interp_z_max = position_m.max()
+    interp_z_min = position_m.min()
+    interp_z_max = position_m.max()
 
     rho = interpolate.interp1d(
         position_m, norm_density, bounds_error=False, fill_value=(0.0, 0.0)
@@ -292,59 +240,50 @@ def run_fbpic(job: Job) -> None:
         n = np.ones_like(z)
 
         # only compute n if z is inside the interpolation bounds
-        # n = np.where(np.logical_and(z > interp_z_min, z < interp_z_max), rho(z), n)
+        n = np.where(np.logical_and(z > interp_z_min, z < interp_z_max), rho(z), n)
 
         # Make linear ramp
-        # n = np.where(
-        #     z < job.sp.ramp_start + job.sp.ramp_length,
-        #     (z - job.sp.ramp_start) / job.sp.ramp_length * rho(interp_z_min),
-        #     n,
-        # )
+        n = np.where(
+            z < job.sp.ramp_start + job.sp.ramp_length,
+            (z - job.sp.ramp_start) / job.sp.ramp_length * rho(interp_z_min),
+            n,
+        )
 
         # Supress density before the ramp
-        # n = np.where(z < job.sp.ramp_start, 0.0, n)
+        n = np.where(z < job.sp.ramp_start, 0.0, n)
 
-        n = rho(z)
         return n
 
     # plot density profile for checking
     all_z = np.linspace(job.sp.zmin, job.sp.p_zmax, 1000)
     dens = dens_func(all_z, 0.0)
 
-    width_inch = job.sp.p_zmax / 1e-5
-    major_locator = pyplot.MultipleLocator(10)
-    minor_locator = pyplot.MultipleLocator(5)
-    major_locator.MAXTICKS = 10000
-    minor_locator.MAXTICKS = 10000
-
     def mark_on_plot(*, ax, parameter: str, y=1.1):
         ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
         ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
         return ax
 
-    fig, ax = pyplot.subplots(figsize=(width_inch, 4.8))
+    fig, ax = pyplot.subplots(figsize=(30, 4.8))
     ax.plot(all_z * 1e6, dens)
     ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
     ax.set_ylim(-0.1, 1.2)
     ax.set_xlim(job.sp.zmin * 1e6 - 20, job.sp.p_zmax * 1e6 + 20)
     ax.set_ylabel("Density profile $n$")
-    ax.xaxis.set_major_locator(major_locator)
-    ax.xaxis.set_minor_locator(minor_locator)
 
     mark_on_plot(ax=ax, parameter="zmin")
     mark_on_plot(ax=ax, parameter="zmax")
     mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
-    # mark_on_plot(ax=ax, parameter="ramp_start", y=0.7)
+    mark_on_plot(ax=ax, parameter="ramp_start", y=0.7)
     mark_on_plot(ax=ax, parameter="L_interact")
     mark_on_plot(ax=ax, parameter="p_zmax")
 
-    # ax.annotate(text="ramp_start + ramp_length", xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
-    #             xycoords="data")
-    # ax.axvline(x=job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, linestyle="--", color="red")
+    ax.annotate(text="ramp_start + ramp_length", xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
+                xycoords="data")
+    ax.axvline(x=job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, linestyle="--", color="red")
 
-    # ax.fill_between(all_z * 1e6, dens, alpha=0.5)
+    ax.fill_between(all_z * 1e6, dens, alpha=0.5)
 
-    # fig.savefig(job.fn("check_density.png"))
+    fig.savefig(job.fn("check_density.png"))
 
     # redirect stdout to "stdout.txt"
     # orig_stdout = sys.stdout
@@ -360,7 +299,7 @@ def run_fbpic(job: Job) -> None:
         job.sp.Nm,
         job.sp.dt,
         zmin=job.sp.zmin,
-        boundaries={"z": "open", "r": "reflective"},
+        boundaries={"z": "open", "r": "open"},
         n_order=-1,
         use_cuda=True,
         verbose_level=2,
@@ -395,6 +334,7 @@ def run_fbpic(job: Job) -> None:
 
     # Track electrons, useful for betatron radiation
     # elec.track(sim.comm)
+
     # The electron beam
     # L0 = 100.0e-6  # Position at which the beam should be "unfreezed"
     Qtot = 200.0e-12  # Charge in Coulomb
@@ -406,7 +346,7 @@ def run_fbpic(job: Job) -> None:
         m=m_e,
         filename="exp_4deg.txt",
         n_physical_particles=Qtot / q_e,
-        z_off=1798e-6,
+        z_off=-1900e-6,
         # z_injection_plane=L0,
     )
 
@@ -444,44 +384,6 @@ def run_fbpic(job: Job) -> None:
 ############
 # PLOTTING #
 ############
-
-
-
-
-def particle_energy_histogram(
-        tseries: OpenPMDTimeSeries, it: int,
-        energy_min=1, energy_max=800, delta_energy=1, cutoff=35,  # CHANGEME
-):
-    """
-    Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
-
-    :param tseries: whole simulation time series
-    :param it: time step in the simulation
-    :param energy_min: lower energy threshold (MeV)
-    :param energy_max: upper energy threshold (MeV)
-    :param delta_energy: size of each energy bin (MeV)
-    :param cutoff: upper threshold for the histogram, in pC / MeV
-    :return: histogram values and bin edges
-    """
-    nbins = (energy_max - energy_min) // delta_energy
-    energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
-
-    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=it, species="bunch")
-    energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
-
-    # Explanation of weights:
-    #     1. convert electron charge from C to pC (factor 1e12)
-    #     2. multiply by weight w to get real number of electrons
-    #     3. divide by energy bin size delta_energy to get charge / MeV
-    hist, _ = np.histogram(
-        energy, bins=energy_bins, weights=q_e * 1e12 / delta_energy * w
-    )
-
-    # cut off histogram
-    np.clip(hist, a_min=None, a_max=cutoff, out=hist)
-
-    return hist, energy_bins, nbins
-
 
 def field_snapshot(
         tseries: OpenPMDTimeSeries,
@@ -545,7 +447,6 @@ def field_snapshot(
 @Project.operation
 @Project.pre(path_exists(os.path.join("diags", "rhos")))
 @Project.pre.after(run_fbpic)
-@Project.post(are_files(("all_hist.txt", "hist_edges.txt")))
 @Project.post(are_rho_pngs)
 def post_process_results(job: Job) -> None:
     """
@@ -572,31 +473,9 @@ def post_process_results(job: Job) -> None:
     rho_path: Union[bytes, str] = os.path.join(job.ws, "diags", "rhos")
 
     time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
-    number_of_iterations: int = time_series.iterations.size
-
-    # Do a mock histogram in order to get the number of bins
-    _, _, nrbins = particle_energy_histogram(
-        tseries=time_series,
-        it=0,
-    )
-    all_hist = np.empty(shape=(number_of_iterations, nrbins), dtype=np.float64)
-    hist_edges = np.empty(shape=(nrbins + 1,), dtype=np.float64)
-
 
     # loop through all the iterations in the job's time series
-    for idx, it in enumerate(time_series.iterations):
-        it_time = it * job.sp.dt
-
-        # generate 1D energy histogram
-        energy_hist, bin_edges, _ = particle_energy_histogram(
-            tseries=time_series,
-            it=it,
-        )
-        # build up arrays for 2D energy histogram
-        all_hist[idx, :] = energy_hist
-        if idx == 0:  # only save the first one
-            hist_edges[:] = bin_edges
-
+    for it in time_series.iterations:
         # save "rho{it:06d}.png"
         field_snapshot(
             tseries=time_series,
@@ -615,14 +494,6 @@ def post_process_results(job: Job) -> None:
     # multiply by electron charge -q_e to get (N e) / V
     # so we get Q / N e, which is C/C, i.e. dimensionless
     # Note: one can also normalize by the critical density n_c
-
-
-    np.savetxt(
-        job.fn("all_hist.txt"),
-        all_hist,
-        header="One iteration per row, containing the energy histogram.",
-    )
-    np.savetxt(job.fn("hist_edges.txt"), hist_edges, header="Energy histogram bins.")
 
 
 def add_create_dir_workflow(path: str) -> None:
