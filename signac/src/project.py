@@ -289,6 +289,7 @@ def run_fbpic(job: Job) -> None:
     # orig_stdout = sys.stdout
     # f = open(job.fn("stdout.txt"), "w")
     # sys.stdout = f
+    # FIXME
 
     # Initialize the simulation object
     sim = Simulation(
@@ -332,10 +333,8 @@ def run_fbpic(job: Job) -> None:
         p_nt=job.sp.p_nt,
     )
 
-    # Track electrons, useful for betatron radiation
-    # elec.track(sim.comm)
-
     # The electron beam
+    # TODO should this be used?
     # L0 = 100.0e-6  # Position at which the beam should be "unfreezed"
     Qtot = 200.0e-12  # Charge in Coulomb
 
@@ -347,7 +346,6 @@ def run_fbpic(job: Job) -> None:
         filename="exp_4deg.txt",
         n_physical_particles=Qtot / q_e,
         z_off=-1900e-6,
-        # z_injection_plane=L0,
     )
 
     # Configure the moving window
@@ -363,10 +361,8 @@ def run_fbpic(job: Job) -> None:
         ParticleDiagnostic(
             period=job.sp.diag_period,
             species={"electrons": plasma_elec, "bunch": bunch},
-            # select={"uz": [1., None]},
             comm=sim.comm,
             write_dir=write_dir,
-            # particle_data=["momentum", "weighting"]
         ),
     ]
 
@@ -379,6 +375,7 @@ def run_fbpic(job: Job) -> None:
     # redirect stdout back and close "stdout.txt"
     # sys.stdout = orig_stdout
     # f.close()
+    # FIXME
 
 
 ############
