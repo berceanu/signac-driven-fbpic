@@ -675,56 +675,6 @@ def generate_movie(job: Job) -> None:
     sh(command, shell=True)
 
 
-def add_plot_snapshots_workflow(iteration: int) -> None:
-    """
-    Adds ``plot_snapshots`` function(s) to the project workflow, for each value of ``iteration``.
-
-    :param iteration: iteration number to pass to ``plot_snapshots`` and its conditions
-    """
-
-    @Project.operation(f"plot_snapshots_{iteration:06d}")
-    @Project.pre.after(run_fbpic)
-    @Project.post(
-        are_files(
-            (
-                    f"E{iteration:06d}.png",
-                    # f"hist{iteration:06d}.png",
-            )
-        )
-    )
-    def plot_snapshots(job: Job) -> None:
-        """
-        Plot a snapshot of
-
-        a. the electric field Ex
-        b. the 1D weighted particle energy histogram
-
-        corresponding to ``iteration``.
-
-        :param job: the job instance is a handle to the data of a unique statepoint
-        """
-        h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
-        time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(
-            h5_path, check_all_files=False
-        )
-
-        # plot electric field and save to disk
-        field_snapshot(
-            tseries=time_series,
-            it=iteration,
-            field_name="E",
-            coord="x",
-            normalization_factor=1.0,
-            path=job.ws,
-            zlabel=r"$E_x/E_0$",
-            vmin=-4,  # CHANGEME
-            vmax=4,  # CHANGEME
-            hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
-        )
-
-
-for iteration_number in (0,):  # add more numbers here
-    add_plot_snapshots_workflow(iteration=iteration_number)
 
 if __name__ == "__main__":
     logging.basicConfig(
