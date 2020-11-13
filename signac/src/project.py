@@ -556,3 +556,4 @@ if __name__ == "__main__":
     Project().main()  # run the whole signac project workflow
 
     logger.info("==RUN FINISHED==")
+    # TODO remove trash
