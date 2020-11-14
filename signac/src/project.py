@@ -471,7 +471,7 @@ def post_process_results(job: Job) -> None:
             path=rho_path,
             zlabel=r"$n/n_e$",
             vmin=0,
-            vmax=2,  # CHANGEME
+            vmax=1,  # CHANGEME
             hslice_val=0,
         )
 
