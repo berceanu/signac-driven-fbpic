@@ -451,7 +451,7 @@ def post_process_results(job: Job) -> None:
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
 
-    c. save a snapshot of the plasma density field ``rho`` to {job_dir}/diags/rhos/rho{it:06d}.png
+    a. save a snapshot of the plasma density field ``rho`` to {job_dir}/diags/rhos/rho{it:06d}.png
 
     :param job: the job instance is a handle to the data of a unique statepoint
     """
