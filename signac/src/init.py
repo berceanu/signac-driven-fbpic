@@ -4,6 +4,7 @@
 Iterates over all defined state points and initializes
 the associated job workspace directories."""
 import logging
+import pathlib
 
 import math
 import shutil
@@ -76,6 +77,9 @@ def main():
             "density_1_inlet_spacers.txt", job.fn("density_1_inlet_spacers.txt")
         )
         shutil.copy("exp_4deg.txt", job.fn("exp_4deg.txt"))
+
+        p = pathlib.Path(job.ws)
+        pathlib.Path(p / "diags" / "rhos").mkdir(parents=True, exist_ok=True)
 
 
 if __name__ == "__main__":

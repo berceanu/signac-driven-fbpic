@@ -452,9 +452,6 @@ def post_process_results(job: Job) -> None:
 
     time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
 
-    full_path = os.path.join(job.ws, os.path.join("diags", "rhos"))
-    os.mkdir(full_path)
-
     # loop through all the iterations in the job's time series
     for it in time_series.iterations:
         # save "rho{it:06d}.png"
