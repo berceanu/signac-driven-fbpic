@@ -414,7 +414,7 @@ def field_snapshot(
     :return: saves field plot image to disk
     """
     if chop is None:  # how much to cut out from simulation domain
-        chop = [40, -20, 15, -15]  # CHANGEME
+        chop = [0, 0, 0, 0]  # CHANGEME
 
     field, info = tseries.get_field(
         field=field_name, coord=coord, iteration=it, m=m, theta=theta
