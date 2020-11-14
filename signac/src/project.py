@@ -69,16 +69,6 @@ class OdinEnvironment(DefaultSlurmEnvironment):
 #####################
 
 
-def are_files(file_names: Iterable[str]) -> Callable[[Job], bool]:
-    """Check if given file names are in the ``job`` dir.
-    Useful for pre- and post- operation conditions.
-
-    :param file_names: iterable containing file names
-    :return: anonymous function that does the check
-    """
-    return lambda job: all(job.isfile(fn) for fn in file_names)
-
-
 def path_exists(path: str) -> Callable[[Job], bool]:
     """
     Checks if relative ``path`` exists inside the job's workspace folder.
@@ -449,19 +439,6 @@ def post_process_results(job: Job) -> None:
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
 
-    a. compute
-
-        1. the iteration time ``it_time``
-        2. position of the laser pulse peak ``z_0``
-        3. normalized vector potential ``a_0``
-        4. beam waist ``w_0``
-        5. spatial pulse length ``c_tau``
-
-    and write results to "diags.txt".
-
-    b. compute the weighted particle energy histogram and save it to "all_hist.txt",
-    and the histogram bins to "hist_edges.txt"
-
     c. save a snapshot of the plasma density field ``rho`` to {job_dir}/diags/rhos/rho{it:06d}.png
 
     :param job: the job instance is a handle to the data of a unique statepoint
@@ -556,4 +533,4 @@ if __name__ == "__main__":
     Project().main()  # run the whole signac project workflow
 
     logger.info("==RUN FINISHED==")
-    # TODO remove trash
+    # TODO remove src/trash/
