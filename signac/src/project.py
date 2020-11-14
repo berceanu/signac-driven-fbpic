@@ -16,7 +16,7 @@ import os
 import sys
 import subprocess
 import glob
-from typing import List, Optional, Union, Callable
+from typing import List, Optional, Union
 from reader import read_density
 
 import numpy as np
@@ -73,17 +73,6 @@ class OdinEnvironment(DefaultSlurmEnvironment):
 #####################
 
 
-def path_exists(path: str) -> Callable[[Job], bool]:
-    """
-    Checks if relative ``path`` exists inside the job's workspace folder.
-    Useful for pre- and post- operation conditions.
-
-    :param path: relative path, eg. dir1/dir2
-    :return: anonymous function that does the check
-    """
-    return lambda job: os.path.isdir(os.path.join(job.ws, path))
-
-
 def sh(*cmd, **kwargs) -> str:
     """
     Run the command ``cmd`` in the shell.
@@ -130,6 +119,9 @@ class Project(FlowProject):
     """
 
     pass
+
+
+ex = Project.make_group(name="ex")
 
 
 ####################
@@ -199,8 +191,9 @@ def are_rho_pngs(job: Job) -> bool:
     return set(files) == set(pngs)
 
 
-@Project.operation
+@ex.with_directives(directives=dict(ngpu=1))
 @directives(ngpu=1)
+@Project.operation
 @Project.post(fbpic_ran)
 def run_fbpic(job: Job) -> None:
     """
@@ -442,8 +435,8 @@ def field_snapshot(
     plot.canvas.print_figure(filename)
 
 
+@ex
 @Project.operation
-@Project.pre(path_exists(os.path.join("diags", "rhos")))
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
 def post_process_results(job: Job) -> None:
@@ -458,6 +451,9 @@ def post_process_results(job: Job) -> None:
     rho_path: Union[bytes, str] = os.path.join(job.ws, "diags", "rhos")
 
     time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
+
+    full_path = os.path.join(job.ws, os.path.join("diags", "rhos"))
+    os.mkdir(full_path)
 
     # loop through all the iterations in the job's time series
     for it in time_series.iterations:
@@ -481,39 +477,8 @@ def post_process_results(job: Job) -> None:
     # Note: one can also normalize by the critical density n_c
 
 
-def add_create_dir_workflow(path: str) -> None:
-    """
-    Adds ``create_dir`` function(s) to the project workflow, for each value of ``path``.
-    Can be called inside a loop, for multiple values of ``path``.
-    For details, see `this recipe <https://github.com/glotzerlab/signac-docs/blob/master/docs/source/recipes.rst#how-to-define-parameter-dependent-operations>`_
-
-    :param path: path to pass to ``create_dir``, and its pre- and post-conditions
-    """
-
-    # Make sure to make the operation-name a function of the parameter(s)!
-    @Project.operation(f"create_dir_{path}".replace("/", "_"))
-    @Project.pre(path_exists(os.path.dirname(path)))
-    @Project.post(path_exists(path))
-    def create_dir(job: Job) -> None:
-        """
-        Creates new ``path`` inside the job directory.
-
-        :param job: the job instance is a handle to the data of a unique statepoint
-        """
-        full_path = os.path.join(job.ws, path)
-        try:
-            os.mkdir(full_path)
-        except OSError:
-            logger.warning("Creation of the directory %s failed" % full_path)
-        else:
-            logger.info("Successfully created the directory %s " % full_path)
-
-
-add_create_dir_workflow(path=os.path.join("diags", "rhos"))
-
-
+@ex
 @Project.operation
-@Project.pre(path_exists(os.path.join("diags", "rhos")))
 @Project.pre(are_rho_pngs)
 @Project.post.isfile("rho.mp4")
 def generate_movie(job: Job) -> None:
