@@ -13,6 +13,7 @@ Note: All the lines marked with the CHANGEME comment contain customizable parame
 import logging
 import math
 import os
+import sys
 import subprocess
 import glob
 from typing import List, Optional, Union, Callable
@@ -286,10 +287,9 @@ def run_fbpic(job: Job) -> None:
     fig.savefig(job.fn("check_density.png"))
 
     # redirect stdout to "stdout.txt"
-    # orig_stdout = sys.stdout
-    # f = open(job.fn("stdout.txt"), "w")
-    # sys.stdout = f
-    # FIXME
+    orig_stdout = sys.stdout
+    f = open(job.fn("stdout.txt"), "w")
+    sys.stdout = f
 
     # Initialize the simulation object
     sim = Simulation(
@@ -376,9 +376,8 @@ def run_fbpic(job: Job) -> None:
     sim.step(job.sp.N_step, show_progress=True)
 
     # redirect stdout back and close "stdout.txt"
-    # sys.stdout = orig_stdout
-    # f.close()
-    # FIXME
+    sys.stdout = orig_stdout
+    f.close()
 
 
 ############
