@@ -5,10 +5,10 @@ Iterates over all defined state points and initializes
 the associated job workspace directories."""
 import logging
 
-import signac
-import unyt as u
 import math
 import shutil
+import unyt as u
+import signac
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
@@ -17,7 +17,10 @@ NUMBER_OF_H5 = 200
 
 def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
-    project = signac.init_project("fbpic-project", workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/")
+    project = signac.init_project(
+        "fbpic-project",
+        workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
+    )
 
     for _ in range(1):
         sp = dict(
@@ -57,8 +60,10 @@ def main():
         )
 
         sp["L_interact"] = sp["p_zmax"] - sp["p_zmin"]
-        sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value('m/s')
-        sp["T_interact"] = (sp["L_interact"] + (sp["zmax"] - sp["zmin"])) / u.clight.to_value('m/s')
+        sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value("m/s")
+        sp["T_interact"] = (
+            sp["L_interact"] + (sp["zmax"] - sp["zmin"])
+        ) / u.clight.to_value("m/s")
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
         sp["diag_period"] = math.ceil(sp["N_step"] / NUMBER_OF_H5)
 
@@ -67,7 +72,9 @@ def main():
     project.write_statepoints()
 
     for job in project:
-        shutil.copy("density_1_inlet_spacers.txt", job.fn("density_1_inlet_spacers.txt"))
+        shutil.copy(
+            "density_1_inlet_spacers.txt", job.fn("density_1_inlet_spacers.txt")
+        )
         shutil.copy("exp_4deg.txt", job.fn("exp_4deg.txt"))
 
 

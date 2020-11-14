@@ -14,9 +14,9 @@ import logging
 import math
 import os
 import subprocess
-import sys
 import glob
-from typing import List, Optional, Tuple, Union, Callable, Iterable
+from typing import List, Optional, Union, Callable
+from reader import read_density
 
 import numpy as np
 import sliceplots
@@ -26,7 +26,6 @@ from matplotlib import pyplot
 from openpmd_viewer import OpenPMDTimeSeries
 from scipy.constants import physical_constants
 from signac.contrib.job import Job
-from reader import read_density
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -42,26 +41,30 @@ class OdinEnvironment(DefaultSlurmEnvironment):
     """Environment profile for the LGED cluster.
     https://docs.signac.io/projects/flow/en/latest/supported_environments/comet.html#flow.environments.xsede.CometEnvironment
     """
-    hostname_pattern = r'.*\.ra5\.eli-np\.ro$'
-    template = 'odin.sh'
+
+    hostname_pattern = r".*\.ra5\.eli-np\.ro$"
+    template = "odin.sh"
     cores_per_node = 48
-    mpi_cmd = 'mpiexec'
+    mpi_cmd = "mpiexec"
 
     @classmethod
     def add_args(cls, parser):
         super(OdinEnvironment, cls).add_args(parser)
         parser.add_argument(
-            '--partition',
-            choices=['cpu', 'gpu'],
-            default='gpu',
-            help="Specify the partition to submit to.")
+            "--partition",
+            choices=["cpu", "gpu"],
+            default="gpu",
+            help="Specify the partition to submit to.",
+        )
 
         parser.add_argument(
-            '--job-output',
-            help=('What to name the job output file. '
-                  'If omitted, uses the system default '
-                  '(slurm default is "slurm-%%j.out").'))
-
+            "--job-output",
+            help=(
+                "What to name the job output file. "
+                "If omitted, uses the system default "
+                '(slurm default is "slurm-%%j.out").'
+            ),
+        )
 
 
 #####################
@@ -93,17 +96,17 @@ def sh(*cmd, **kwargs) -> str:
         subprocess.Popen(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs
         )
-            .communicate()[0]
-            .decode("utf-8")
+        .communicate()[0]
+        .decode("utf-8")
     )
     logger.info(stdout)
     return stdout
 
 
 def ffmpeg_command(
-        frame_rate: float = 10.0,  # CHANGEME
-        input_files: str = "pic%04d.png",  # pic0001.png, pic0002.png, ...
-        output_file: str = "test.mp4",
+    frame_rate: float = 10.0,  # CHANGEME
+    input_files: str = "pic%04d.png",  # pic0001.png, pic0002.png, ...
+    output_file: str = "test.mp4",
 ) -> str:
     """
     Build up the command string for running ``ffmpeg``.
@@ -267,9 +270,16 @@ def run_fbpic(job: Job) -> None:
     mark_on_plot(ax=ax, parameter="L_interact")
     mark_on_plot(ax=ax, parameter="p_zmax")
 
-    ax.annotate(text="ramp_start + ramp_length", xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
-                xycoords="data")
-    ax.axvline(x=job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, linestyle="--", color="red")
+    ax.annotate(
+        text="ramp_start + ramp_length",
+        xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
+        xycoords="data",
+    )
+    ax.axvline(
+        x=job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6,
+        linestyle="--",
+        color="red",
+    )
 
     ax.fill_between(all_z * 1e6, dens, alpha=0.5)
 
@@ -345,8 +355,11 @@ def run_fbpic(job: Job) -> None:
     write_dir = os.path.join(job.ws, "diags")
     sim.diags = [
         FieldDiagnostic(
-            period=job.sp.diag_period, fldobject=sim.fld, comm=sim.comm, write_dir=write_dir,
-            fieldtypes=["rho", "E"]
+            period=job.sp.diag_period,
+            fldobject=sim.fld,
+            comm=sim.comm,
+            write_dir=write_dir,
+            fieldtypes=["rho", "E"],
         ),
         ParticleDiagnostic(
             period=job.sp.diag_period,
@@ -372,17 +385,18 @@ def run_fbpic(job: Job) -> None:
 # PLOTTING #
 ############
 
+
 def field_snapshot(
-        tseries: OpenPMDTimeSeries,
-        it: int,
-        field_name: str,
-        normalization_factor=1,
-        coord: Optional[str] = None,
-        m="all",
-        theta=0.0,
-        chop: Optional[List[float]] = None,
-        path="./",
-        **kwargs,
+    tseries: OpenPMDTimeSeries,
+    it: int,
+    field_name: str,
+    normalization_factor=1,
+    coord: Optional[str] = None,
+    m="all",
+    theta=0.0,
+    chop: Optional[List[float]] = None,
+    path="./",
+    **kwargs,
 ) -> None:
     """
     Plot the ``field_name`` field from ``tseries`` at step ``iter``.
@@ -427,8 +441,6 @@ def field_snapshot(
 
     filename = os.path.join(path, f"{field_name}{it:06d}.png")
     plot.canvas.print_figure(filename)
-
-
 
 
 @Project.operation
@@ -501,7 +513,6 @@ def add_create_dir_workflow(path: str) -> None:
 add_create_dir_workflow(path=os.path.join("diags", "rhos"))
 
 
-
 @Project.operation
 @Project.pre(path_exists(os.path.join("diags", "rhos")))
 @Project.pre(are_rho_pngs)
@@ -518,7 +529,6 @@ def generate_movie(job: Job) -> None:
     )
 
     sh(command, shell=True)
-
 
 
 if __name__ == "__main__":
