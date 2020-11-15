@@ -176,12 +176,12 @@ def fbpic_ran(job: Job) -> bool:
 
 def are_rho_pngs(job: Job) -> bool:
     """
-    Check if all the {job_dir}/diags/rhos/rho{it:06d}.png files are present.
+    Check if all the {job_dir}/rhos/rho{it:06d}.png files are present.
 
     :param job: the job instance is a handle to the data of a unique statepoint
     :return: True if .png files are there, False otherwise
     """
-    files = os.listdir(os.path.join(job.ws, "diags", "rhos"))
+    files = os.listdir(os.path.join(job.ws, "rhos"))
 
     # estimate iteration array based on input parameters
     iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
@@ -280,9 +280,9 @@ def run_fbpic(job: Job) -> None:
     fig.savefig(job.fn("check_density.png"))
 
     # redirect stdout to "stdout.txt"
-    orig_stdout = sys.stdout
-    f = open(job.fn("stdout.txt"), "w")
-    sys.stdout = f
+    #orig_stdout = sys.stdout
+    #f = open(job.fn("stdout.txt"), "w")
+    #sys.stdout = f
 
     # Initialize the simulation object
     sim = Simulation(
@@ -369,8 +369,8 @@ def run_fbpic(job: Job) -> None:
     sim.step(job.sp.N_step, show_progress=True)
 
     # redirect stdout back and close "stdout.txt"
-    sys.stdout = orig_stdout
-    f.close()
+    #sys.stdout = orig_stdout
+    #f.close()
 
 
 ############
@@ -443,12 +443,12 @@ def post_process_results(job: Job) -> None:
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
 
-    a. save a snapshot of the plasma density field ``rho`` to {job_dir}/diags/rhos/rho{it:06d}.png
+    a. save a snapshot of the plasma density field ``rho`` to {job_dir}/rhos/rho{it:06d}.png
 
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
-    rho_path: Union[bytes, str] = os.path.join(job.ws, "diags", "rhos")
+    rho_path: Union[bytes, str] = os.path.join(job.ws, "rhos")
 
     time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
 
@@ -480,12 +480,12 @@ def post_process_results(job: Job) -> None:
 @Project.post.isfile("rho.mp4")
 def generate_movie(job: Job) -> None:
     """
-    Generate a movie from all the .png files in {job_dir}/diags/rhos/
+    Generate a movie from all the .png files in {job_dir}/rhos/
 
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     command = ffmpeg_command(
-        input_files=os.path.join(job.ws, "diags", "rhos", "rho*.png"),
+        input_files=os.path.join(job.ws, "rhos", "rho*.png"),
         output_file=job.fn("rho.mp4"),
     )
 
