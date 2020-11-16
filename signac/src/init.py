@@ -10,6 +10,7 @@ import math
 import shutil
 import unyt as u
 import signac
+import numpy as np
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
@@ -23,7 +24,7 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
 
-    for _ in range(1):
+    for ne in np.linspace(6, 4e2, 16) * 1e13 * 1e6:
         sp = dict(
             # The simulation box
             Nz=512,  # Number of gridpoints along z
@@ -37,7 +38,7 @@ def main():
             p_zmin=-100.0e-6,
             # Maximal radial position of the plasma (meters)
             p_rmax=290.0e-6,
-            n_e=5.0e14 * 1.0e6,  # Density (electrons.meters^-3)
+            n_e=ne,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
             p_nt=4,  # Number of particles per cell along theta
