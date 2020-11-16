@@ -103,9 +103,9 @@ def field_snapshot(
 
 
 if __name__ == "__main__":
-    p = pathlib.Path('/scratch/berceanu/runs/signac-driven-fbpic/workspace/17d602de872d8c1d80e178bbf3c386d6')
+    p = pathlib.Path('/scratch/berceanu/runs/signac-driven-fbpic/workspace/1f39b6d2d358860226da746c9f362d2d')
     h5_path = p / "diags" / "hdf5"
-    rho_path = pathlib.Path.cwd() / "diags" / "rhos"
+    rho_path = pathlib.Path.cwd() / "rhos"
 
     time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
     iterations = time_series.iterations
