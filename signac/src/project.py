@@ -293,6 +293,7 @@ def run_fbpic(job: Job) -> None:
     ax.fill_between(all_z * 1e6, dens, alpha=0.5)
 
     fig.savefig(job.fn("check_density.png"))
+    pyplot.close(fig)
 
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
@@ -419,6 +420,7 @@ def centroid_plot(
 
     filename = os.path.join(path, f"centroid{it:06d}.png")
     fig.savefig(filename)
+    pyplot.close(fig)
 
 
 def field_snapshot(
