@@ -191,6 +191,21 @@ def are_rho_pngs(job: Job) -> bool:
     return set(files) == set(pngs)
 
 
+def are_centroid_pngs(job: Job) -> bool:
+    """
+    :param job: the job instance is a handle to the data of a unique statepoint
+    :return: True if .png files are there, False otherwise
+    """
+    files = os.listdir(os.path.join(job.ws, "centroids"))
+
+    # estimate iteration array based on input parameters
+    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+
+    pngs = (f"centroid{it:06d}.png" for it in iterations)
+
+    return set(files) == set(pngs)
+
+
 @ex.with_directives(directives=dict(ngpu=1))
 @directives(ngpu=1)
 @Project.operation
@@ -377,6 +392,35 @@ def run_fbpic(job: Job) -> None:
 # PLOTTING #
 ############
 
+def centroid_plot(
+    tseries: OpenPMDTimeSeries,
+    it: int,
+    path="./",
+) -> None:
+    """
+    Plot a line through the centroids of each z-slice in the particle positions phase space.
+    """
+    fig, ax = pyplot.subplots(figsize=(7, 5))
+    z, x = tseries.get_particle(
+        ["z", "x"], species="bunch", iteration=it, plot=True
+    )
+
+    img = ax.get_images()[0]
+    z_min, z_max, x_min, x_max = img.get_extent()
+    hist_data = img.get_array()
+
+    r, c = np.shape(hist_data)
+    z_coords = np.linspace(z_min, z_max, c)
+    x_coords = np.linspace(x_min, x_max, r)
+    z_m, x_m = np.meshgrid(z_coords, x_coords)
+
+    centroid = np.ma.average(x_m, weights=hist_data, axis=0)
+    
+    ax.plot(z_coords, centroid)
+
+    filename = os.path.join(path, f"centroid{it:06d}.png")
+    fig.savefig(filename)
+    
 
 def field_snapshot(
     tseries: OpenPMDTimeSeries,
@@ -439,16 +483,16 @@ def field_snapshot(
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
+@Project.post(are_centroid_pngs)
 def post_process_results(job: Job) -> None:
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
-
-    a. save a snapshot of the plasma density field ``rho`` to {job_dir}/rhos/rho{it:06d}.png
 
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
     rho_path: Union[bytes, str] = os.path.join(job.ws, "rhos")
+    centroid_path: Union[bytes, str] = os.path.join(job.ws, "centroids")
 
     time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
 
@@ -462,10 +506,9 @@ def post_process_results(job: Job) -> None:
             normalization_factor=1.0 / (-q_e * job.sp.n_e),
             path=rho_path,
             zlabel=r"$n/n_e$",
-            vmin=0,
-            vmax=1,  # CHANGEME
             hslice_val=0,
         )
+        centroid_plot(tseries=time_series, it=it, path=centroid_path)
 
     # the field "rho" has (SI) units of charge/volume (Q/V), C/(m^3)
     # the initial density n_e has units of N/V, N = electron number
@@ -478,7 +521,7 @@ def post_process_results(job: Job) -> None:
 @Project.operation
 @Project.pre(are_rho_pngs)
 @Project.post.isfile("rho.mp4")
-def generate_movie(job: Job) -> None:
+def generate_rho_movie(job: Job) -> None:
     """
     Generate a movie from all the .png files in {job_dir}/rhos/
 
@@ -487,6 +530,21 @@ def generate_movie(job: Job) -> None:
     command = ffmpeg_command(
         input_files=os.path.join(job.ws, "rhos", "rho*.png"),
         output_file=job.fn("rho.mp4"),
+    )
+
+    sh(command, shell=True)
+
+@ex
+@Project.operation
+@Project.pre(are_centroid_pngs)
+@Project.post.isfile("centroid.mp4")
+def generate_centroid_movie(job: Job) -> None:
+    """
+    :param job: the job instance is a handle to the data of a unique statepoint
+    """
+    command = ffmpeg_command(
+        input_files=os.path.join(job.ws, "centroids", "centroid*.png"),
+        output_file=job.fn("centroid.mp4"),
     )
 
     sh(command, shell=True)

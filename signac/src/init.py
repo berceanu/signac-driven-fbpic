@@ -27,12 +27,12 @@ def main():
     for ne in np.linspace(6, 4e2, 16) * 1e13 * 1e6:
         sp = dict(
             # The simulation box
-            Nz=512,  # Number of gridpoints along z
+            Nz=2048,  # Number of gridpoints along z
             zmin=-4000.0e-6,  # Left end of the simulation box (meters)
             zmax=-200.0e-6,  # Right end of the simulation box (meters)
-            Nr=64,  # Number of gridpoints along r
+            Nr=256,  # Number of gridpoints along r
             rmax=300.0e-6,  # Length of the box along r (meters)
-            Nm=2,  # Number of modes used
+            Nm=5,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=-100.0e-6,
@@ -41,7 +41,7 @@ def main():
             n_e=ne,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
-            p_nt=4,  # Number of particles per cell along theta
+            p_nt=6,  # Number of particles per cell along theta
             # do not change below this line ##############
             p_zmax=68400.0e-6,  # Position of the end of the plasma (meters)
             # The density profile
@@ -81,6 +81,7 @@ def main():
 
         p = pathlib.Path(job.ws)
         pathlib.Path(p / "rhos").mkdir(parents=True, exist_ok=True)
+        pathlib.Path(p / "centroids").mkdir(parents=True, exist_ok=True)
 
 
 if __name__ == "__main__":
