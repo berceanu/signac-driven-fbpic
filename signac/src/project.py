@@ -392,6 +392,7 @@ def run_fbpic(job: Job) -> None:
 # PLOTTING #
 ############
 
+
 def centroid_plot(
     tseries: OpenPMDTimeSeries,
     it: int,
@@ -401,9 +402,7 @@ def centroid_plot(
     Plot a line through the centroids of each z-slice in the particle positions phase space.
     """
     fig, ax = pyplot.subplots(figsize=(7, 5))
-    z, x = tseries.get_particle(
-        ["z", "x"], species="bunch", iteration=it, plot=True
-    )
+    z, x = tseries.get_particle(["z", "x"], species="bunch", iteration=it, plot=True)
 
     img = ax.get_images()[0]
     z_min, z_max, x_min, x_max = img.get_extent()
@@ -415,12 +414,12 @@ def centroid_plot(
     z_m, x_m = np.meshgrid(z_coords, x_coords)
 
     centroid = np.ma.average(x_m, weights=hist_data, axis=0)
-    
+
     ax.plot(z_coords, centroid)
 
     filename = os.path.join(path, f"centroid{it:06d}.png")
     fig.savefig(filename)
-    
+
 
 def field_snapshot(
     tseries: OpenPMDTimeSeries,
@@ -533,6 +532,7 @@ def generate_rho_movie(job: Job) -> None:
     )
 
     sh(command, shell=True)
+
 
 @ex
 @Project.operation
