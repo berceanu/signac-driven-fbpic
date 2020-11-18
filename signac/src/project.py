@@ -17,7 +17,7 @@ import sys
 import subprocess
 import glob
 from typing import List, Optional, Union
-from reader import read_density
+from density_reader import read_density
 
 import numpy as np
 import sliceplots
@@ -507,6 +507,8 @@ def post_process_results(job: Job) -> None:
             normalization_factor=1.0 / (-q_e * job.sp.n_e),
             path=rho_path,
             zlabel=r"$n/n_e$",
+            vmin=0.0,
+            vmax=1.0,  # CHANGEME
             hslice_val=0,
         )
         centroid_plot(tseries=time_series, it=it, path=centroid_path)

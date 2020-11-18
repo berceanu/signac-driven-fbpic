@@ -32,4 +32,3 @@ if __name__ == "__main__":
     position_m, norm_density = read_density("../density_1_inlet_spacers.txt")
 
     print(position_m*1e6)
-    # print(norm_density)

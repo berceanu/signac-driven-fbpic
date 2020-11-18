@@ -4,7 +4,7 @@ import signac
 project = signac.get_project()
 
 
-def copy_append_hash(path_to_fname, dst_dir):
+def copy_with_hash(path_to_fname, dst_dir):
     fname = path_to_fname.stem
     ext = path_to_fname.suffix
 
@@ -23,4 +23,4 @@ if __name__ == "__main__":
     for job in project:
         for fname in ("rho.mp4", "centroid.mp4"):
             src = pathlib.Path(job.fn(fname))
-            copy_append_hash(src, out_path)
+            copy_with_hash(src, out_path)
