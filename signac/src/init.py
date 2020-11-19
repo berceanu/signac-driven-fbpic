@@ -27,12 +27,12 @@ def main():
     for ne in np.linspace(6, 4e2, 16) * 1e13 * 1e6:
         sp = dict(
             # The simulation box
-            Nz=2048,  # Number of gridpoints along z
+            Nz=4096,  # Number of gridpoints along z
             zmin=-4000.0e-6,  # Left end of the simulation box (meters)
             zmax=-200.0e-6,  # Right end of the simulation box (meters)
             Nr=512,  # Number of gridpoints along r
             rmax=300.0e-6,  # Length of the box along r (meters)
-            Nm=5,  # Number of modes used
+            Nm=4,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=-100.0e-6,
