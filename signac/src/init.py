@@ -30,7 +30,7 @@ def main():
             Nz=2048,  # Number of gridpoints along z
             zmin=-4000.0e-6,  # Left end of the simulation box (meters)
             zmax=-200.0e-6,  # Right end of the simulation box (meters)
-            Nr=256,  # Number of gridpoints along r
+            Nr=512,  # Number of gridpoints along r
             rmax=300.0e-6,  # Length of the box along r (meters)
             Nm=5,  # Number of modes used
             # The particles

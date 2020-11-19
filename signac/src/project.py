@@ -355,6 +355,7 @@ def run_fbpic(job: Job) -> None:
         filename="exp_4deg.txt",
         n_physical_particles=Qtot / q_e,
         z_off=-1900e-6,
+        z_injection_plane=job.sp.p_zmin,
     )
 
     # Configure the moving window
