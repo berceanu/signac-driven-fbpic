@@ -17,7 +17,6 @@ import sys
 import subprocess
 import glob
 from typing import List, Optional, Union
-from density_reader import read_density
 
 import numpy as np
 import sliceplots
@@ -191,21 +190,6 @@ def are_rho_pngs(job: Job) -> bool:
     return set(files) == set(pngs)
 
 
-def are_centroid_pngs(job: Job) -> bool:
-    """
-    :param job: the job instance is a handle to the data of a unique statepoint
-    :return: True if .png files are there, False otherwise
-    """
-    files = os.listdir(os.path.join(job.ws, "centroids"))
-
-    # estimate iteration array based on input parameters
-    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
-
-    pngs = (f"centroid{it:06d}.png" for it in iterations)
-
-    return set(files) == set(pngs)
-
-
 @ex.with_directives(directives=dict(ngpu=1))
 @directives(ngpu=1)
 @Project.operation
@@ -218,19 +202,8 @@ def run_fbpic(job: Job) -> None:
     """
     from fbpic.main import Simulation
     from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
-    from fbpic.lpa_utils.bunch import add_particle_bunch_file
-    from scipy import interpolate
 
-    position_m, norm_density = read_density("density_1_inlet_spacers.txt")
-
-    interp_z_min = position_m.min()
-    interp_z_max = position_m.max()
-
-    rho = interpolate.interp1d(
-        position_m, norm_density, bounds_error=False, fill_value=(0.0, 0.0)
-    )
-
-    # The density profile
+    # The density profile FIXME
     def dens_func(z: np.ndarray, r: np.ndarray) -> np.ndarray:
         """Returns relative density at position z and r.
 
@@ -342,22 +315,6 @@ def run_fbpic(job: Job) -> None:
         p_nt=job.sp.p_nt,
     )
 
-    # The electron beam
-    # TODO should this be used?
-    # L0 = 100.0e-6  # Position at which the beam should be "unfreezed"
-    Qtot = 200.0e-12  # Charge in Coulomb
-
-    # particles beam from txt file
-    bunch = add_particle_bunch_file(
-        sim=sim,
-        q=-q_e,
-        m=m_e,
-        filename="exp_4deg.txt",
-        n_physical_particles=Qtot / q_e,
-        z_off=-1900e-6,
-        z_injection_plane=job.sp.p_zmin,
-    )
-
     # Configure the moving window
     sim.set_moving_window(v=c_light)
 
@@ -393,35 +350,6 @@ def run_fbpic(job: Job) -> None:
 ############
 # PLOTTING #
 ############
-
-
-def centroid_plot(
-    tseries: OpenPMDTimeSeries,
-    it: int,
-    path="./",
-) -> None:
-    """
-    Plot a line through the centroids of each z-slice in the particle positions phase space.
-    """
-    fig, ax = pyplot.subplots(figsize=(7, 5))
-    z, x = tseries.get_particle(["z", "x"], species="bunch", iteration=it, plot=True)
-
-    img = ax.get_images()[0]
-    z_min, z_max, x_min, x_max = img.get_extent()
-    hist_data = img.get_array()
-
-    r, c = np.shape(hist_data)
-    z_coords = np.linspace(z_min, z_max, c)
-    x_coords = np.linspace(x_min, x_max, r)
-    z_m, x_m = np.meshgrid(z_coords, x_coords)
-
-    centroid = np.ma.average(x_m, weights=hist_data, axis=0)
-
-    ax.plot(z_coords, centroid)
-
-    filename = os.path.join(path, f"centroid{it:06d}.png")
-    fig.savefig(filename)
-    pyplot.close(fig)
 
 
 def field_snapshot(
@@ -485,7 +413,6 @@ def field_snapshot(
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
-@Project.post(are_centroid_pngs)
 def post_process_results(job: Job) -> None:
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
@@ -494,7 +421,6 @@ def post_process_results(job: Job) -> None:
     """
     h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
     rho_path: Union[bytes, str] = os.path.join(job.ws, "rhos")
-    centroid_path: Union[bytes, str] = os.path.join(job.ws, "centroids")
 
     time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
 
@@ -512,7 +438,6 @@ def post_process_results(job: Job) -> None:
             vmax=1.0,  # CHANGEME
             hslice_val=0,
         )
-        centroid_plot(tseries=time_series, it=it, path=centroid_path)
 
     # the field "rho" has (SI) units of charge/volume (Q/V), C/(m^3)
     # the initial density n_e has units of N/V, N = electron number
@@ -539,22 +464,6 @@ def generate_rho_movie(job: Job) -> None:
     sh(command, shell=True)
 
 
-@ex
-@Project.operation
-@Project.pre(are_centroid_pngs)
-@Project.post.isfile("centroid.mp4")
-def generate_centroid_movie(job: Job) -> None:
-    """
-    :param job: the job instance is a handle to the data of a unique statepoint
-    """
-    command = ffmpeg_command(
-        input_files=os.path.join(job.ws, "centroids", "centroid*.png"),
-        output_file=job.fn("centroid.mp4"),
-    )
-
-    sh(command, shell=True)
-
-
 if __name__ == "__main__":
     logging.basicConfig(
         filename=log_file_name,
@@ -567,4 +476,3 @@ if __name__ == "__main__":
     Project().main()  # run the whole signac project workflow
 
     logger.info("==RUN FINISHED==")
-    # TODO remove src/trash/
