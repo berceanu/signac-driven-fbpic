@@ -330,7 +330,7 @@ def run_fbpic(job: Job) -> None:
         ),
         ParticleDiagnostic(
             period=job.sp.diag_period,
-            species={"electrons": plasma_elec, "bunch": bunch},
+            species={"electrons": plasma_elec},
             comm=sim.comm,
             write_dir=write_dir,
         ),
@@ -435,7 +435,7 @@ def post_process_results(job: Job) -> None:
             path=rho_path,
             zlabel=r"$n/n_e$",
             vmin=0.0,
-            vmax=1.0,  # CHANGEME
+            vmax=2.0,  # CHANGEME
             hslice_val=0,
         )
 
