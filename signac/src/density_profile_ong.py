@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     ax.set_ylabel(r"Electron density (cm$^{-3}$)")
     ax.set_xlabel(r"Plasma length ($\mathrm{\mu m}$)")
-    
+
     ax.annotate(
         rf"Nozzle radius = {Nozzle_r} mm",
         xy=(gasSigmaLeft_SI, ne / 3),
