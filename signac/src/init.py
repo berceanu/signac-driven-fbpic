@@ -74,14 +74,8 @@ def main():
     project.write_statepoints()
 
     for job in project:
-        shutil.copy(
-            "density_1_inlet_spacers.txt", job.fn("density_1_inlet_spacers.txt")
-        )
-        shutil.copy("exp_4deg.txt", job.fn("exp_4deg.txt"))
-
         p = pathlib.Path(job.ws)
         pathlib.Path(p / "rhos").mkdir(parents=True, exist_ok=True)
-        pathlib.Path(p / "centroids").mkdir(parents=True, exist_ok=True)
 
 
 if __name__ == "__main__":
