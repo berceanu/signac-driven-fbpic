@@ -18,22 +18,31 @@ def dens_func(z, r):
     n : 1d array of floats
         Array of relative density, with one element per macroparticles
     """
+
+    def ramp(z, *, center, sigma, p):
+        """Gaussian-like function."""
+        return np.exp(-(((z - center) / sigma) ** p))
+
     # Allocate relative density
     n = np.ones_like(z)
 
-    # Make ramp up
-    inv_ramp_up = 1.0 / ramp_up
-    n = np.where(z < ramp_up, z * inv_ramp_up, n)
+    # before up-ramp
+    n = np.where(z < 0.0, 0.0, n)
 
-    # Make ramp down
-    inv_ramp_down = 1.0 / ramp_down
+    # Make up-ramp
     n = np.where(
-        (z >= ramp_up + plateau) & (z < ramp_up + plateau + ramp_down),
-        -(z - (ramp_up + plateau + ramp_down)) * inv_ramp_down,
+        z < center_left, ramp(z, center=center_left, sigma=sigma_left, p=power), n
+    )
+
+    # Make down-ramp
+    n = np.where(
+        (z >= center_right) & (z < center_right + 2 * sigma_right),
+        ramp(z, center=center_right, sigma=sigma_right, p=power),
         n,
     )
 
-    n = np.where(z >= ramp_up + plateau + ramp_down, 0, n)
+    # after down-ramp
+    n = np.where(z >= center_right + 2 * sigma_right, 0, n)
 
     return n
 
@@ -46,9 +55,12 @@ def mark_on_plot(*, ax, parameter, y=1.1):
 
 if __name__ == "__main__":
     # The density profile
-    ramp_up = 0.5e-3
-    plateau = 3.5e-3
-    ramp_down = 0.5e-3
+    flat_top_dist = 1000.0e-6  # plasma flat top distance
+    center_left = 1000.0e-6
+    center_right = center_left + flat_top_dist
+    sigma_left = 500.0e-6
+    sigma_right = 500.0e-6
+    power = 4.0
 
     # The simulation box
     zmax = 0.0e-6  # Length of the box along z (meters)
@@ -56,9 +68,9 @@ if __name__ == "__main__":
 
     # The particles of the plasma
     p_zmin = 0.0e-6  # Position of the beginning of the plasma (meters)
-    p_zmax = ramp_up + plateau + ramp_down
+    p_zmax = center_right + 2 * sigma_right
     p_rmax = 100.0e-6  # Maximal radial position of the plasma (meters)
-    n_e = 3.0e24  # The density in the labframe (electrons.meters^-3)
+    n_e = 5.307e18 * 1.0e6  # The density in the labframe (electrons.meters^-3)
 
     L_interact = p_zmax - p_zmin  # the plasma length
 
@@ -78,16 +90,10 @@ if __name__ == "__main__":
     mark_on_plot(ax=ax, parameter="zmin")
     mark_on_plot(ax=ax, parameter="zmax", y=0.7)
     mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
-    mark_on_plot(ax=ax, parameter="ramp_up", y=0.7)
+    mark_on_plot(ax=ax, parameter="center_left", y=0.7)
+    mark_on_plot(ax=ax, parameter="center_right", y=0.7)
     mark_on_plot(ax=ax, parameter="L_interact", y=0.7)
     mark_on_plot(ax=ax, parameter="p_zmax")
-
-    ax.annotate(
-        s="ramp_up + plateau", xy=((ramp_up + plateau) * 1e6, 1.1), xycoords="data",
-    )
-    ax.axvline(
-        x=(ramp_up + plateau) * 1e6, linestyle="--", color="red",
-    )
 
     ax.fill_between(all_z * 1e6, dens, alpha=0.5)
 

@@ -2,56 +2,73 @@ import numpy as np
 from matplotlib import pyplot
 
 
-def func1(x1, gasPower):
-    n1 = ne * np.exp(-(((x1 - gasCenterLeft_SI) / (gasSigmaLeft_SI)) ** gasPower))
-    return n1
+def dens_func(z, *, center_left, center_right, sigma_left, sigma_right, power):
+    def ramp(z, *, center, sigma, power):
+        return np.exp(-(((z - center) / sigma) ** power))
 
+    # Allocate relative density
+    n = np.ones_like(z)
 
-def func2(x2, gasPower):
-    n2 = ne * np.exp(-(((x2 - gasCenterRight_SI) / (gasSigmaRight_SI)) ** gasPower))
-    return n2
+    # before up-ramp
+    n = np.where(z < 0, 0, n)
 
+    # Make up-ramp
+    n = np.where(
+        z < center_left, ramp(z, center=center_left, sigma=sigma_left, power=power), n
+    )
 
-def func3(x3, gasPower):
-    n3 = ne * np.exp(-(((x3 - x3) / (gasSigmaRight_SI)) ** gasPower))
-    return n3
+    # Make down-ramp
+    n = np.where(
+        (z >= center_right) & (z < center_right + 2 * sigma_right),
+        ramp(z, center=center_right, sigma=sigma_right, power=power),
+        n,
+    )
+
+    # after down-ramp
+    n = np.where(z >= center_right + 2 * sigma_right, 0, n)
+
+    return n
 
 
 if __name__ == "__main__":
-    flat_top_dist = 1.0  # plasma flat top distance (mm)
-    ne = 5.307e18  # electron plasma density
+    ne = 5.307e18  # electron plasma density cm$^{-3}$
+    gasPower = 4
 
+    #  lengths in microns
+    flat_top_dist = 1000  # plasma flat top distance
     gasCenterLeft_SI = 1000
-    gasCenterRight_SI = gasCenterLeft_SI + flat_top_dist * 1000
+    gasCenterRight_SI = gasCenterLeft_SI + flat_top_dist
     gasSigmaLeft_SI = 500
     gasSigmaRight_SI = 500
-    FOCUS_POS_SI = 500
-
-    x1 = np.arange(0, gasCenterLeft_SI, 1)
-    x2 = np.arange(gasCenterRight_SI, (gasCenterRight_SI + 2 * gasSigmaRight_SI), 1)
-    x3 = np.arange(gasCenterLeft_SI, gasCenterRight_SI, 1)
 
     Nozzle_r = (gasCenterLeft_SI + gasCenterRight_SI) / 2 - gasSigmaLeft_SI
-    Nozzle_r = Nozzle_r * 0.001
-    Nozzle_r = round(Nozzle_r, 2)
+    FOCUS_POS_SI = 500 #microns
 
-    print("Nozzle radius =", Nozzle_r, "mm")
+    all_z = np.linspace(0, gasCenterRight_SI + 2 * gasSigmaRight_SI, 3001)
+    rho = dens_func(
+        all_z,
+        center_left=gasCenterLeft_SI,
+        center_right=gasCenterRight_SI,
+        sigma_left=gasSigmaLeft_SI,
+        sigma_right=gasSigmaRight_SI,
+        power=gasPower,
+    )
 
-    fig, ax = pyplot.subplots(figsize=(30, 4.8))
 
-    ax.plot(x1, func1(x1, 4), color="black")
-    ax.plot(x2, func2(x2, 4), color="black")
-    ax.plot(x3, func3(x3, 4), color="black")
+    fig, ax = pyplot.subplots(figsize=(20, 4.8))
+
+    ax.plot(all_z, ne * rho, color="black")
 
     ax.axvline(x=gasCenterLeft_SI, ymin=0, ymax=ne, linestyle="--")
     ax.axvline(x=gasCenterRight_SI, ymin=0, ymax=ne, linestyle="--")
+
     ax.axvline(x=FOCUS_POS_SI, ymin=0, ymax=ne, linestyle="--", color="red")
 
     ax.set_ylabel(r"Electron density (cm$^{-3}$)")
     ax.set_xlabel(r"Plasma length ($\mathrm{\mu m}$)")
 
     ax.annotate(
-        rf"Nozzle radius = {Nozzle_r} mm",
+        r"Nozzle radius = %s $\mathrm{\mu m}$" % Nozzle_r,
         xy=(gasSigmaLeft_SI, ne / 3),
         xycoords="data",
         xytext=((gasCenterLeft_SI + gasCenterRight_SI) / 2, ne / 3),
@@ -62,4 +79,4 @@ if __name__ == "__main__":
     ax.set_ylim(ymin=0)
     ax.set_xlim(xmin=-500)
 
-    fig.savefig("ong.png")
+    fig.savefig("density.png")
