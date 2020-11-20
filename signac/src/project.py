@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+##!/usr/bin/env python3
 """This module contains the operation functions for this project.
 
 The workflow defined in this file can be executed from the command
@@ -275,7 +275,7 @@ def run_fbpic(job: Job) -> None:
     mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
     mark_on_plot(ax=ax, parameter="center_left", y=0.7)
     mark_on_plot(ax=ax, parameter="center_right", y=0.7)
-    mark_on_plot(ax=ax, parameter="L_interact")
+    mark_on_plot(ax=ax, parameter="L_interact", y=0.7)
     mark_on_plot(ax=ax, parameter="p_zmax")
 
     ax.fill_between(all_z * 1e6, dens, alpha=0.5)
@@ -284,9 +284,9 @@ def run_fbpic(job: Job) -> None:
     pyplot.close(fig)
 
     # redirect stdout to "stdout.txt"
-    orig_stdout = sys.stdout
-    f = open(job.fn("stdout.txt"), "w")
-    sys.stdout = f
+    #orig_stdout = sys.stdout
+    #f = open(job.fn("stdout.txt"), "w")
+    #sys.stdout = f
 
     # Initialize the simulation object
     sim = Simulation(
@@ -421,11 +421,11 @@ def run_fbpic(job: Job) -> None:
     np.random.seed(0)
 
     # Run the simulation
-    sim.step(job.sp.N_step, show_progress=False)
+    sim.step(job.sp.N_step, show_progress=True)
 
     # redirect stdout back and close "stdout.txt"
-    sys.stdout = orig_stdout
-    f.close()
+    #sys.stdout = orig_stdout
+    #f.close()
 
 
 ############
