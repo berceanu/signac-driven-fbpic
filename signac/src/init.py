@@ -10,6 +10,7 @@ import numpy as np
 
 import unyt as u
 import signac
+import prepic.lwfa as lwfa
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
@@ -22,35 +23,46 @@ def main():
         "fbpic-project",
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
-
-    for ne in np.linspace(6, 4e2, 16) * 1e13 * 1e6:
+    # TODO compare with betatron input
+    for _ in range(1):
         sp = dict(
             # The simulation box
-            Nz=4096,  # Number of gridpoints along z
-            zmin=-4000.0e-6,  # Left end of the simulation box (meters)
-            zmax=-200.0e-6,  # Right end of the simulation box (meters)
-            Nr=512,  # Number of gridpoints along r
-            rmax=300.0e-6,  # Length of the box along r (meters)
-            Nm=4,  # Number of modes used
+            Nz=2425,  # Number of gridpoints along z
+            zmin=-100.0e-6,  # Left end of the simulation box (meters)
+            zmax=0.0e-6,  # Right end of the simulation box (meters)
+            Nr=420,  # Number of gridpoints along r
+            rmax=150.0e-6,  # Length of the box along r (meters)
+            Nm=2,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
-            p_zmin=-100.0e-6,
+            p_zmin=0.0e-6,
             # Maximal radial position of the plasma (meters)
-            p_rmax=290.0e-6,
-            n_e=ne,  # Density (electrons.meters^-3)
+            p_rmax=100.0e-6,
+            n_e=5.307e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
             p_nt=6,  # Number of particles per cell along theta
-            # do not change below this line ##############
-            p_zmax=68400.0e-6,  # Position of the end of the plasma (meters)
+            # The laser
+            a0=2.4,         # Laser amplitude
+            w0=18.7e-6,     # Laser waist
+            ctau=7.495e-6,  # Laser duration
+            z0=-10.e-6,     # Laser centroid
+            zfoc=0.e-6,     # Focal position
+            lambda0=0.8e-6, # Laser wavelength
             # The density profile
-            ramp_start=-100.0e-6,
-            ramp_length=100.0e-6,  # increase (up to `p_zmax`) !
-            # The interaction length of the simulation (meters)
-            # increase (up to `p_zmax`) to simulate longer distance!
+            flat_top_dist=1000.0e-6,  # plasma flat top distance
+            sigma_right=500.0e-6,
+            center_left=1000.0e-6,
+            sigma_left=500.0e-6,
+            power=4.0,
+            # do not change below this line ##############
+            n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
+            center_right=None,
+            p_zmax=None,  # Position of the end of the plasma (meters)
             L_interact=None,
             # Period in number of timesteps
             diag_period=None,
+            # TODO add electron tracking period
             # Timestep (seconds)
             dt=None,
             # Interaction time (seconds) (to calculate number of PIC iterations)
@@ -59,7 +71,15 @@ def main():
             # Number of iterations to perform
             N_step=None,
         )
+        laser = lwfa.Laser.from_a0(
+            a0=sp["a0"] * u.dimensionless,
+            τL=(sp["ctau"] * u.meter) / u.clight,
+            beam=lwfa.GaussianBeam(w0=sp["w0"] * u.meter, λL=sp["lambda0"] * u.meter),
+        )
+        sp["n_c"] = laser.ncrit.to_value('1/m**3')
 
+        sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
+        sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
         sp["L_interact"] = sp["p_zmax"] - sp["p_zmin"]
         sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value("m/s")
         sp["T_interact"] = (
