@@ -3,16 +3,23 @@ import numpy as np
 from matplotlib import pyplot
 from prepic import GaussianBeam, Laser, Plasma, Simulation
 
+
+def mark_on_plot(*, ax, parameter, y=1.1):
+    ax.annotate(s=parameter, xy=(eval(parameter) * 1e6, y), xycoords="data")
+    ax.axvline(x=eval(parameter) * 1e6, linestyle="--", color="red")
+    return ax
+
+
 e4_params = namedtuple(
-     "e4_params",
+    "e4_params",
     [
         "npe",  # electron plasma density
-         "w0",  # laser beam waist (Gaussian beam assumed)
-         "ɛL",  # laser energy on target (focused into the FWHM@intensity spot)
-         "τL",  # laser pulse duration (FWHM@intensity)
-         "prop_dist",  # laser propagation distance (acceleration length)
-     ],
-    )
+        "w0",  # laser beam waist (Gaussian beam assumed)
+        "ɛL",  # laser energy on target (focused into the FWHM@intensity spot)
+        "τL",  # laser pulse duration (FWHM@intensity)
+        "prop_dist",  # laser propagation distance (acceleration length)
+    ],
+)
 
 # Define the density function
 def dens_func(z, r):
@@ -58,12 +65,6 @@ def dens_func(z, r):
     n = np.where(z >= center_right + 2 * sigma_right, 0, n)
 
     return n
-
-
-def mark_on_plot(*, ax, parameter, y=1.1):
-    ax.annotate(s=parameter, xy=(eval(parameter) * 1e6, y), xycoords="data")
-    ax.axvline(x=eval(parameter) * 1e6, linestyle="--", color="red")
-    return ax
 
 
 if __name__ == "__main__":
@@ -114,24 +115,22 @@ if __name__ == "__main__":
     pyplot.close(fig)
 
     param = e4_params(
-        npe = ne / u.cm ** 3,
-        w0 = 18.7 * u.micrometer,
-        ɛL = 1.8 * u.joule,
-        τL = 25 * u.femtosecond,
-        prop_dist = flat_top_dist * u.mm,
-        )
+        npe=ne / u.cm ** 3,
+        w0=18.7 * u.micrometer,
+        ɛL=1.8 * u.joule,
+        τL=25 * u.femtosecond,
+        prop_dist=flat_top_dist * u.mm,
+    )
 
-    e4_params_beam = GaussianBeam(w0 =param.w0)
+    e4_params_beam = GaussianBeam(w0=param.w0)
     e4_params_laser = Laser(ɛL=param.ɛL, τL=param.τL, beam=e4_params_beam)
     e4_params_plasma = Plasma(
-        n_pe=param.npe, 
-        laser=e4_params_laser, 
-        propagation_distance=param.prop_dist
-        )
-    sim_e4_params = Simulation(e4_params_plasma,box_length=97*u.micrometer,ppc=2)
+        n_pe=param.npe, laser=e4_params_laser, propagation_distance=param.prop_dist
+    )
+    sim_e4_params = Simulation(e4_params_plasma, box_length=97 * u.micrometer, ppc=2)
 
     print(e4_params_beam)
-    print(e4_params_laser) 
+    print(e4_params_laser)
     print(f"critical density for this laser is {e4_params_laser.ncrit:.1e}")
     print(e4_params_plasma)
     print(sim_e4_params)
