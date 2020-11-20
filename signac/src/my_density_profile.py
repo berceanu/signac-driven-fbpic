@@ -70,8 +70,15 @@ def dens_func(z, r):
 
 if __name__ == "__main__":
     # The simulation box
+    Nz = 2425         # Number of gridpoints along z
+
     zmax = 0.0e-6  # Length of the box along z (meters)
-    zmin = -30.0e-6
+    zmin = -100.0e-6
+    Nr = 420          # Number of gridpoints along r
+    rmax = 150.e-6   # Length of the box along r (meters)
+    Nm = 2           # Number of modes used
+
+    dt = (zmax-zmin)/Nz/c  # Timestep (seconds)
 
     # The density profile
     flat_top_dist = 1000.0e-6  # plasma flat top distance
@@ -86,6 +93,17 @@ if __name__ == "__main__":
     p_zmax = center_right + 2 * sigma_right
     p_rmax = 100.0e-6  # Maximal radial position of the plasma (meters)
     n_e = 5.307e18 * 1.0e6  # The density in the labframe (electrons.meters^-3)
+    p_nz = 2         # Number of particles per cell along z
+    p_nr = 2         # Number of particles per cell along r
+    p_nt = 6         # Number of particles per cell along theta
+
+    # The laser
+    a0 = 2.4         # Laser amplitude
+    w0 = 18.7e-6     # Laser waist
+    ctau = 7.495e-6  # Laser duration
+    z0 = -10.e-6     # Laser centroid
+    zfoc = 0.e-6     # Focal position
+    lambda0 = 0.8e-6 # Laser wavelength
 
     L_interact = p_zmax - p_zmin  # the plasma length
 
