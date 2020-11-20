@@ -10,6 +10,7 @@ import numpy as np
 
 import unyt as u
 import signac
+import prepic.lwfa as lwfa
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
@@ -55,11 +56,13 @@ def main():
             sigma_left=500.0e-6,
             power=4.0,
             # do not change below this line ##############
+            n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             center_right=None,
             p_zmax=None,  # Position of the end of the plasma (meters)
             L_interact=None,
             # Period in number of timesteps
             diag_period=None,
+            # TODO add electron tracking period
             # Timestep (seconds)
             dt=None,
             # Interaction time (seconds) (to calculate number of PIC iterations)
@@ -68,6 +71,12 @@ def main():
             # Number of iterations to perform
             N_step=None,
         )
+        laser = lwfa.Laser.from_a0(
+            a0=sp["a0"] * u.dimensionless,
+            τL=(sp["ctau"] * u.meter) / u.clight,
+            beam=lwfa.GaussianBeam(w0=sp["w0"] * u.meter, λL=sp["lambda0"] * u.meter),
+        )
+        sp["n_c"] = laser.ncrit.to_value('1/m**3')
 
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
         sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
