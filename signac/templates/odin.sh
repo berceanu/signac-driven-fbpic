@@ -26,11 +26,11 @@
 {% set threshold = 0 if force else 0.9 %}
 {% set cpu_tasks = operations|calc_tasks('np', parallel, force) %}
 {% set gpu_tasks = operations|calc_tasks('ngpu', parallel, force) %}
-{% set nn_cpu = cpu_tasks|calc_num_nodes(48) %}
+{% set nn_cpu = cpu_tasks|calc_num_nodes(16) %}
 {% set nn_gpu = gpu_tasks|calc_num_nodes(16) %}
 {% set nn = nn|default((nn_cpu, nn_gpu)|max, true) %}
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node={{ (gpu_tasks * 3, cpu_tasks)|max }}
+#SBATCH --ntasks-per-node={{ (gpu_tasks, cpu_tasks)|max }}
 #SBATCH --gres=gpu:{{ (gpu_tasks, 16)|min }}
 {% endblock %}
 
