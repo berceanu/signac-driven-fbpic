@@ -6,11 +6,10 @@ the associated job workspace directories."""
 import logging
 import pathlib
 import math
-import numpy as np
 
 import unyt as u
-import signac
 import prepic.lwfa as lwfa
+import signac
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM

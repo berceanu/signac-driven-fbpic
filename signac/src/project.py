@@ -375,6 +375,7 @@ def run_fbpic(job: Job) -> None:
             write_dir=write_dir,
         ),
     ]
+    # TODO add electron tracking
 
     # Plot the Ex component of the laser
     # Get the fields in the half-plane theta=0 (Sum mode 0 and mode 1)
