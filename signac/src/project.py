@@ -201,36 +201,56 @@ def run_fbpic(job: Job) -> None:
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     from fbpic.main import Simulation
+    from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
     from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
 
-    # The density profile FIXME
-    def dens_func(z: np.ndarray, r: np.ndarray) -> np.ndarray:
-        """Returns relative density at position z and r.
-
-        :param z: longitudinal positions, 1d array
-        :param r: radial positions, 1d array
-        :return: a 1d array ``n`` containing the density (between 0 and 1) at the given positions (z, r)
+    # The density profile
+    def dens_func(z, r):
         """
+        User-defined function: density profile of the plasma
+
+        It should return the relative density with respect to n_plasma,
+        at the position x, y, z (i.e. return a number between 0 and 1)
+
+        Parameters
+        ----------
+        z, r: 1darrays of floats
+            Arrays with one element per macroparticle
+        Returns
+        -------
+        n : 1d array of floats
+            Array of relative density, with one element per macroparticles
+        """
+
+        def ramp(z, *, center, sigma, p):
+            """Gaussian-like function."""
+            return np.exp(-(((z - center) / sigma) ** p))
+
         # Allocate relative density
         n = np.ones_like(z)
 
-        # only compute n if z is inside the interpolation bounds
-        n = np.where(np.logical_and(z > interp_z_min, z < interp_z_max), rho(z), n)
+        # before up-ramp
+        n = np.where(z < 0.0, 0.0, n)
 
-        # Make linear ramp
+        # Make up-ramp
         n = np.where(
-            z < job.sp.ramp_start + job.sp.ramp_length,
-            (z - job.sp.ramp_start) / job.sp.ramp_length * rho(interp_z_min),
+            z < job.sp.center_left, ramp(z, center=job.sp.center_left, sigma=job.sp.sigma_left, p=job.sp.power), n
+        )
+
+        # Make down-ramp
+        n = np.where(
+            (z >= job.sp.center_right) & (z < job.sp.center_right + 2 * job.sp.sigma_right),
+            ramp(z, center=job.sp.center_right, sigma=job.sp.sigma_right, p=job.sp.power),
             n,
         )
 
-        # Supress density before the ramp
-        n = np.where(z < job.sp.ramp_start, 0.0, n)
+        # after down-ramp
+        n = np.where(z >= job.sp.center_right + 2 * job.sp.sigma_right, 0, n)
 
         return n
 
     # plot density profile for checking
-    all_z = np.linspace(job.sp.zmin, job.sp.p_zmax, 1000)
+    all_z = np.linspace(job.sp.zmin, job.sp.L_interact, 1000)
     dens = dens_func(all_z, 0.0)
 
     def mark_on_plot(*, ax, parameter: str, y=1.1):
@@ -241,27 +261,17 @@ def run_fbpic(job: Job) -> None:
     fig, ax = pyplot.subplots(figsize=(30, 4.8))
     ax.plot(all_z * 1e6, dens)
     ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
-    ax.set_ylim(-0.1, 1.2)
-    ax.set_xlim(job.sp.zmin * 1e6 - 20, job.sp.p_zmax * 1e6 + 20)
+    ax.set_ylim(0.0, 1.2)
+    ax.set_xlim(job.sp.zmin * 1e6 - 20, job.sp.L_interact * 1e6 + 20)
     ax.set_ylabel("Density profile $n$")
 
     mark_on_plot(ax=ax, parameter="zmin")
     mark_on_plot(ax=ax, parameter="zmax")
     mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
-    mark_on_plot(ax=ax, parameter="ramp_start", y=0.7)
+    mark_on_plot(ax=ax, parameter="center_left", y=0.7)
+    mark_on_plot(ax=ax, parameter="center_right", y=0.7)
     mark_on_plot(ax=ax, parameter="L_interact")
     mark_on_plot(ax=ax, parameter="p_zmax")
-
-    ax.annotate(
-        text="ramp_start + ramp_length",
-        xy=(job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6, 1.1),
-        xycoords="data",
-    )
-    ax.axvline(
-        x=job.sp.ramp_start * 1e6 + job.sp.ramp_length * 1e6,
-        linestyle="--",
-        color="red",
-    )
 
     ax.fill_between(all_z * 1e6, dens, alpha=0.5)
 
@@ -281,6 +291,7 @@ def run_fbpic(job: Job) -> None:
         job.sp.rmax,
         job.sp.Nm,
         job.sp.dt,
+        n_e=None,  # no electrons
         zmin=job.sp.zmin,
         boundaries={"z": "open", "r": "open"},
         n_order=-1,
@@ -315,6 +326,14 @@ def run_fbpic(job: Job) -> None:
         p_nt=job.sp.p_nt,
     )
 
+    # Create a Gaussian laser profile
+    laser_profile = GaussianLaser(a0=job.sp.a0, waist=job.sp.w0, tau=job.sp.ctau / c_light, z0=job.sp.z0,
+                                  zf=job.sp.zfoc, theta_pol=0., lambda0=job.sp.lambda0,
+                                  cep_phase=0., phi2_chirp=0.,
+                                  propagation_direction=1)
+    # Add it to the simulation
+    add_laser_pulse(sim, laser_profile, gamma_boost=None, method='direct', z0_antenna=None, v_antenna=0.)
+
     # Configure the moving window
     sim.set_moving_window(v=c_light)
 
@@ -331,10 +350,51 @@ def run_fbpic(job: Job) -> None:
         ParticleDiagnostic(
             period=job.sp.diag_period,
             species={"electrons": plasma_elec},
+            # select={"uz": [40.0, None]},
             comm=sim.comm,
             write_dir=write_dir,
         ),
     ]
+
+    # Plot the Ex component of the laser
+    # Get the fields in the half-plane theta=0 (Sum mode 0 and mode 1)
+    gathered_grids = [sim.comm.gather_grid(sim.fld.interp[m]) for m in range(job.sp.Nm)]
+
+    rgrid = gathered_grids[0].r
+    zgrid = gathered_grids[0].z
+
+    # construct the Er field for theta=0
+    Er = gathered_grids[0].Er.T.real
+
+    for m in range(1, job.sp.Nm):
+        # There is a factor 2 here so as to comply with the convention in
+        # Lifschitz et al., which is also the convention adopted in Warp Circ
+        Er += 2 * gathered_grids[m].Er.T.real
+
+    e0 = electric_field_amplitude_norm(lambda0=job.sp.lambda0)
+
+    fig = pyplot.figure(figsize=(8, 8))
+    sliceplots.Plot2D(
+        fig=fig,
+        arr2d=Er / e0,
+        h_axis=zgrid * 1e6,
+        v_axis=rgrid * 1e6,
+        zlabel=r"$E_r/E_0$",
+        xlabel=r"$z \;(\mu m)$",
+        ylabel=r"$r \;(\mu m)$",
+        extent=(
+            zgrid[0] * 1e6,  # + 40
+            zgrid[-1] * 1e6,  # - 20
+            rgrid[0] * 1e6,
+            rgrid[-1] * 1e6,  # - 15,
+        ),
+        cbar=True,
+        vmin=-3,
+        vmax=3,
+        hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
+    )
+    fig.savefig(job.fn('check_laser.png'))
+    pyplot.close(fig)
 
     # set deterministic random seed
     np.random.seed(0)
@@ -351,6 +411,20 @@ def run_fbpic(job: Job) -> None:
 # PLOTTING #
 ############
 
+
+def electric_field_amplitude_norm(lambda0=0.8e-6):
+    """
+    Computes the laser electric field amplitude for :math:`a_0=1`.
+
+    :param lambda0: laser wavelength (meters)
+    """
+    # wavevector
+    k0 = 2 * np.pi / lambda0
+
+    # field amplitude
+    e0 = m_e * c_light ** 2 * k0 / q_e
+
+    return e0
 
 def field_snapshot(
     tseries: OpenPMDTimeSeries,
