@@ -23,7 +23,7 @@ def main():
         "fbpic-project",
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
-    # TODO compare with betatron input
+
     for _ in range(1):
         sp = dict(
             # The simulation box
@@ -43,12 +43,12 @@ def main():
             p_nr=2,  # Number of particles per cell along r
             p_nt=6,  # Number of particles per cell along theta
             # The laser
-            a0=2.4,         # Laser amplitude
-            w0=18.7e-6,     # Laser waist
+            a0=2.4,  # Laser amplitude
+            w0=18.7e-6,  # Laser waist
             ctau=7.495e-6,  # Laser duration
-            z0=-10.e-6,     # Laser centroid
-            zfoc=0.e-6,     # Focal position
-            lambda0=0.8e-6, # Laser wavelength
+            z0=-10.0e-6,  # Laser centroid
+            zfoc=0.0e-6,  # Focal position
+            lambda0=0.8e-6,  # Laser wavelength
             # The density profile
             flat_top_dist=1000.0e-6,  # plasma flat top distance
             sigma_right=500.0e-6,
@@ -76,7 +76,7 @@ def main():
             τL=(sp["ctau"] * u.meter) / u.clight,
             beam=lwfa.GaussianBeam(w0=sp["w0"] * u.meter, λL=sp["lambda0"] * u.meter),
         )
-        sp["n_c"] = laser.ncrit.to_value('1/m**3')
+        sp["n_c"] = laser.ncrit.to_value("1/m**3")
 
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
         sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
