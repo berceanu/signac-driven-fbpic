@@ -6,7 +6,7 @@ from prepic import GaussianBeam, Laser, Plasma, Simulation
 
 
 def mark_on_plot(*, ax, parameter, y=1.1):
-    ax.annotate(s=parameter, xy=(eval(parameter) * 1e6, y), xycoords="data")
+    ax.annotate(parameter, xy=(eval(parameter) * 1e6, y), xycoords="data")
     ax.axvline(x=eval(parameter) * 1e6, linestyle="--", color="red")
     return ax
 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     pyplot.close(fig)
 
     param = E4Params(
-        npe=ne / u.meter ** 3,
+        npe=n_e / u.meter ** 3,
         w0=18.7 * u.micrometer,
         ɛL=1.8 * u.joule,
         τL=25 * u.femtosecond,
