@@ -234,13 +234,18 @@ def run_fbpic(job: Job) -> None:
 
         # Make up-ramp
         n = np.where(
-            z < job.sp.center_left, ramp(z, center=job.sp.center_left, sigma=job.sp.sigma_left, p=job.sp.power), n
+            z < job.sp.center_left,
+            ramp(z, center=job.sp.center_left, sigma=job.sp.sigma_left, p=job.sp.power),
+            n,
         )
 
         # Make down-ramp
         n = np.where(
-            (z >= job.sp.center_right) & (z < job.sp.center_right + 2 * job.sp.sigma_right),
-            ramp(z, center=job.sp.center_right, sigma=job.sp.sigma_right, p=job.sp.power),
+            (z >= job.sp.center_right)
+            & (z < job.sp.center_right + 2 * job.sp.sigma_right),
+            ramp(
+                z, center=job.sp.center_right, sigma=job.sp.sigma_right, p=job.sp.power
+            ),
             n,
         )
 
@@ -327,12 +332,27 @@ def run_fbpic(job: Job) -> None:
     )
 
     # Create a Gaussian laser profile
-    laser_profile = GaussianLaser(a0=job.sp.a0, waist=job.sp.w0, tau=job.sp.ctau / c_light, z0=job.sp.z0,
-                                  zf=job.sp.zfoc, theta_pol=0., lambda0=job.sp.lambda0,
-                                  cep_phase=0., phi2_chirp=0.,
-                                  propagation_direction=1)
+    laser_profile = GaussianLaser(
+        a0=job.sp.a0,
+        waist=job.sp.w0,
+        tau=job.sp.ctau / c_light,
+        z0=job.sp.z0,
+        zf=job.sp.zfoc,
+        theta_pol=0.0,
+        lambda0=job.sp.lambda0,
+        cep_phase=0.0,
+        phi2_chirp=0.0,
+        propagation_direction=1,
+    )
     # Add it to the simulation
-    add_laser_pulse(sim, laser_profile, gamma_boost=None, method='direct', z0_antenna=None, v_antenna=0.)
+    add_laser_pulse(
+        sim,
+        laser_profile,
+        gamma_boost=None,
+        method="direct",
+        z0_antenna=None,
+        v_antenna=0.0,
+    )
 
     # Configure the moving window
     sim.set_moving_window(v=c_light)
@@ -393,7 +413,7 @@ def run_fbpic(job: Job) -> None:
         vmax=3,
         hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
     )
-    fig.savefig(job.fn('check_laser.png'))
+    fig.savefig(job.fn("check_laser.png"))
     pyplot.close(fig)
 
     # set deterministic random seed
@@ -425,6 +445,7 @@ def electric_field_amplitude_norm(lambda0=0.8e-6):
     e0 = m_e * c_light ** 2 * k0 / q_e
 
     return e0
+
 
 def field_snapshot(
     tseries: OpenPMDTimeSeries,
