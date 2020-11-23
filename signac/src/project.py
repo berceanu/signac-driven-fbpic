@@ -45,7 +45,7 @@ class OdinEnvironment(DefaultSlurmEnvironment):
 
     hostname_pattern = r".*\.ra5\.eli-np\.ro$"
     template = "odin.sh"
-    cores_per_node = 48
+    cores_per_node = 16
     mpi_cmd = "mpiexec"
 
     @classmethod
@@ -57,7 +57,11 @@ class OdinEnvironment(DefaultSlurmEnvironment):
             default="gpu",
             help="Specify the partition to submit to.",
         )
-
+        parser.add_argument(
+            '-w', '--walltime',
+            type=float,
+            default=36,
+            help="The wallclock time in hours.")
         parser.add_argument(
             "--job-output",
             help=(
