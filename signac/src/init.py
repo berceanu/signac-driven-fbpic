@@ -25,7 +25,7 @@ def main():
     for _ in range(1):
         sp = dict(
             # The simulation box
-            Nz=2425,  # Number of gridpoints along z
+            Nz=2464,  # Number of gridpoints along z
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             Nr=256,  # Number of gridpoints along r
@@ -36,7 +36,7 @@ def main():
             p_zmin=0.0e-6,
             # Maximal radial position of the plasma (meters)
             p_rmax=50.0e-6,
-            n_e=4.0e18 * 1.0e6,  # Density (electrons.meters^-3)
+            n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
             p_nt=6,  # Number of particles per cell along theta
@@ -71,7 +71,7 @@ def main():
         )
         laser = lwfa.Laser.from_a0(
             a0=sp["a0"] * u.dimensionless,
-            τL=(sp["ctau"] * u.meter) / u.clight,
+            τL=sp["tau"] * u.second,
             beam=lwfa.GaussianBeam(w0=sp["w0"] * u.meter, λL=sp["lambda0"] * u.meter),
         )
         sp["n_c"] = laser.ncrit.to_value("1/m**3")
