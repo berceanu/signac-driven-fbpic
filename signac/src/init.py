@@ -28,31 +28,31 @@ def main():
             Nz=2425,  # Number of gridpoints along z
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
-            Nr=420,  # Number of gridpoints along r
-            rmax=150.0e-6,  # Length of the box along r (meters)
+            Nr=256,  # Number of gridpoints along r
+            rmax=70.0e-6,  # Length of the box along r (meters)
             Nm=2,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
             # Maximal radial position of the plasma (meters)
-            p_rmax=100.0e-6,
-            n_e=5.307e18 * 1.0e6,  # Density (electrons.meters^-3)
+            p_rmax=50.0e-6,
+            n_e=4.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
             p_nt=6,  # Number of particles per cell along theta
             # The laser
             a0=2.4,  # Laser amplitude
-            w0=18.7e-6,  # Laser waist
-            ctau=7.495e-6,  # Laser duration
+            w0=22.0e-6/ 1.17741,  # Laser waist
+            tau=25.e-15 / 2.354820045,  # Laser duration, sec
             z0=-10.0e-6,  # Laser centroid
-            zfoc=0.0e-6,  # Focal position
+            zfoc=500.0e-6,  # Focal position
             lambda0=0.8e-6,  # Laser wavelength
             # The density profile
             flat_top_dist=1000.0e-6,  # plasma flat top distance
             sigma_right=500.0e-6,
             center_left=1000.0e-6,
             sigma_left=500.0e-6,
-            power=4.0,
+            power=2.0,
             # do not change below this line ##############
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             center_right=None,

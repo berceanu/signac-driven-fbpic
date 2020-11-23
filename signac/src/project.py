@@ -204,6 +204,10 @@ def run_fbpic(job: Job) -> None:
     from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
     from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
 
+    def ramp(z, *, center, sigma, p):
+        """Gaussian-like function."""
+        return np.exp(-(((z - center) / sigma) ** p))
+
     # The density profile
     def dens_func(z, r):
         """
@@ -222,9 +226,6 @@ def run_fbpic(job: Job) -> None:
             Array of relative density, with one element per macroparticles
         """
 
-        def ramp(z, *, center, sigma, p):
-            """Gaussian-like function."""
-            return np.exp(-(((z - center) / sigma) ** p))
 
         # Allocate relative density
         n = np.ones_like(z)
@@ -335,7 +336,7 @@ def run_fbpic(job: Job) -> None:
     laser_profile = GaussianLaser(
         a0=job.sp.a0,
         waist=job.sp.w0,
-        tau=job.sp.ctau / c_light,
+        tau=job.sp.tau,
         z0=job.sp.z0,
         zf=job.sp.zfoc,
         theta_pol=0.0,
