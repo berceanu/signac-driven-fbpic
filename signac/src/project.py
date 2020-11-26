@@ -59,10 +59,12 @@ class OdinEnvironment(DefaultSlurmEnvironment):
             help="Specify the partition to submit to.",
         )
         parser.add_argument(
-            '-w', '--walltime',
+            "-w",
+            "--walltime",
             type=float,
             default=36,
-            help="The wallclock time in hours.")
+            help="The wallclock time in hours.",
+        )
         parser.add_argument(
             "--job-output",
             help=(
@@ -218,7 +220,11 @@ def run_fbpic(job: Job) -> None:
     """
     from fbpic.main import Simulation
     from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
-    from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
+    from fbpic.openpmd_diag import (
+        FieldDiagnostic,
+        ParticleDiagnostic,
+        ParticleChargeDensityDiagnostic,
+    )
 
     def ramp(z, *, center, sigma, p):
         """Gaussian-like function."""
@@ -241,7 +247,6 @@ def run_fbpic(job: Job) -> None:
         n : 1d array of floats
             Array of relative density, with one element per macroparticles
         """
-
 
         # Allocate relative density
         n = np.ones_like(z)
@@ -301,9 +306,9 @@ def run_fbpic(job: Job) -> None:
     pyplot.close(fig)
 
     # redirect stdout to "stdout.txt"
-    #orig_stdout = sys.stdout
-    #f = open(job.fn("stdout.txt"), "w")
-    #sys.stdout = f
+    # orig_stdout = sys.stdout
+    # f = open(job.fn("stdout.txt"), "w")
+    # sys.stdout = f
 
     # Initialize the simulation object
     sim = Simulation(
@@ -391,6 +396,15 @@ def run_fbpic(job: Job) -> None:
             comm=sim.comm,
             write_dir=write_dir,
         ),
+        # Since rho from `FieldDiagnostic` is 0 almost everywhere
+        # (neutral plasma), it is useful to see the charge density
+        # of individual particles
+        ParticleChargeDensityDiagnostic(
+            period=job.sp.diag_period,
+            sim=sim,
+            species={"electrons": plasma_elec},
+            write_dir=write_dir,
+        ),
     ]
     # TODO add electron tracking
 
@@ -441,8 +455,8 @@ def run_fbpic(job: Job) -> None:
     sim.step(job.sp.N_step, show_progress=True)
 
     # redirect stdout back and close "stdout.txt"
-    #sys.stdout = orig_stdout
-    #f.close()
+    # sys.stdout = orig_stdout
+    # f.close()
 
 
 ############
@@ -466,8 +480,12 @@ def electric_field_amplitude_norm(lambda0=0.8e-6):
 
 
 def particle_energy_histogram(
-        tseries: OpenPMDTimeSeries, it: int,
-        energy_min=1, energy_max=800, delta_energy=1, cutoff=35,  # CHANGEME
+    tseries: OpenPMDTimeSeries,
+    it: int,
+    energy_min=1,
+    energy_max=800,
+    delta_energy=1,
+    cutoff=35,  # CHANGEME
 ):
     """
     Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
@@ -483,7 +501,7 @@ def particle_energy_histogram(
     nbins = (energy_max - energy_min) // delta_energy
     energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
 
-    #FIXME get_particle now returns particle positions in meters instead of microns
+    # FIXME get_particle now returns particle positions in meters instead of microns
     ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=it)
     energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
 
@@ -499,9 +517,6 @@ def particle_energy_histogram(
     np.clip(hist, a_min=None, a_max=cutoff, out=hist)
 
     return hist, energy_bins, nbins
-
-
-
 
 
 def field_snapshot(
@@ -560,15 +575,16 @@ def field_snapshot(
     filename = os.path.join(path, f"{field_name}{it:06d}.png")
     plot.canvas.print_figure(filename)
 
+
 def get_a0(
-        tseries: OpenPMDTimeSeries,
-        t: Optional[float] = None,
-        it: Optional[int] = None,
-        coord="x",
-        m="all",
-        slice_across=None,
-        theta=0.0,
-        lambda0=0.8e-6,
+    tseries: OpenPMDTimeSeries,
+    t: Optional[float] = None,
+    it: Optional[int] = None,
+    coord="x",
+    m="all",
+    slice_across=None,
+    theta=0.0,
+    lambda0=0.8e-6,
 ) -> Tuple[float, float, float, float]:
     """
     Compute z₀, a₀, w₀, cτ.
@@ -611,16 +627,17 @@ def get_a0(
 
     # FWHM perpendicular size of beam, proportional to w0
     fwhm_a0_w0 = (
-            np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2))
-            * info_electric_field_x.dr
+        np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2))
+        * info_electric_field_x.dr
     )
 
     # FWHM longitudinal size of the beam, proportional to ctau
     fwhm_a0_ctau = (
-            np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_electric_field_x.dz
+        np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_electric_field_x.dz
     )
 
     return z0, a0_max, fwhm_a0_w0, fwhm_a0_ctau
+
 
 @ex
 @Project.operation
@@ -669,9 +686,7 @@ def post_process_results(job: Job) -> None:
     for idx, it in enumerate(time_series.iterations):
         it_time = it * job.sp.dt
 
-        z_0, a_0, w_0, c_tau = get_a0(
-            time_series, it=it, lambda0=job.sp.lambda0
-        )
+        z_0, a_0, w_0, c_tau = get_a0(time_series, it=it, lambda0=job.sp.lambda0)
 
         diags_file.write(
             f"{it:06d},{it_time * 1e15:.3e},{z_0 * 1e6:.3e},{a_0:.3e},{w_0 * 1e6:.3e},{c_tau * 1e6:.3e}\n"
@@ -714,6 +729,7 @@ def post_process_results(job: Job) -> None:
         header="One iteration per row, containing the energy histogram.",
     )
     np.savetxt(job.fn("hist_edges.txt"), hist_edges, header="Energy histogram bins.")
+
 
 @ex
 @Project.operation
