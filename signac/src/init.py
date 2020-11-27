@@ -39,7 +39,7 @@ def main():
             n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
-            p_nt=6,  # Number of particles per cell along theta
+            p_nt=8,  # Number of particles per cell along theta
             # The laser
             a0=2.4,  # Laser amplitude
             w0=22.0e-6/ 1.17741,  # Laser waist
