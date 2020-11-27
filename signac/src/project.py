@@ -310,6 +310,7 @@ def run_fbpic(job: Job) -> None:
     # f = open(job.fn("stdout.txt"), "w")
     # sys.stdout = f
 
+
     # Initialize the simulation object
     sim = Simulation(
         job.sp.Nz,
@@ -318,9 +319,8 @@ def run_fbpic(job: Job) -> None:
         job.sp.rmax,
         job.sp.Nm,
         job.sp.dt,
-        n_e=None,  # no electrons
         zmin=job.sp.zmin,
-        boundaries={"z": "open", "r": "open"},
+        boundaries={"z": "open", "r": "reflective"},
         n_order=-1,
         use_cuda=True,
         verbose_level=2,
