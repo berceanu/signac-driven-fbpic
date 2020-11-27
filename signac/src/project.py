@@ -24,19 +24,22 @@ from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot
 from openpmd_viewer import OpenPMDTimeSeries
-from scipy.constants import physical_constants
 from scipy.signal import hilbert
 from signac.contrib.job import Job
-
+import unyt as u
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
 
-c_light = physical_constants["speed of light in vacuum"][0]
-m_e = physical_constants["electron mass"][0]
-m_p = physical_constants["proton mass"][0]
-q_e = physical_constants["elementary charge"][0]
-mc2 = m_e * c_light ** 2 / (q_e * 1e6)  # 0.511 MeV
+# strip units
+c_light = u.clight.to_value("m/s")
+m_e = u.electron_mass.to_value("kg")
+m_p = u.proton_mass.to_value("kg")
+q_e = u.electron_charge.to_value("C") # negative sign
+q_p = u.proton_charge.to_value("C") # positive sign
+mc2 = (u.electron_mass * u.clight ** 2).to_value("MeV")
+# 0.511 MeV
+
 
 
 class OdinEnvironment(DefaultSlurmEnvironment):
@@ -329,7 +332,7 @@ def run_fbpic(job: Job) -> None:
 
     # Add the plasma electron and plasma ions
     plasma_elec = sim.add_new_species(
-        q=-q_e,
+        q=q_e,
         m=m_e,
         n=job.sp.n_e,
         dens_func=dens_func,
@@ -341,7 +344,7 @@ def run_fbpic(job: Job) -> None:
         p_nt=job.sp.p_nt,
     )
     plasma_ions = sim.add_new_species(
-        q=q_e,
+        q=q_p,
         m=m_p,
         n=job.sp.n_e,
         dens_func=dens_func,
@@ -510,7 +513,7 @@ def particle_energy_histogram(
     #     2. multiply by weight w to get real number of electrons
     #     3. divide by energy bin size delta_energy to get charge / MeV
     hist, _ = np.histogram(
-        energy, bins=energy_bins, weights=q_e * 1e12 / delta_energy * w
+        energy, bins=energy_bins, weights=u.elementary_charge.to_value("pC") / delta_energy * w
     )
 
     # cut off histogram
@@ -707,7 +710,7 @@ def post_process_results(job: Job) -> None:
             tseries=time_series,
             it=it,
             field_name="rho",
-            normalization_factor=1.0 / (-q_e * job.sp.n_e),
+            normalization_factor=1.0 / (q_e * job.sp.n_e),
             path=rho_path,
             zlabel=r"$n/n_e$",
             vmin=0,
@@ -717,7 +720,7 @@ def post_process_results(job: Job) -> None:
 
     # the field "rho" has (SI) units of charge/volume (Q/V), C/(m^3)
     # the initial density n_e has units of N/V, N = electron number
-    # multiply by electron charge -q_e to get (N e) / V
+    # multiply by electron charge q_e to get (N e) / V
     # so we get Q / N e, which is C/C, i.e. dimensionless
     # Note: one can also normalize by the critical density n_c
 
