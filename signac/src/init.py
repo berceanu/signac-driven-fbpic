@@ -43,7 +43,7 @@ def main():
             # The laser
             a0=2.4,  # Laser amplitude
             w0=22.0e-6/ 1.17741,  # Laser waist
-            tau=25.e-15,  # Laser duration, sec
+            tau=25.e-15 / 2.354820045,  # Laser duration, sec
             z0=-10.0e-6,  # Laser centroid
             zfoc=500.0e-6,  # Focal position
             lambda0=0.8e-6,  # Laser wavelength
