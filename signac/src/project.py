@@ -25,8 +25,8 @@ from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot
 from openpmd_viewer import OpenPMDTimeSeries
 from scipy.signal import hilbert
-from signac.contrib.job import Job
 import unyt as u
+from signac.contrib.job import Job
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -35,11 +35,10 @@ log_file_name = "fbpic-project.log"
 c_light = u.clight.to_value("m/s")
 m_e = u.electron_mass.to_value("kg")
 m_p = u.proton_mass.to_value("kg")
-q_e = u.electron_charge.to_value("C") # negative sign
-q_p = u.proton_charge.to_value("C") # positive sign
+q_e = u.electron_charge.to_value("C")  # negative sign
+q_p = u.proton_charge.to_value("C")  # positive sign
 mc2 = (u.electron_mass * u.clight ** 2).to_value("MeV")
 # 0.511 MeV
-
 
 
 class OdinEnvironment(DefaultSlurmEnvironment):
@@ -313,7 +312,6 @@ def run_fbpic(job: Job) -> None:
     # f = open(job.fn("stdout.txt"), "w")
     # sys.stdout = f
 
-
     # Initialize the simulation object
     sim = Simulation(
         job.sp.Nz,
@@ -330,22 +328,10 @@ def run_fbpic(job: Job) -> None:
     )
     # 'r': 'open' can also be used, but is more computationally expensive
 
-    # Add the plasma electron and plasma ions
+    # Add the plasma electrons
     plasma_elec = sim.add_new_species(
         q=q_e,
         m=m_e,
-        n=job.sp.n_e,
-        dens_func=dens_func,
-        p_zmin=job.sp.p_zmin,
-        p_zmax=job.sp.p_zmax,
-        p_rmax=job.sp.p_rmax,
-        p_nz=job.sp.p_nz,
-        p_nr=job.sp.p_nr,
-        p_nt=job.sp.p_nt,
-    )
-    plasma_ions = sim.add_new_species(
-        q=q_p,
-        m=m_p,
         n=job.sp.n_e,
         dens_func=dens_func,
         p_zmin=job.sp.p_zmin,
@@ -513,7 +499,9 @@ def particle_energy_histogram(
     #     2. multiply by weight w to get real number of electrons
     #     3. divide by energy bin size delta_energy to get charge / MeV
     hist, _ = np.histogram(
-        energy, bins=energy_bins, weights=u.elementary_charge.to_value("pC") / delta_energy * w
+        energy,
+        bins=energy_bins,
+        weights=u.elementary_charge.to_value("pC") / delta_energy * w,
     )
 
     # cut off histogram
