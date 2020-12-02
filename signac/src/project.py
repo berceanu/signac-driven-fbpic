@@ -16,13 +16,14 @@ import os
 import subprocess
 import glob
 from typing import List, Optional, Union, Iterable, Callable, Tuple
+import pathlib
 
 import numpy as np
 import pandas as pd
 import sliceplots
 from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
-from matplotlib import pyplot
+from matplotlib import pyplot, colors, cm
 from openpmd_viewer import OpenPMDTimeSeries
 from scipy.signal import hilbert
 import unyt as u
@@ -472,7 +473,6 @@ def particle_energy_histogram(
     nbins = (energy_max - energy_min) // delta_energy
     energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
 
-    # FIXME get_particle now returns particle positions in meters instead of microns
     ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=it)
     energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
 
@@ -492,61 +492,103 @@ def particle_energy_histogram(
     return hist, energy_bins, nbins
 
 
-def field_snapshot(
-    tseries: OpenPMDTimeSeries,
-    it: int,
-    field_name: str,
-    normalization_factor=1,
-    coord: Optional[str] = None,
-    m="all",
-    theta=0.0,
-    chop: Optional[List[float]] = None,
-    path="./",
-    **kwargs,
+def laser_density_plot(
+    tseries,
+    iteration: int,
+    rho_field_name="rho_electrons",
+    laser_polarization="x",
+    save_path=pathlib.Path.cwd(),
+    n_c=1.7419595910637713e+27,  # 1/m^3
+    E0=4013376052599.5396,  # V/m
 ) -> None:
     """
-    Plot the ``field_name`` field from ``tseries`` at step ``iter``.
-
-    :param path: path to output file
-    :param tseries: whole simulation time series
-    :param it: time step in the simulation
-    :param field_name: which field to extract, eg. 'rho', 'E', 'B' or 'J'
-    :param normalization_factor: normalization factor for the extracted field
-    :param coord: which component of the field to extract, eg. 'r', 't' or 'z'
-    :param m: 'all' for extracting the sum of all the azimuthal modes
-    :param theta: the angle of the plane of observation, with respect to the 'x' axis
-    :param chop: adjusting extent of simulation box plot
-    :param kwargs: extra plotting arguments, eg. labels, data limits etc.
-    :return: saves field plot image to disk
+    Plot on the same figure the laser pulse envelope and the electron density.
     """
-    if chop is None:  # how much to cut out from simulation domain
-        chop = [0, 0, 0, 0]  # CHANGEME
+    import colorcet as cc
 
-    field, info = tseries.get_field(
-        field=field_name, coord=coord, iteration=it, m=m, theta=theta
+
+    laser_cmap = copy(cc.m_fire)
+    laser_cmap.set_under("black", alpha=0)
+
+    rho, rho_info = ts.get_field(
+        field=rho_field_name,
+        iteration=iteration,
+    )
+    envelope, env_info = ts.get_laser_envelope(iteration=iteration, pol=laser_polarization)
+
+    # get longitudinal field
+    e_z_of_z, e_z_of_z_info = ts.get_field(
+        field="E",
+        coord="z",
+        iteration=iteration,
+        slice_across="r",
     )
 
-    field *= normalization_factor
+    fig, ax = pyplot.subplots(figsize=(20, 8))
 
-    plot = sliceplots.Plot2D(
-        arr2d=field,
-        h_axis=info.z * 1e6,
-        v_axis=info.r * 1e6,
-        xlabel=r"${} \;(\mu m)$".format(info.axes[1]),
-        ylabel=r"${} \;(\mu m)$".format(info.axes[0]),
-        extent=(
-            info.zmin * 1e6 + chop[0],
-            info.zmax * 1e6 + chop[1],
-            info.rmin * 1e6 + chop[2],
-            info.rmax * 1e6 + chop[3],
-        ),
-        cbar=True,
-        text=f"iteration {it}",
-        **kwargs,
+    im_rho = ax.imshow(
+        rho / (np.abs(q_e) * n_c),
+        extent=rho_info.imshow_extent * 1e6,  # conversion to microns
+        origin="lower",
+        norm=colors.SymLogNorm(linthresh=1e-4, linscale=0.15, base=10),
+        cmap=cm.get_cmap("cividis"),
     )
+    im_envelope = ax.imshow(
+        envelope / E0,
+        extent=env_info.imshow_extent * 1e6,
+        origin="lower",
+        cmap=laser_cmap,
+    )
+    im_envelope.set_clim(vmin=1.0)
 
-    filename = os.path.join(path, f"{field_name}{it:06d}.png")
-    plot.canvas.print_figure(filename)
+    # plot longitudinal field
+    ax.plot(e_z_of_z_info.z * 1e6, e_z_of_z / E0 * 25 - 20, color="0.75")
+    ax.axhline(-20, color="0.65", ls="-.")
+
+    cbaxes_rho = inset_axes(
+        ax,
+        width="3%",  # width = 10% of parent_bbox width
+        height="46%",  # height : 50%
+        loc=2,
+        bbox_to_anchor=(1.01, 0.0, 1, 1),
+        bbox_transform=ax.transAxes,
+        borderpad=0,
+    )
+    cbaxes_env = inset_axes(
+        ax,
+        width="3%",  # width = 5% of parent_bbox width
+        height="46%",  # height : 50%
+        loc=3,
+        bbox_to_anchor=(1.01, 0.0, 1, 1),
+        bbox_transform=ax.transAxes,
+        borderpad=0,
+    )
+    cbar_env = fig.colorbar(
+        mappable=im_envelope, orientation="vertical", ticklocation="right", cax=cbaxes_env
+    )
+    cbar_rho = fig.colorbar(
+        mappable=im_rho, orientation="vertical", ticklocation="right", cax=cbaxes_rho
+    )
+    cbar_env.set_label(r"$eE_{x} / m c \omega_\mathrm{L}$")
+    cbar_rho.set_label(r"$n_{e} / n_\mathrm{cr}$")
+    # cbar_rho.set_ticks([1e-4,1e-2,1e0]) FIXME
+
+    ax.set_ylabel(r"${} \;(\mu m)$".format(rho_info.axes[0]))
+    ax.set_xlabel(r"${} \;(\mu m)$".format(rho_info.axes[1]))
+
+    current_time = (ts.current_t * u.second).to("picosecond")
+    ax.set_title(f"t = {current_time:.2f}")
+
+    filename = save_path / f"{rho_field_name}{it:06d}.png"
+
+    fig.savefig(
+        filename,
+        dpi=300,
+        transparent=False,
+        bbox_inches="tight",
+    )
+    pyplot.close(fig)
+
 
 
 def get_a0(
