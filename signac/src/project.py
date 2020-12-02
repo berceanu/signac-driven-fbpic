@@ -579,7 +579,7 @@ def laser_density_plot(
     current_time = (ts.current_t * u.second).to("picosecond")
     ax.set_title(f"t = {current_time:.2f}")
 
-    filename = save_path / f"{rho_field_name}{it:06d}.png"
+    filename = save_path / f"rho{iteration:06d}.png"
 
     fig.savefig(
         filename,
@@ -718,16 +718,13 @@ def post_process_results(job: Job) -> None:
             hist_edges[:] = bin_edges
 
         # save "rho{it:06d}.png"
-        field_snapshot(
+        laser_density_plot(
             tseries=time_series,
-            it=it,
-            field_name="rho",
-            normalization_factor=1.0 / (q_e * job.sp.n_e),
-            path=rho_path,
-            zlabel=r"$n/n_e$",
-            vmin=0,
-            vmax=2,  # CHANGEME
-            hslice_val=0,
+            iteration=it,
+            rho_field_name="rho_electrons"
+            save_path=rho_path,
+            n_c=job.sp.n_c,
+            E0=job.sp.E0,
         )
 
     # the field "rho" has (SI) units of charge/volume (Q/V), C/(m^3)
