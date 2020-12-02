@@ -15,7 +15,7 @@ import math
 import os
 import subprocess
 import glob
-from typing import List, Optional, Union, Iterable, Callable, Tuple
+from typing import Union, Iterable, Callable, Tuple
 import pathlib
 
 import numpy as np
@@ -25,7 +25,6 @@ from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot, colors, cm
 from openpmd_viewer import addons
-from scipy.signal import hilbert
 import unyt as u
 from signac.contrib.job import Job
 
@@ -451,6 +450,7 @@ def run_fbpic(job: Job) -> None:
 # PLOTTING #
 ############
 
+
 def particle_energy_histogram(
     tseries,
     it: int,
@@ -498,14 +498,15 @@ def laser_density_plot(
     rho_field_name="rho_electrons",
     laser_polarization="x",
     save_path=pathlib.Path.cwd(),
-    n_c=1.7419595910637713e+27,  # 1/m^3
+    n_c=1.7419595910637713e27,  # 1/m^3
     E0=4013376052599.5396,  # V/m
 ) -> None:
     """
     Plot on the same figure the laser pulse envelope and the electron density.
     """
     import colorcet as cc
-
+    from copy import copy
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
     laser_cmap = copy(cc.m_fire)
     laser_cmap.set_under("black", alpha=0)
@@ -514,7 +515,9 @@ def laser_density_plot(
         field=rho_field_name,
         iteration=iteration,
     )
-    envelope, env_info = tseries.get_laser_envelope(iteration=iteration, pol=laser_polarization)
+    envelope, env_info = tseries.get_laser_envelope(
+        iteration=iteration, pol=laser_polarization
+    )
 
     # get longitudinal field
     e_z_of_z, e_z_of_z_info = tseries.get_field(
@@ -564,7 +567,10 @@ def laser_density_plot(
         borderpad=0,
     )
     cbar_env = fig.colorbar(
-        mappable=im_envelope, orientation="vertical", ticklocation="right", cax=cbaxes_env
+        mappable=im_envelope,
+        orientation="vertical",
+        ticklocation="right",
+        cax=cbaxes_env,
     )
     cbar_rho = fig.colorbar(
         mappable=im_rho, orientation="vertical", ticklocation="right", cax=cbaxes_rho
