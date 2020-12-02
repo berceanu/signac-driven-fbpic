@@ -15,6 +15,7 @@ import math
 import os
 import subprocess
 import glob
+from copy import copy
 from typing import Union, Iterable, Callable, Tuple
 import pathlib
 
@@ -24,6 +25,8 @@ import sliceplots
 from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot, colors, cm
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+import colorcet as cc
 from openpmd_viewer import addons
 import unyt as u
 from signac.contrib.job import Job
@@ -504,9 +507,6 @@ def laser_density_plot(
     """
     Plot on the same figure the laser pulse envelope and the electron density.
     """
-    import colorcet as cc
-    from copy import copy
-    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
     laser_cmap = copy(cc.m_fire)
     laser_cmap.set_under("black", alpha=0)
