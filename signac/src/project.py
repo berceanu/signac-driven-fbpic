@@ -24,7 +24,7 @@ import sliceplots
 from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot, colors, cm
-from openpmd_viewer import OpenPMDTimeSeries
+from openpmd_viewer import addons
 from scipy.signal import hilbert
 import unyt as u
 from signac.contrib.job import Job
@@ -182,7 +182,7 @@ def fbpic_ran(job: Job) -> bool:
         did_it_run = False
         return did_it_run
 
-    time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=True)
+    time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
     iterations: np.ndarray = time_series.iterations
 
     # estimate iteration array based on input parameters
@@ -452,7 +452,7 @@ def run_fbpic(job: Job) -> None:
 ############
 
 def particle_energy_histogram(
-    tseries: OpenPMDTimeSeries,
+    tseries,
     it: int,
     energy_min=1,
     energy_max=800,
@@ -510,14 +510,14 @@ def laser_density_plot(
     laser_cmap = copy(cc.m_fire)
     laser_cmap.set_under("black", alpha=0)
 
-    rho, rho_info = ts.get_field(
+    rho, rho_info = tseries.get_field(
         field=rho_field_name,
         iteration=iteration,
     )
-    envelope, env_info = ts.get_laser_envelope(iteration=iteration, pol=laser_polarization)
+    envelope, env_info = tseries.get_laser_envelope(iteration=iteration, pol=laser_polarization)
 
     # get longitudinal field
-    e_z_of_z, e_z_of_z_info = ts.get_field(
+    e_z_of_z, e_z_of_z_info = tseries.get_field(
         field="E",
         coord="z",
         iteration=iteration,
@@ -576,7 +576,7 @@ def laser_density_plot(
     ax.set_ylabel(r"${} \;(\mu m)$".format(rho_info.axes[0]))
     ax.set_xlabel(r"${} \;(\mu m)$".format(rho_info.axes[1]))
 
-    current_time = (ts.current_t * u.second).to("picosecond")
+    current_time = (tseries.current_t * u.second).to("picosecond")
     ax.set_title(f"t = {current_time:.2f}")
 
     filename = save_path / f"rho{iteration:06d}.png"
@@ -590,68 +590,21 @@ def laser_density_plot(
     pyplot.close(fig)
 
 
-
-def get_a0(
-    tseries: OpenPMDTimeSeries,
-    t: Optional[float] = None,
-    it: Optional[int] = None,
-    coord="x",
-    m="all",
-    slice_across=None,
-    theta=0.0,
-    lambda0=0.8e-6,
+def get_scalar_diagnostics(
+    tseries,
+    iteration: int,
+    laser_polarization="x",
 ) -> Tuple[float, float, float, float]:
-    """
-    Compute z₀, a₀, w₀, cτ.
+    """Compute z₀, a₀, w₀, cτ."""
 
-    :param tseries: whole simulation time series
-    :param t: time (in seconds) at which to obtain the data
-    :param it: time step at which to obtain the data
-    :param coord: which component of the field to extract
-    :param m: 'all' for extracting the sum of all the modes
-    :param slice_across: the direction along which to slice the data eg., 'x', 'y' or 'z'
-    :param theta: the angle of the plane of observation, with respect to the 'x' axis
-    :param lambda0: laser wavelength (meters)
-    :return: z₀, a₀, w₀, cτ
-    """
-    # get E_x field in V/m
-    electric_field_x, info_electric_field_x = tseries.get_field(
-        field="E",
-        coord=coord,
-        t=t,
-        iteration=it,
-        m=m,
-        theta=theta,
-        slice_across=slice_across,
-    )
+    a0 = tseries.get_a0(iteration=iteration, pol=laser_polarization)
+    w0 = tseries.get_laser_waist(iteration=iteration, pol=laser_polarization)
+    ctau = tseries.get_ctau(iteration=iteration, pol=laser_polarization)
 
-    # normalized vector potential
-    e0 = # FIXME
-    a0 = electric_field_x / e0
+    current_time = tseries.current_t * u.second
+    current_z = (u.clight * current_time).to_value("m")
 
-    # get pulse envelope
-    envelope = np.abs(hilbert(a0, axis=1))
-    envelope_z = envelope[envelope.shape[0] // 2, :]
-
-    a0_max = np.amax(envelope_z)
-
-    # index of peak
-    z_idx = np.argmax(envelope_z)
-    # pulse peak position
-    z0 = info_electric_field_x.z[z_idx]
-
-    # FWHM perpendicular size of beam, proportional to w0
-    fwhm_a0_w0 = (
-        np.sum(np.greater_equal(envelope[:, z_idx], a0_max / 2))
-        * info_electric_field_x.dr
-    )
-
-    # FWHM longitudinal size of the beam, proportional to ctau
-    fwhm_a0_ctau = (
-        np.sum(np.greater_equal(envelope_z, a0_max / 2)) * info_electric_field_x.dz
-    )
-
-    return z0, a0_max, fwhm_a0_w0, fwhm_a0_ctau
+    return current_z, a0, w0, ctau
 
 
 @ex
@@ -681,9 +634,9 @@ def post_process_results(job: Job) -> None:
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
-    rho_path: Union[bytes, str] = os.path.join(job.ws, "rhos")
+    rho_path = pathlib.Path(job.ws) / "rhos"
 
-    time_series: OpenPMDTimeSeries = OpenPMDTimeSeries(h5_path, check_all_files=False)
+    time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
     number_of_iterations: int = time_series.iterations.size
 
     # Do a mock histogram in order to get the number of bins
@@ -701,7 +654,7 @@ def post_process_results(job: Job) -> None:
     for idx, it in enumerate(time_series.iterations):
         it_time = it * job.sp.dt
 
-        z_0, a_0, w_0, c_tau = get_a0(time_series, it=it, lambda0=job.sp.lambda0)
+        z_0, a_0, w_0, c_tau = get_scalar_diagnostics(tseries=time_series, iteration=it)
 
         diags_file.write(
             f"{it:06d},{it_time * 1e15:.3e},{z_0 * 1e6:.3e},{a_0:.3e},{w_0 * 1e6:.3e},{c_tau * 1e6:.3e}\n"
