@@ -674,7 +674,7 @@ def post_process_results(job: Job) -> None:
         laser_density_plot(
             tseries=time_series,
             iteration=it,
-            rho_field_name="rho_electrons"
+            rho_field_name="rho_electrons",
             save_path=rho_path,
             n_c=job.sp.n_c,
             E0=job.sp.E0,
@@ -757,6 +757,7 @@ def plot_1d_diags(job: Job) -> None:
         ylim=[0, 10],  # CHANGEME
     )
     fig.savefig(job.fn("a0.png"))
+    pyplot.close(fig)
 
     fig, ax = pyplot.subplots(figsize=(10, 6))
     sliceplots.plot1d(
@@ -767,6 +768,7 @@ def plot_1d_diags(job: Job) -> None:
         ylabel=r"$%s \;(\mu m)$" % "w_0",
     )
     fig.savefig(job.fn("w0.png"))
+    pyplot.close(fig)
 
     fig, ax = pyplot.subplots(figsize=(10, 6))
     sliceplots.plot1d(
@@ -777,6 +779,7 @@ def plot_1d_diags(job: Job) -> None:
         ylabel=r"$c \tau \;(\mu m)$",
     )
     fig.savefig(job.fn("ctau.png"))
+    pyplot.close(fig)
 
 
 @ex
