@@ -412,12 +412,10 @@ def run_fbpic(job: Job) -> None:
         # Lifschitz et al., which is also the convention adopted in Warp Circ
         Er += 2 * gathered_grids[m].Er.T.real
 
-    e0 = electric_field_amplitude_norm(lambda0=job.sp.lambda0)
-
     fig = pyplot.figure(figsize=(8, 8))
     sliceplots.Plot2D(
         fig=fig,
-        arr2d=Er / e0,
+        arr2d=Er / job.sp.E0,
         h_axis=zgrid * 1e6,
         v_axis=rgrid * 1e6,
         zlabel=r"$E_r/E_0$",
@@ -451,22 +449,6 @@ def run_fbpic(job: Job) -> None:
 ############
 # PLOTTING #
 ############
-
-
-def electric_field_amplitude_norm(lambda0=0.8e-6):
-    """
-    Computes the laser electric field amplitude for :math:`a_0=1`.
-
-    :param lambda0: laser wavelength (meters)
-    """
-    # wavevector
-    k0 = 2 * np.pi / lambda0
-
-    # field amplitude
-    e0 = m_e * c_light ** 2 * k0 / q_e
-
-    return e0
-
 
 def particle_energy_histogram(
     tseries: OpenPMDTimeSeries,
@@ -602,7 +584,7 @@ def get_a0(
     )
 
     # normalized vector potential
-    e0 = electric_field_amplitude_norm(lambda0=lambda0)
+    e0 = # FIXME
     a0 = electric_field_x / e0
 
     # get pulse envelope

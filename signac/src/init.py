@@ -75,6 +75,7 @@ def main():
             beam=lwfa.GaussianBeam(w0=sp["w0"] * u.meter, λL=sp["lambda0"] * u.meter),
         )
         sp["n_c"] = laser.ncrit.to_value("1/m**3")
+        sp["E0"] = (laser.E0 / sp["a0"]).to_value("volt/m")
 
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
         sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
