@@ -15,6 +15,7 @@ import math
 import os
 import subprocess
 import glob
+from copy import copy
 from typing import Union, Iterable, Callable, Tuple
 import pathlib
 
@@ -24,6 +25,8 @@ import sliceplots
 from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot, colors, cm
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+import colorcet as cc
 from openpmd_viewer import addons
 import unyt as u
 from signac.contrib.job import Job
@@ -397,44 +400,6 @@ def run_fbpic(job: Job) -> None:
     ]
     # TODO add electron tracking
 
-    # Plot the Ex component of the laser
-    # Get the fields in the half-plane theta=0 (Sum mode 0 and mode 1)
-    gathered_grids = [sim.comm.gather_grid(sim.fld.interp[m]) for m in range(job.sp.Nm)]
-
-    rgrid = gathered_grids[0].r
-    zgrid = gathered_grids[0].z
-
-    # construct the Er field for theta=0
-    Er = gathered_grids[0].Er.T.real
-
-    for m in range(1, job.sp.Nm):
-        # There is a factor 2 here so as to comply with the convention in
-        # Lifschitz et al., which is also the convention adopted in Warp Circ
-        Er += 2 * gathered_grids[m].Er.T.real
-
-    fig = pyplot.figure(figsize=(8, 8))
-    sliceplots.Plot2D(
-        fig=fig,
-        arr2d=Er / job.sp.E0,
-        h_axis=zgrid * 1e6,
-        v_axis=rgrid * 1e6,
-        zlabel=r"$E_r/E_0$",
-        xlabel=r"$z \;(\mu m)$",
-        ylabel=r"$r \;(\mu m)$",
-        extent=(
-            zgrid[0] * 1e6,  # + 40
-            zgrid[-1] * 1e6,  # - 20
-            rgrid[0] * 1e6,
-            rgrid[-1] * 1e6,  # - 15,
-        ),
-        cbar=True,
-        vmin=-3,
-        vmax=3,
-        hslice_val=0.0,  # do a 1D slice through the middle of the simulation box
-    )
-    fig.savefig(job.fn("check_laser.png"))
-    pyplot.close(fig)
-
     # set deterministic random seed
     np.random.seed(0)
 
@@ -504,9 +469,6 @@ def laser_density_plot(
     """
     Plot on the same figure the laser pulse envelope and the electron density.
     """
-    import colorcet as cc
-    from copy import copy
-    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
     laser_cmap = copy(cc.m_fire)
     laser_cmap.set_under("black", alpha=0)
