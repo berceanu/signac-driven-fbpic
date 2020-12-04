@@ -489,7 +489,7 @@ def laser_density_plot(
         slice_across="r",
     )
 
-    fig, ax = pyplot.subplots(figsize=(21, 8))
+    fig, ax = pyplot.subplots(figsize=(1.618*4.16, 3.9))
 
     im_rho = ax.imshow(
         rho / (np.abs(q_e) * n_c),
@@ -551,9 +551,9 @@ def laser_density_plot(
 
     fig.savefig(
         filename,
-        dpi=100,
+        dpi=192,
         transparent=False,
-        bbox_inches="tight",
+        # bbox_inches="tight",
     )
     pyplot.close(fig)
 
