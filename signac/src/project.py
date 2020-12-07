@@ -582,7 +582,7 @@ def get_scalar_diags(
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
-def create_rho_pngs(job: Job) -> None:
+def save_rho_pngs(job: Job) -> None:
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
     * save a snapshot of the plasma density field ``rho`` to {job_dir}/rhos/rho{it:06d}.png
@@ -610,12 +610,12 @@ def create_rho_pngs(job: Job) -> None:
 
 @Project.operation
 @Project.pre.after(run_fbpic)
-@Project.post(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
-def write_diags_to_disk(job: Job) -> None:
+@Project.post.isfile("diags.txt")
+def save_scalar_diags(job: Job) -> None:
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
 
-    a. compute
+    compute
 
         1. the iteration time ``it_time``
         2. position of the laser pulse peak ``z_0``
@@ -625,13 +625,41 @@ def write_diags_to_disk(job: Job) -> None:
 
     and write results to "diags.txt".
 
-    b. compute the weighted particle energy histogram and save it to "all_hist.txt",
+    :param job: the job instance is a handle to the data of a unique statepoint
+    """
+    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
+    time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
+
+    diags_file = open(job.fn("diags.txt"), "w")
+    diags_file.write("iteration,time[fs],z₀[μm],a₀,w₀[μm],cτ[μm]\n")
+
+    # loop through all the iterations in the job's time series
+    for it in time_series.iterations:
+        it_time = it * job.sp.dt
+
+        z_0, a_0, w_0, c_tau = get_scalar_diags(tseries=time_series, iteration=it)
+
+        diags_file.write(
+            f"{it:06d},{it_time * 1e15:.3e},{z_0 * 1e6:.3e},{a_0:.3e},{w_0 * 1e6:.3e},{c_tau * 1e6:.3e}\n"
+        )
+
+    diags_file.close()
+
+
+
+@Project.operation
+@Project.pre.after(run_fbpic)
+@Project.post(are_files(("all_hist.txt", "hist_edges.txt")))
+def save_histograms(job: Job) -> None:
+    """
+    Loop through a whole simulation and, for *each ``fbpic`` iteration*:
+
+    compute the weighted particle energy histogram and save it to "all_hist.txt",
     and the histogram bins to "hist_edges.txt"
 
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-
     time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
     number_of_iterations: int = time_series.iterations.size
 
@@ -643,19 +671,8 @@ def write_diags_to_disk(job: Job) -> None:
     all_hist = np.empty(shape=(number_of_iterations, nrbins), dtype=np.float64)
     hist_edges = np.empty(shape=(nrbins + 1,), dtype=np.float64)
 
-    diags_file = open(job.fn("diags.txt"), "w")
-    diags_file.write("iteration,time[fs],z₀[μm],a₀,w₀[μm],cτ[μm]\n")
-
     # loop through all the iterations in the job's time series
     for idx, it in enumerate(time_series.iterations):
-        it_time = it * job.sp.dt
-
-        z_0, a_0, w_0, c_tau = get_scalar_diags(tseries=time_series, iteration=it)
-
-        diags_file.write(
-            f"{it:06d},{it_time * 1e15:.3e},{z_0 * 1e6:.3e},{a_0:.3e},{w_0 * 1e6:.3e},{c_tau * 1e6:.3e}\n"
-        )
-
         # generate 1D energy histogram
         energy_hist, bin_edges, _ = particle_energy_histogram(
             tseries=time_series,
@@ -665,8 +682,6 @@ def write_diags_to_disk(job: Job) -> None:
         all_hist[idx, :] = energy_hist
         if idx == 0:  # only save the first one
             hist_edges[:] = bin_edges
-
-    diags_file.close()
 
     np.savetxt(
         job.fn("all_hist.txt"),
@@ -678,7 +693,8 @@ def write_diags_to_disk(job: Job) -> None:
 
 @ex
 @Project.operation
-@Project.pre(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
+@Project.pre.after(save_histograms)
+@Project.pre.after(save_scalar_diags)
 @Project.post.isfile("hist2d.png")
 def plot_2d_hist(job: Job) -> None:
     """
@@ -712,7 +728,7 @@ def plot_2d_hist(job: Job) -> None:
 
 @ex
 @Project.operation
-@Project.pre.isfile("diags.txt")
+@Project.pre.after(save_scalar_diags)
 @Project.post(are_files(("a0.png", "w0.png", "ctau.png")))
 def plot_scalar_diags(job: Job) -> None:
     """
@@ -763,7 +779,7 @@ def plot_scalar_diags(job: Job) -> None:
 
 @ex
 @Project.operation
-@Project.pre(are_rho_pngs)
+@Project.pre.after(save_rho_pngs)
 @Project.post.isfile("rho.mp4")
 def generate_rho_movie(job: Job) -> None:
     """
