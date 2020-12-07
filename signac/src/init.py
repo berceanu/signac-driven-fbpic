@@ -6,6 +6,7 @@ the associated job workspace directories."""
 import logging
 import pathlib
 import math
+import numpy as np
 
 import unyt as u
 import prepic.lwfa as lwfa
