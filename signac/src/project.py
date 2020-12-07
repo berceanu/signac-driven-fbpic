@@ -591,7 +591,6 @@ def save_rho_pngs(job: Job) -> None:
     """
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     rho_path = pathlib.Path(job.ws) / "rhos"
-
     time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
 
     def it_laser_density_plot(it_nr):
