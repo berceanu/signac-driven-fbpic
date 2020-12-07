@@ -560,7 +560,7 @@ def laser_density_plot(
     pyplot.close(fig)
 
 
-def get_scalar_diagnostics(
+def get_scalar_diags(
     tseries,
     iteration: int,
     laser_polarization="x",
@@ -611,7 +611,7 @@ def create_rho_pngs(job: Job) -> None:
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
-def post_process_results(job: Job) -> None:
+def write_diags_to_disk(job: Job) -> None:
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
 
@@ -650,7 +650,7 @@ def post_process_results(job: Job) -> None:
     for idx, it in enumerate(time_series.iterations):
         it_time = it * job.sp.dt
 
-        z_0, a_0, w_0, c_tau = get_scalar_diagnostics(tseries=time_series, iteration=it)
+        z_0, a_0, w_0, c_tau = get_scalar_diags(tseries=time_series, iteration=it)
 
         diags_file.write(
             f"{it:06d},{it_time * 1e15:.3e},{z_0 * 1e6:.3e},{a_0:.3e},{w_0 * 1e6:.3e},{c_tau * 1e6:.3e}\n"
