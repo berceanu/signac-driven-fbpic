@@ -506,8 +506,8 @@ def laser_density_plot(
     im_envelope.set_clim(vmin=1.0)
 
     # plot longitudinal field
-    ax.plot(e_z_of_z_info.z * 1e6, e_z_of_z / E0 * 25 - 18, color="0.75")
-    ax.axhline(-18, color="0.65", ls="-.")
+    ax.plot(e_z_of_z_info.z * 1e6, e_z_of_z / E0 * 15 - 15, color="0.75")
+    ax.axhline(-15, color="0.65", ls="-.")
 
     cbaxes_rho = inset_axes(
         ax,

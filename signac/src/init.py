@@ -30,7 +30,7 @@ def main():
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             Nr=256,  # Number of gridpoints along r
             rmax=25.0e-6,  # Length of the box along r (meters)
-            Nm=2,  # Number of modes used
+            Nm=3,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
@@ -39,10 +39,10 @@ def main():
             n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
-            p_nt=8,  # Number of particles per cell along theta
+            p_nt=12,  # Number of particles per cell along theta
             # The laser
             a0=2.4,  # Laser amplitude
-            w0=22.0e-6 / 1.17741,  # Laser waist
+            w0=18.7e-6,  # Laser waist
             tau=25.0e-15,  # Laser duration, sec
             z0=-10.0e-6,  # Laser centroid
             zfoc=500.0e-6,  # Focal position
