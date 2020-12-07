@@ -19,6 +19,7 @@ import glob
 from copy import copy
 from typing import Union, Iterable, Callable, Tuple
 import pathlib
+from multiprocessing import Pool
 
 import numpy as np
 import pandas as pd
@@ -488,6 +489,11 @@ def laser_density_plot(
         iteration=iteration,
         slice_across="r",
     )
+    # the field "rho" has (SI) units of charge/volume (Q/V), C/(m^3)
+    # the initial density n_e has units of N/V, N = electron number
+    # multiply by electron charge q_e to get (N e) / V
+    # so we get Q / N e, which is C/C, i.e. dimensionless
+    # Note: one can also normalize by the critical density n_c
 
     fig, ax = pyplot.subplots(figsize=(10, 6))
 
@@ -571,11 +577,40 @@ def get_scalar_diagnostics(
     return current_z, a0, w0, ctau
 
 
-@ex
+@ex.with_directives(directives=dict(np=8))
+@directives(np=8)
+@Project.operation
+@Project.pre.after(run_fbpic)
+@Project.post(are_rho_pngs)
+def create_rho_pngs(job: Job) -> None:
+    """
+    Loop through a whole simulation and, for *each ``fbpic`` iteration*:
+    * save a snapshot of the plasma density field ``rho`` to {job_dir}/rhos/rho{it:06d}.png
+
+    :param job: the job instance is a handle to the data of a unique statepoint
+    """
+    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
+    rho_path = pathlib.Path(job.ws) / "rhos"
+
+    time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
+
+    def it_laser_density_plot(it_nr):
+        return laser_density_plot(
+            tseries=time_series,
+            iteration=it_nr,
+            rho_field_name="rho_electrons",
+            save_path=rho_path,
+            n_c=job.sp.n_c,
+            E0=job.sp.E0,
+        )
+
+    with Pool(8) as pool:
+        pool.map(it_laser_density_plot, time_series.iterations.tolist())
+
+
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_files(("diags.txt", "all_hist.txt", "hist_edges.txt")))
-@Project.post(are_rho_pngs)
 def post_process_results(job: Job) -> None:
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
@@ -593,12 +628,9 @@ def post_process_results(job: Job) -> None:
     b. compute the weighted particle energy histogram and save it to "all_hist.txt",
     and the histogram bins to "hist_edges.txt"
 
-    c. save a snapshot of the plasma density field ``rho`` to {job_dir}/diags/rhos/rho{it:06d}.png
-
     :param job: the job instance is a handle to the data of a unique statepoint
     """
-    h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
-    rho_path = pathlib.Path(job.ws) / "rhos"
+    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
 
     time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
     number_of_iterations: int = time_series.iterations.size
@@ -633,22 +665,6 @@ def post_process_results(job: Job) -> None:
         all_hist[idx, :] = energy_hist
         if idx == 0:  # only save the first one
             hist_edges[:] = bin_edges
-
-        # save "rho{it:06d}.png"
-        laser_density_plot(
-            tseries=time_series,
-            iteration=it,
-            rho_field_name="rho_electrons",
-            save_path=rho_path,
-            n_c=job.sp.n_c,
-            E0=job.sp.E0,
-        )
-
-    # the field "rho" has (SI) units of charge/volume (Q/V), C/(m^3)
-    # the initial density n_e has units of N/V, N = electron number
-    # multiply by electron charge q_e to get (N e) / V
-    # so we get Q / N e, which is C/C, i.e. dimensionless
-    # Note: one can also normalize by the critical density n_c
 
     diags_file.close()
 
