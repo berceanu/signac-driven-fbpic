@@ -311,9 +311,9 @@ def run_fbpic(job: Job) -> None:
     pyplot.close(fig)
 
     # redirect stdout to "stdout.txt"
-    # orig_stdout = sys.stdout
-    # f = open(job.fn("stdout.txt"), "w")
-    # sys.stdout = f
+    orig_stdout = sys.stdout
+    f = open(job.fn("stdout.txt"), "w")
+    sys.stdout = f
 
     # Initialize the simulation object
     sim = Simulation(
@@ -324,7 +324,7 @@ def run_fbpic(job: Job) -> None:
         job.sp.Nm,
         job.sp.dt,
         zmin=job.sp.zmin,
-        boundaries={"z": "open", "r": "reflective"},
+        boundaries={"z": "open", "r": "open"},
         n_order=-1,
         use_cuda=True,
         verbose_level=2,
@@ -404,11 +404,11 @@ def run_fbpic(job: Job) -> None:
     np.random.seed(0)
 
     # Run the simulation
-    sim.step(job.sp.N_step, show_progress=True)
+    sim.step(job.sp.N_step, show_progress=False)
 
     # redirect stdout back and close "stdout.txt"
-    # sys.stdout = orig_stdout
-    # f.close()
+    sys.stdout = orig_stdout
+    f.close()
 
 
 ############
