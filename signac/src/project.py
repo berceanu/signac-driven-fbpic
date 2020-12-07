@@ -646,7 +646,6 @@ def save_scalar_diags(job: Job) -> None:
     diags_file.close()
 
 
-
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_files(("all_hist.txt", "hist_edges.txt")))
