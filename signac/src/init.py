@@ -25,11 +25,11 @@ def main():
     for _ in range(1):
         sp = dict(
             # The simulation box
-            Nz=2464,  # Number of gridpoints along z
+            Nz=2048,  # Number of gridpoints along z
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             Nr=256,  # Number of gridpoints along r
-            rmax=30.0e-6,  # Length of the box along r (meters)
+            rmax=25.0e-6,  # Length of the box along r (meters)
             Nm=2,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)

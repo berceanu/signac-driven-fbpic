@@ -480,7 +480,6 @@ def laser_density_plot(
     envelope, env_info = tseries.get_laser_envelope(
         iteration=iteration, pol=laser_polarization
     )
-
     # get longitudinal field
     e_z_of_z, e_z_of_z_info = tseries.get_field(
         field="E",
@@ -489,7 +488,7 @@ def laser_density_plot(
         slice_across="r",
     )
 
-    fig, ax = pyplot.subplots(figsize=(1.618*4.16, 3.9))
+    fig, ax = pyplot.subplots(figsize=(10, 6))
 
     im_rho = ax.imshow(
         rho / (np.abs(q_e) * n_c),
@@ -507,8 +506,8 @@ def laser_density_plot(
     im_envelope.set_clim(vmin=1.0)
 
     # plot longitudinal field
-    ax.plot(e_z_of_z_info.z * 1e6, e_z_of_z / E0 * 25 - 20, color="0.75")
-    ax.axhline(-20, color="0.65", ls="-.")
+    ax.plot(e_z_of_z_info.z * 1e6, e_z_of_z / E0 * 25 - 18, color="0.75")
+    ax.axhline(-18, color="0.65", ls="-.")
 
     cbaxes_rho = inset_axes(
         ax,
@@ -549,12 +548,8 @@ def laser_density_plot(
 
     filename = save_path / f"rho{iteration:06d}.png"
 
-    fig.savefig(
-        filename,
-        dpi=192,
-        transparent=False,
-        # bbox_inches="tight",
-    )
+    fig.subplots_adjust(right=0.85)
+    fig.savefig(filename)
     pyplot.close(fig)
 
 
@@ -702,7 +697,7 @@ def plot_2d_hist(job: Job) -> None:
 @Project.operation
 @Project.pre.isfile("diags.txt")
 @Project.post(are_files(("a0.png", "w0.png", "ctau.png")))
-def plot_1d_diags(job: Job) -> None:
+def plot_scalar_diags(job: Job) -> None:
     """
     Plot the 1D diagnostics, ``a_0``, ``w_0`` and ``c_tau`` vs ``z_0``.
 
@@ -722,7 +717,6 @@ def plot_1d_diags(job: Job) -> None:
         h_axis=z_0,  # x-axis
         xlabel=r"$%s \;(\mu m)$" % "z",
         ylabel=r"$%s$" % "a_0",
-        ylim=[0, 10],  # CHANGEME
     )
     fig.savefig(job.fn("a0.png"))
     pyplot.close(fig)
