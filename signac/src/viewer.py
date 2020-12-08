@@ -6,7 +6,7 @@ from operator import itemgetter
 import unyt as u
 import collections
 
-current_dir = pathlib.Path.cwd()
+current_dir = pathlib.Path.cwd() / "runs"
 
 statepoints_file = current_dir / "signac_statepoints.json"
 statepoints_bytes = statepoints_file.read_bytes()
