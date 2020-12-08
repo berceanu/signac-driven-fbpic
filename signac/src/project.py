@@ -570,7 +570,7 @@ def get_scalar_diags(
 
     a0 = tseries.get_a0(iteration=iteration, pol=laser_polarization)
     w0 = tseries.get_laser_waist(iteration=iteration, pol=laser_polarization)
-    ctau = tseries.get_ctau(iteration=iteration, pol=laser_polarization)
+    ctau = tseries.get_ctau(iteration=iteration, pol=laser_polarization, method='rms')
 
     current_time = tseries.current_t * u.second
     current_z = (u.clight * current_time).to_value("m")
