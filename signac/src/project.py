@@ -573,8 +573,8 @@ def get_scalar_diags(
     return current_z, a0, w0, ctau
 
 
-@ex.with_directives(directives=dict(np=8))
-@directives(np=8)
+@ex.with_directives(directives=dict(np=3))
+@directives(np=3)
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
@@ -598,7 +598,7 @@ def save_rho_pngs(job: Job) -> None:
         E0=job.sp.E0,
     )
 
-    with Pool(8) as pool:
+    with Pool(3) as pool:
         pool.map(it_laser_density_plot, time_series.iterations.tolist())
 
 
