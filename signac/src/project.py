@@ -570,6 +570,9 @@ def get_scalar_diags(
     current_time = tseries.current_t * u.second
     current_z = (u.clight * current_time).to_value("m")
 
+    if np.isinf(a0):
+        a0 = 0.0
+
     return current_z, a0, w0, ctau
 
 
