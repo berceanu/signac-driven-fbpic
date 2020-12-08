@@ -20,6 +20,7 @@ from copy import copy
 from typing import Union, Iterable, Callable, Tuple
 import pathlib
 from multiprocessing import Pool
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -460,8 +461,8 @@ def particle_energy_histogram(
 
 
 def laser_density_plot(
+    iteration,
     tseries,
-    iteration: int,
     rho_field_name="rho_electrons",
     laser_polarization="x",
     save_path=pathlib.Path.cwd(),
@@ -593,15 +594,14 @@ def save_rho_pngs(job: Job) -> None:
     rho_path = pathlib.Path(job.ws) / "rhos"
     time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
 
-    def it_laser_density_plot(it_nr):
-        return laser_density_plot(
-            tseries=time_series,
-            iteration=it_nr,
-            rho_field_name="rho_electrons",
-            save_path=rho_path,
-            n_c=job.sp.n_c,
-            E0=job.sp.E0,
-        )
+    it_laser_density_plot = partial(
+        laser_density_plot,
+        tseries=time_series,
+        rho_field_name="rho_electrons",
+        save_path=rho_path,
+        n_c=job.sp.n_c,
+        E0=job.sp.E0,
+    )
 
     with Pool(8) as pool:
         pool.map(it_laser_density_plot, time_series.iterations.tolist())
