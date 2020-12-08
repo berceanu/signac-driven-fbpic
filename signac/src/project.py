@@ -670,6 +670,43 @@ def save_histograms(job: Job) -> None:
 
 @ex
 @Project.operation
+@Project.pre.after(save_histograms)
+@Project.post.isfile("hist2d.png")
+def plot_2d_hist(job: Job) -> None:
+    """
+    Plot the 2D histogram, composed of the 1D slices for each iteration.
+
+    :param job: the job instance is a handle to the data of a unique statepoint
+    """
+    all_hist = np.loadtxt(
+        job.fn("all_hist.txt"), dtype=np.float64, comments="#", ndmin=2
+    )
+    hist_edges = np.loadtxt(
+        job.fn("hist_edges.txt"), dtype=np.float64, comments="#", ndmin=1
+    )
+
+    # compute moving window position for each iteration
+    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+    times = iterations * job.sp.dt * u.second
+    positions = times * u.clight
+    z_0 = positions.to_value("micrometer")
+
+    # plot 2D energy-charge histogram
+    hist2d = sliceplots.Plot2D(
+        arr2d=all_hist.T,  # 2D data
+        h_axis=z_0,  # x-axis
+        v_axis=hist_edges[1:],  # y-axis
+        xlabel=r"$%s \;(\mu m)$" % "z",
+        ylabel=r"E (MeV)",
+        zlabel=r"dQ/dE (pC/MeV)",
+        vslice_val=z_0[-1],  # can be changed to z_0[iteration]
+        extent=(z_0[0], z_0[-1], hist_edges[1], hist_edges[-1]),
+    )
+    hist2d.canvas.print_figure(job.fn("hist2d.png"))
+
+
+@ex
+@Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.isfile("diags.txt")
 def save_scalar_diags(job: Job) -> None:
@@ -756,41 +793,6 @@ def plot_scalar_diags(job: Job) -> None:
     )
     fig.savefig(job.fn("ctau.png"))
     pyplot.close(fig)
-
-
-@ex
-@Project.operation
-@Project.pre.after(save_histograms)
-@Project.pre.after(save_scalar_diags)
-@Project.post.isfile("hist2d.png")
-def plot_2d_hist(job: Job) -> None:
-    """
-    Plot the 2D histogram, composed of the 1D slices for each iteration.
-
-    :param job: the job instance is a handle to the data of a unique statepoint
-    """
-    df_diags = pd.read_csv(job.fn("diags.txt"), header=0, index_col=0, comment="#")
-    all_hist = np.loadtxt(
-        job.fn("all_hist.txt"), dtype=np.float64, comments="#", ndmin=2
-    )
-    hist_edges = np.loadtxt(
-        job.fn("hist_edges.txt"), dtype=np.float64, comments="#", ndmin=1
-    )
-
-    z_0 = df_diags.loc[:, "z₀[μm]"]
-
-    # plot 2D energy-charge histogram
-    hist2d = sliceplots.Plot2D(
-        arr2d=all_hist.T,  # 2D data
-        h_axis=z_0.values,  # x-axis
-        v_axis=hist_edges[1:],  # y-axis
-        xlabel=r"$%s \;(\mu m)$" % "z",
-        ylabel=r"E (MeV)",
-        zlabel=r"dQ/dE (pC/MeV)",
-        vslice_val=z_0.iloc[-1],  # can be changed to z_0.loc[iteration]
-        extent=(z_0.iloc[0], z_0.iloc[-1], hist_edges[1], hist_edges[-1]),
-    )
-    hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
 
 if __name__ == "__main__":
