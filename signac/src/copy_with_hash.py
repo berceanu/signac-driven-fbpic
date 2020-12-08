@@ -21,6 +21,6 @@ if __name__ == "__main__":
     p.write_bytes(statepoints.read_bytes())
 
     for job in project:
-        for f_name in ("rho.mp4",):
+        for f_name in ("rho.mp4", "hist2d.png"):
             src = pathlib.Path(job.fn(f_name))
             copy_with_hash(src, out_path, job)
