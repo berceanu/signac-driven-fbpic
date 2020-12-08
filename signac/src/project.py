@@ -604,41 +604,20 @@ def save_rho_pngs(job: Job) -> None:
 
 @ex
 @Project.operation
-@Project.pre.after(run_fbpic)
-@Project.post.isfile("diags.txt")
-def save_scalar_diags(job: Job) -> None:
+@Project.pre.after(save_rho_pngs)
+@Project.post.isfile("rho.mp4")
+def generate_rho_movie(job: Job) -> None:
     """
-    Loop through a whole simulation and, for *each ``fbpic`` iteration*:
-
-    compute
-
-        1. the iteration time ``it_time``
-        2. position of the laser pulse peak ``z_0``
-        3. normalized vector potential ``a_0``
-        4. beam waist ``w_0``
-        5. spatial pulse length ``c_tau``
-
-    and write results to "diags.txt".
+    Generate a movie from all the .png files in {job_dir}/rhos/
 
     :param job: the job instance is a handle to the data of a unique statepoint
     """
-    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
+    command = ffmpeg_command(
+        input_files=os.path.join(job.ws, "rhos", "rho*.png"),
+        output_file=job.fn("rho.mp4"),
+    )
 
-    diags_file = open(job.fn("diags.txt"), "w")
-    diags_file.write("iteration,time[fs],z₀[μm],a₀,w₀[μm],cτ[μm]\n")
-
-    # loop through all the iterations in the job's time series
-    for it in time_series.iterations:
-        it_time = it * job.sp.dt
-
-        z_0, a_0, w_0, c_tau = get_scalar_diags(tseries=time_series, iteration=it)
-
-        diags_file.write(
-            f"{it:06d},{it_time * 1e15:.3e},{z_0 * 1e6:.3e},{a_0:.3e},{w_0 * 1e6:.3e},{c_tau * 1e6:.3e}\n"
-        )
-
-    diags_file.close()
+    sh(command, shell=True)
 
 
 @ex
@@ -688,37 +667,41 @@ def save_histograms(job: Job) -> None:
 
 @ex
 @Project.operation
-@Project.pre.after(save_histograms)
-@Project.pre.after(save_scalar_diags)
-@Project.post.isfile("hist2d.png")
-def plot_2d_hist(job: Job) -> None:
+@Project.pre.after(run_fbpic)
+@Project.post.isfile("diags.txt")
+def save_scalar_diags(job: Job) -> None:
     """
-    Plot the 2D histogram, composed of the 1D slices for each iteration.
+    Loop through a whole simulation and, for *each ``fbpic`` iteration*:
+
+    compute
+
+        1. the iteration time ``it_time``
+        2. position of the laser pulse peak ``z_0``
+        3. normalized vector potential ``a_0``
+        4. beam waist ``w_0``
+        5. spatial pulse length ``c_tau``
+
+    and write results to "diags.txt".
 
     :param job: the job instance is a handle to the data of a unique statepoint
     """
-    df_diags = pd.read_csv(job.fn("diags.txt"), header=0, index_col=0, comment="#")
-    all_hist = np.loadtxt(
-        job.fn("all_hist.txt"), dtype=np.float64, comments="#", ndmin=2
-    )
-    hist_edges = np.loadtxt(
-        job.fn("hist_edges.txt"), dtype=np.float64, comments="#", ndmin=1
-    )
+    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
+    time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
 
-    z_0 = df_diags.loc[:, "z₀[μm]"]
+    diags_file = open(job.fn("diags.txt"), "w")
+    diags_file.write("iteration,time[fs],z₀[μm],a₀,w₀[μm],cτ[μm]\n")
 
-    # plot 2D energy-charge histogram
-    hist2d = sliceplots.Plot2D(
-        arr2d=all_hist.T,  # 2D data
-        h_axis=z_0.values,  # x-axis
-        v_axis=hist_edges[1:],  # y-axis
-        xlabel=r"$%s \;(\mu m)$" % "z",
-        ylabel=r"E (MeV)",
-        zlabel=r"dQ/dE (pC/MeV)",
-        vslice_val=z_0.iloc[-1],  # can be changed to z_0.loc[iteration]
-        extent=(z_0.iloc[0], z_0.iloc[-1], hist_edges[1], hist_edges[-1]),
-    )
-    hist2d.canvas.print_figure(job.fn("hist2d.png"))
+    # loop through all the iterations in the job's time series
+    for it in time_series.iterations:
+        it_time = it * job.sp.dt
+
+        z_0, a_0, w_0, c_tau = get_scalar_diags(tseries=time_series, iteration=it)
+
+        diags_file.write(
+            f"{it:06d},{it_time * 1e15:.3e},{z_0 * 1e6:.3e},{a_0:.3e},{w_0 * 1e6:.3e},{c_tau * 1e6:.3e}\n"
+        )
+
+    diags_file.close()
 
 
 @ex
@@ -774,20 +757,37 @@ def plot_scalar_diags(job: Job) -> None:
 
 @ex
 @Project.operation
-@Project.pre.after(save_rho_pngs)
-@Project.post.isfile("rho.mp4")
-def generate_rho_movie(job: Job) -> None:
+@Project.pre.after(save_histograms)
+@Project.pre.after(save_scalar_diags)
+@Project.post.isfile("hist2d.png")
+def plot_2d_hist(job: Job) -> None:
     """
-    Generate a movie from all the .png files in {job_dir}/rhos/
+    Plot the 2D histogram, composed of the 1D slices for each iteration.
 
     :param job: the job instance is a handle to the data of a unique statepoint
     """
-    command = ffmpeg_command(
-        input_files=os.path.join(job.ws, "rhos", "rho*.png"),
-        output_file=job.fn("rho.mp4"),
+    df_diags = pd.read_csv(job.fn("diags.txt"), header=0, index_col=0, comment="#")
+    all_hist = np.loadtxt(
+        job.fn("all_hist.txt"), dtype=np.float64, comments="#", ndmin=2
+    )
+    hist_edges = np.loadtxt(
+        job.fn("hist_edges.txt"), dtype=np.float64, comments="#", ndmin=1
     )
 
-    sh(command, shell=True)
+    z_0 = df_diags.loc[:, "z₀[μm]"]
+
+    # plot 2D energy-charge histogram
+    hist2d = sliceplots.Plot2D(
+        arr2d=all_hist.T,  # 2D data
+        h_axis=z_0.values,  # x-axis
+        v_axis=hist_edges[1:],  # y-axis
+        xlabel=r"$%s \;(\mu m)$" % "z",
+        ylabel=r"E (MeV)",
+        zlabel=r"dQ/dE (pC/MeV)",
+        vslice_val=z_0.iloc[-1],  # can be changed to z_0.loc[iteration]
+        extent=(z_0.iloc[0], z_0.iloc[-1], hist_edges[1], hist_edges[-1]),
+    )
+    hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
 
 if __name__ == "__main__":
