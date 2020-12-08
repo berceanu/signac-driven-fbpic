@@ -24,8 +24,7 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
 
-            #tau=25.0,  # Laser duration, sec
-    for my_tau in np.linspace(20, 30, 11) * 1e-15:
+    for focus in np.linspace(-50, 500, 12) * 1e-6:
         sp = dict(
             # The simulation box
             Nz=2048,  # Number of gridpoints along z
@@ -46,9 +45,9 @@ def main():
             # The laser
             a0=2.4,  # Laser amplitude
             w0=18.7e-6,  # Laser waist
-            tau=my_tau,  # Laser duration, sec
+            tau=30.0e-15,  # Laser duration, sec
             z0=-10.0e-6,  # Laser centroid
-            zfoc=500.0e-6,  # Focal position
+            zfoc=focus,  # Focal position
             lambda0=0.8e-6,  # Laser wavelength
             # The density profile
             flat_top_dist=1000.0e-6,  # plasma flat top distance

@@ -227,7 +227,7 @@ def run_fbpic(job: Job) -> None:
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     from fbpic.main import Simulation
-    from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
+    from fbpic.lpa_utils.laser import add_laser_pulse, FlattenedGaussianLaser
     from fbpic.openpmd_diag import (
         FieldDiagnostic,
         ParticleDiagnostic,
@@ -322,12 +322,12 @@ def run_fbpic(job: Job) -> None:
 
     # Initialize the simulation object
     sim = Simulation(
-        job.sp.Nz,
-        job.sp.zmax,
-        job.sp.Nr,
-        job.sp.rmax,
-        job.sp.Nm,
-        job.sp.dt,
+        Nz=job.sp.Nz,
+        zmax=job.sp.zmax,
+        Nr=job.sp.Nr,
+        rmax=job.sp.rmax,
+        Nm=job.sp.Nm,
+        dt=job.sp.dt,
         zmin=job.sp.zmin,
         boundaries={"z": "open", "r": "open"},
         n_order=-1,
@@ -351,26 +351,18 @@ def run_fbpic(job: Job) -> None:
     )
 
     # Create a Gaussian laser profile
-    laser_profile = GaussianLaser(
+    laser_profile = FlattenedGaussianLaser(
         a0=job.sp.a0,
-        waist=job.sp.w0,
+        w0=job.sp.w0,
         tau=job.sp.tau,
         z0=job.sp.z0,
         zf=job.sp.zfoc,
-        theta_pol=0.0,
         lambda0=job.sp.lambda0,
-        cep_phase=0.0,
-        phi2_chirp=0.0,
-        propagation_direction=1,
     )
     # Add it to the simulation
     add_laser_pulse(
-        sim,
-        laser_profile,
-        gamma_boost=None,
-        method="direct",
-        z0_antenna=None,
-        v_antenna=0.0,
+        sim=sim,
+        laser_profile=laser_profile,
     )
 
     # Configure the moving window
@@ -572,7 +564,7 @@ def get_scalar_diags(
 
     a0 = tseries.get_a0(iteration=iteration, pol=laser_polarization)
     w0 = tseries.get_laser_waist(iteration=iteration, pol=laser_polarization)
-    ctau = tseries.get_ctau(iteration=iteration, pol=laser_polarization, method='rms')
+    ctau = tseries.get_ctau(iteration=iteration, pol=laser_polarization, method="rms")
 
     current_time = tseries.current_t * u.second
     current_z = (u.clight * current_time).to_value("m")
