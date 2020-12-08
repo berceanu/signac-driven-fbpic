@@ -607,6 +607,7 @@ def save_rho_pngs(job: Job) -> None:
         pool.map(it_laser_density_plot, time_series.iterations.tolist())
 
 
+@ex
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.isfile("diags.txt")
@@ -645,6 +646,7 @@ def save_scalar_diags(job: Job) -> None:
     diags_file.close()
 
 
+@ex
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_files(("all_hist.txt", "hist_edges.txt")))
