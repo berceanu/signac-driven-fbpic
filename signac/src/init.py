@@ -91,8 +91,6 @@ def main():
 
         project.open_job(sp).init()
 
-    project.write_statepoints()
-
     for job in project:
         p = pathlib.Path(job.ws)
         pathlib.Path(p / "rhos").mkdir(parents=True, exist_ok=True)
