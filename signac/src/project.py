@@ -607,6 +607,58 @@ def generate_rho_movie(job: Job) -> None:
 @ex
 @Project.operation
 @Project.pre.after(run_fbpic)
+@Project.post.isfile("final_histogram.npz")
+def save_final_histogram(job: Job) -> None:
+    """Save the histogram corresponding to the last iteration."""
+
+    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
+    time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
+    last_iteration = time_series.iterations[-1]
+
+    # compute 1D histogram
+    energy_hist, bin_edges, nbins = particle_energy_histogram(
+        tseries=time_series,
+        it=last_iteration,
+        cutoff=np.inf,  # no cutoff
+    )
+    np.savez(job.fn("final_histogram"), edges=bin_edges, counts=energy_hist)
+
+
+@ex
+@Project.operation
+@Project.pre.after(save_final_histogram)
+@Project.post.isfile("final_histogram.png")
+def plot_final_histogram(job: Job) -> None:
+    """Plot the electron spectrum corresponding to the last iteration."""
+
+    npzfile = np.load("final_histogram.npz")
+
+    edges = npzfile["edges"]
+    counts = npzfile["counts"]
+
+    energy = np.array([edges[:-1], edges[1:]]).T.flatten()
+    charge = np.array([counts, counts]).T.flatten()
+
+    mask = (energy > 70) & (energy < 500)  # MeV
+    energy = energy[mask]
+    charge = np.clip(charge, 0, 1)[mask]
+
+    # plot it
+    fig, ax = pyplot.subplots(figsize=(10, 6))
+    sliceplots.plot1d(
+        ax=ax,
+        v_axis=charge,
+        h_axis=energy,
+        xlabel=r"E (MeV)",
+        ylabel=r"dQ/dE (pC/MeV)",
+        ylim=[0, 1.1],
+    )
+    fig.savefig(job.fn("final_histogram.png"))
+
+
+@ex
+@Project.operation
+@Project.pre.after(run_fbpic)
 @Project.post(are_files(("all_hist.txt", "hist_edges.txt")))
 def save_histograms(job: Job) -> None:
     """
