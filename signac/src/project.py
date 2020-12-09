@@ -305,6 +305,7 @@ def run_fbpic(job: Job) -> None:
     mark_on_plot(ax=ax, parameter="zmax")
     mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
     mark_on_plot(ax=ax, parameter="zfoc", y=0.5)
+    mark_on_plot(ax=ax, parameter="z0", y=0.5)
     mark_on_plot(ax=ax, parameter="center_left", y=0.7)
     mark_on_plot(ax=ax, parameter="center_right", y=0.7)
     mark_on_plot(ax=ax, parameter="L_interact", y=0.7)
