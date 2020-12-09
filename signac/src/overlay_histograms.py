@@ -2,6 +2,7 @@ import pathlib
 from openpmd_viewer import addons
 from project import particle_energy_histogram
 from matplotlib import pyplot
+import unyt as u
 import signac
 
 
@@ -10,7 +11,12 @@ def main():
 
     fig, ax = pyplot.subplots(figsize=(10, 6))
 
-    for z_foc, jobs in proj.groupby(key="zfoc"):
+    ax.set_xlabel("E (MeV)")
+    ax.set_ylim(0, 35)
+    ax.set_xlim(1, 500)
+    ax.set_ylabel("dQ/dE (pC/MeV)")
+
+    for zf, jobs in proj.groupby(key="zfoc"):
         job = next(jobs)  # assuming single job per group
 
         # get path to job's hdf5 files
@@ -25,10 +31,11 @@ def main():
             tseries=time_series,
             it=last_iteration,
         )
+        zfoc = (job.sp.zfoc * u.meter).to("micrometer")
 
-        if z_foc < 0:
-            ax.step(bin_edges[1:], energy_hist)
+        ax.step(bin_edges[1:], energy_hist, label=f"$z_f$ = {zfoc:.0f}")
 
+    ax.legend()
     fig.savefig("zoo.png")
 
 
