@@ -33,8 +33,8 @@ def get_persistent_homology(seq):
 
     # Process each sample in descending order
     for idx in indices:
-        lftdone = (idx > 0 and idxtopeak[idx - 1] is not None)
-        rgtdone = (idx < len(seq) - 1 and idxtopeak[idx + 1] is not None)
+        lftdone = idx > 0 and idxtopeak[idx - 1] is not None
+        rgtdone = idx < len(seq) - 1 and idxtopeak[idx + 1] is not None
         il = idxtopeak[idx - 1] if lftdone else None
         ir = idxtopeak[idx + 1] if rgtdone else None
 
@@ -69,20 +69,18 @@ def get_persistent_homology(seq):
     return sorted(peaks, key=lambda p: p.get_persistence(seq), reverse=True)
 
 
-
-
 if __name__ == "__main__":
-    npzfile = np.load('histogram.npz')
+    npzfile = np.load("histogram.npz")
 
-    edges = npzfile['edges']
-    counts = npzfile['counts']
+    edges = npzfile["edges"]
+    counts = npzfile["counts"]
 
     energy = np.array([edges[:-1], edges[1:]]).T.flatten()
     charge = np.array([counts, counts]).T.flatten()
 
-    mask = (energy > 90) & (energy < 710)  # MeV
+    mask = (energy > 70) & (energy < 400)  # MeV
     energy = energy[mask]
-    charge = np.clip(charge, 0, 1)[mask]
+    charge = charge[mask]
 
     h = get_persistent_homology(charge)
 
@@ -94,9 +92,10 @@ if __name__ == "__main__":
         h_axis=energy,
         xlabel=r"E (MeV)",
         ylabel=r"dQ/dE (pC/MeV)",
-        ylim=[0, 1.1]
     )
-    for peak_number, peak in enumerate(h[:6]):  # go through first peaks, in order of importance
+    for peak_number, peak in enumerate(
+        h[:6]
+    ):  # go through first peaks, in order of importance
         peak_index = peak.born
         energy_position = energy[peak_index]
         charge_value = charge[peak_index]
@@ -104,11 +103,26 @@ if __name__ == "__main__":
         ymin = charge_value - persistence
         if persistence == float("inf"):
             ymin = 0
-        ax.annotate(s=f"{peak_number}", xy=(energy_position + 5, charge_value + 0.02), xycoords="data",
-                    color=STYLE[str(peak_index)]["color"], size=14)
-        ax.axvline(x=energy_position, linestyle=STYLE[str(peak_index)]["linestyle"],
-                color=STYLE[str(peak_index)]["color"], linewidth=2)
-        ax.fill_between(energy, charge, ymin, where=(energy > energy[peak.left]) & (energy <= energy[peak.right]),
-                        color=STYLE[str(peak_index)]["color"], alpha=0.9)
+        ax.annotate(
+            s=f"{peak_number}",
+            xy=(energy_position + 5, charge_value + 0.02),
+            xycoords="data",
+            color=STYLE[str(peak_index)]["color"],
+            size=14,
+        )
+        ax.axvline(
+            x=energy_position,
+            linestyle=STYLE[str(peak_index)]["linestyle"],
+            color=STYLE[str(peak_index)]["color"],
+            linewidth=2,
+        )
+        ax.fill_between(
+            energy,
+            charge,
+            ymin,
+            where=(energy > energy[peak.left]) & (energy <= energy[peak.right]),
+            color=STYLE[str(peak_index)]["color"],
+            alpha=0.9,
+        )
 
-    fig.savefig('peak_detection.png')
+    fig.savefig("peak_detection.png")
