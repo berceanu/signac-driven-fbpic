@@ -75,7 +75,7 @@ if __name__ == "__main__":
     energy = np.array([edges[:-1], edges[1:]]).T.flatten()
     charge = np.array([counts, counts]).T.flatten()
 
-    mask = (energy > 0) & (energy < 400)  # MeV
+    mask = (energy > 0) & (energy < 350)  # MeV
     energy = energy[mask]
     charge = np.clip(charge, 0, 40)[mask]
 
