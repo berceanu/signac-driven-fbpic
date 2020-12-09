@@ -19,7 +19,7 @@ STYLE = defaultdict(lambda: next(loop_cy_iter))
 
 
 def main():
-    proj = signac.get_project(root="../", search=False)
+    proj = signac.get_project(search=False)
 
     fig, ax = pyplot.subplots(figsize=(golden * 8, 8))
 
