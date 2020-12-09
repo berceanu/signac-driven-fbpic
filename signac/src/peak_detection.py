@@ -7,7 +7,6 @@ from cycler import cycler
 
 line_colors = ["C1", "C2", "C3", "C4", "C5", "C6"]
 line_styles = ["-", "--", ":", "-.", (0, (1, 10)), (0, (5, 10))]
-
 cyl = cycler(color=line_colors) + cycler(linestyle=line_styles)
 loop_cy_iter = cyl()
 STYLE = defaultdict(lambda: next(loop_cy_iter))

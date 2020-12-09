@@ -17,13 +17,12 @@ import sys
 import subprocess
 import glob
 from copy import copy
-from typing import Union, Iterable, Callable, Tuple
+from typing import Union, Iterable, Callable
 import pathlib
 from multiprocessing import Pool
 from functools import partial
 
 import numpy as np
-import pandas as pd
 import sliceplots
 from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
@@ -32,8 +31,8 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import colorcet as cc
 from openpmd_viewer import addons
 import unyt as u
+from peak_detection import get_persistent_homology
 from signac.contrib.job import Job
-from peak_detection import get_persistent_homology, STYLE
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -632,8 +631,16 @@ def save_final_histogram(job: Job) -> None:
 def plot_final_histogram(job: Job) -> None:
     """Plot the electron spectrum corresponding to the last iteration."""
 
-    npzfile = np.load(job.fn("final_histogram.npz"))
+    from collections import defaultdict
+    from cycler import cycler
 
+    line_colors = ["C1", "C2", "C3", "C4", "C5", "C6"]
+    line_styles = ["-", "--", ":", "-.", (0, (1, 10)), (0, (5, 10))]
+    cyl = cycler(color=line_colors) + cycler(linestyle=line_styles)
+    loop_cy_iter = cyl()
+    STYLE = defaultdict(lambda: next(loop_cy_iter))
+
+    npzfile = np.load(job.fn("final_histogram.npz"))
     edges = npzfile["edges"]
     counts = npzfile["counts"]
 
