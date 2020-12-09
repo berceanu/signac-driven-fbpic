@@ -647,9 +647,9 @@ def plot_final_histogram(job: Job) -> None:
     energy = np.array([edges[:-1], edges[1:]]).T.flatten()
     charge = np.array([counts, counts]).T.flatten()
 
-    mask = (energy > 70) & (energy < 400)  # MeV
+    mask = (energy > 0) & (energy < 350)  # MeV
     energy = energy[mask]
-    charge = np.clip(charge, 0, 35)[mask]
+    charge = np.clip(charge, 0, 40)[mask]
 
     h = get_persistent_homology(charge)
 
@@ -661,7 +661,6 @@ def plot_final_histogram(job: Job) -> None:
         h_axis=energy,
         xlabel=r"E (MeV)",
         ylabel=r"dQ/dE (pC/MeV)",
-        ylim=[0, 35.1],
     )
     for peak_number, peak in enumerate(
         h[:6]

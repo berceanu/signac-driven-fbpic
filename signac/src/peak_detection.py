@@ -75,9 +75,9 @@ if __name__ == "__main__":
     energy = np.array([edges[:-1], edges[1:]]).T.flatten()
     charge = np.array([counts, counts]).T.flatten()
 
-    mask = (energy > 10) & (energy < 400)  # MeV
+    mask = (energy > 0) & (energy < 400)  # MeV
     energy = energy[mask]
-    charge = charge[mask]
+    charge = np.clip(charge, 0, 40)[mask]
 
     h = get_persistent_homology(charge)
 
