@@ -656,7 +656,9 @@ def plot_final_histogram(job: Job) -> None:
         ylabel=r"dQ/dE (pC/MeV)",
         ylim=[0, 35.1],
     )
-    for peak_number, peak in enumerate(h[:6]):  # go through first peaks, in order of importance
+    for peak_number, peak in enumerate(
+        h[:6]
+    ):  # go through first peaks, in order of importance
         peak_index = peak.born
         energy_position = energy[peak_index]
         charge_value = charge[peak_index]
@@ -664,12 +666,27 @@ def plot_final_histogram(job: Job) -> None:
         ymin = charge_value - persistence
         if persistence == float("inf"):
             ymin = 0
-        ax.annotate(text=f"{peak_number}", xy=(energy_position + 5, charge_value + 0.02), xycoords="data",
-                    color=STYLE[str(peak_index)]["color"], size=14)
-        ax.axvline(x=energy_position, linestyle=STYLE[str(peak_index)]["linestyle"],
-                color=STYLE[str(peak_index)]["color"], linewidth=2)
-        ax.fill_between(energy, charge, ymin, where=(energy > energy[peak.left]) & (energy <= energy[peak.right]),
-                        color=STYLE[str(peak_index)]["color"], alpha=0.9)
+        ax.annotate(
+            text=f"{peak_number}",
+            xy=(energy_position + 5, charge_value + 0.02),
+            xycoords="data",
+            color=STYLE[str(peak_index)]["color"],
+            size=14,
+        )
+        ax.axvline(
+            x=energy_position,
+            linestyle=STYLE[str(peak_index)]["linestyle"],
+            color=STYLE[str(peak_index)]["color"],
+            linewidth=2,
+        )
+        ax.fill_between(
+            energy,
+            charge,
+            ymin,
+            where=(energy > energy[peak.left]) & (energy <= energy[peak.right]),
+            color=STYLE[str(peak_index)]["color"],
+            alpha=0.9,
+        )
 
     fig.savefig(job.fn("final_histogram.png"))
 
