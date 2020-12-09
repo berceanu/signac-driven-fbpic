@@ -1,15 +1,27 @@
 import pathlib
+from collections import defaultdict
 from openpmd_viewer import addons
 from project import particle_energy_histogram
 from matplotlib import pyplot
+from cycler import cycler
+from scipy.constants import golden
 import unyt as u
 import signac
+
+line_colors = ["C1", "C2", "C3"]
+line_styles = ["-", "--", ":", "-."]
+
+cyl = cycler(color=line_colors) * cycler(linestyle=line_styles)
+
+loop_cy_iter = cyl()
+
+STYLE = defaultdict(lambda: next(loop_cy_iter))
 
 
 def main():
     proj = signac.get_project(root="../", search=False)
 
-    fig, ax = pyplot.subplots(figsize=(10, 6))
+    fig, ax = pyplot.subplots(figsize=(golden * 8, 8))
 
     ax.set_xlabel("E (MeV)")
     ax.set_ylim(0, 35)
@@ -31,12 +43,21 @@ def main():
             tseries=time_series,
             it=last_iteration,
         )
-        zfoc = (job.sp.zfoc * u.meter).to("micrometer")
 
-        ax.step(bin_edges[1:], energy_hist, label=f"$z_f$ = {zfoc:.0f}")
+        zfoc = (job.sp.zfoc * u.meter).to("micrometer")
+        label = f"$z_f$ = {zfoc:.0f}"
+
+        ax.step(
+            bin_edges[1:],
+            energy_hist,
+            label=label,
+            color=STYLE[label]["color"],
+            linestyle=STYLE[label]["linestyle"],
+            linewidth=0.5,
+        )
 
     ax.legend()
-    fig.savefig("zoo.png")
+    fig.savefig("histograms.png", dpi=192, transparent=False)
 
 
 if __name__ == "__main__":
