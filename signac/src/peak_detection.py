@@ -1,8 +1,7 @@
+from collections import defaultdict
 import numpy as np
 import sliceplots
 from matplotlib import pyplot
-
-from collections import defaultdict
 from cycler import cycler
 
 line_colors = ["C1", "C2", "C3", "C4", "C5", "C6"]
@@ -68,7 +67,7 @@ def get_persistent_homology(seq):
 
 
 if __name__ == "__main__":
-    npzfile = np.load("histogram.npz")
+    npzfile = np.load("final_histogram.npz")
 
     edges = npzfile["edges"]
     counts = npzfile["counts"]
@@ -76,7 +75,7 @@ if __name__ == "__main__":
     energy = np.array([edges[:-1], edges[1:]]).T.flatten()
     charge = np.array([counts, counts]).T.flatten()
 
-    mask = (energy > 70) & (energy < 400)  # MeV
+    mask = (energy > 10) & (energy < 400)  # MeV
     energy = energy[mask]
     charge = charge[mask]
 
@@ -102,7 +101,7 @@ if __name__ == "__main__":
         if persistence == float("inf"):
             ymin = 0
         ax.annotate(
-            s=f"{peak_number}",
+            text=f"{peak_number}",
             xy=(energy_position + 5, charge_value + 0.02),
             xycoords="data",
             color=STYLE[str(peak_index)]["color"],
@@ -123,4 +122,4 @@ if __name__ == "__main__":
             alpha=0.9,
         )
 
-    fig.savefig("peak_detection.png")
+    fig.savefig("final_histogram.png")
