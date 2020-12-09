@@ -556,26 +556,6 @@ def laser_density_plot(
     pyplot.close(fig)
 
 
-def get_scalar_diags(
-    tseries,
-    iteration: int,
-    laser_polarization="x",
-) -> Tuple[float, float, float, float]:
-    """Compute z₀, a₀, w₀, cτ."""
-
-    a0 = tseries.get_a0(iteration=iteration, pol=laser_polarization)
-    w0 = tseries.get_laser_waist(iteration=iteration, pol=laser_polarization)
-    ctau = tseries.get_ctau(iteration=iteration, pol=laser_polarization, method="rms")
-
-    current_time = tseries.current_t * u.second
-    current_z = (u.clight * current_time).to_value("m")
-
-    if np.isinf(a0):
-        a0 = 0.0
-
-    return current_z, a0, w0, ctau
-
-
 @ex.with_directives(directives=dict(np=3))
 @directives(np=3)
 @Project.operation
@@ -703,96 +683,6 @@ def plot_2d_hist(job: Job) -> None:
         extent=(z_0[0], z_0[-1], hist_edges[1], hist_edges[-1]),
     )
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
-
-
-@ex
-@Project.operation
-@Project.pre.after(run_fbpic)
-@Project.post.isfile("diags.txt")
-def save_scalar_diags(job: Job) -> None:
-    """
-    Loop through a whole simulation and, for *each ``fbpic`` iteration*:
-
-    compute
-
-        1. the iteration time ``it_time``
-        2. position of the laser pulse peak ``z_0``
-        3. normalized vector potential ``a_0``
-        4. beam waist ``w_0``
-        5. spatial pulse length ``c_tau``
-
-    and write results to "diags.txt".
-
-    :param job: the job instance is a handle to the data of a unique statepoint
-    """
-    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
-
-    diags_file = open(job.fn("diags.txt"), "w")
-    diags_file.write("iteration,time[fs],z₀[μm],a₀,w₀[μm],cτ[μm]\n")
-
-    # loop through all the iterations in the job's time series
-    for it in time_series.iterations:
-        it_time = it * job.sp.dt
-
-        z_0, a_0, w_0, c_tau = get_scalar_diags(tseries=time_series, iteration=it)
-
-        diags_file.write(
-            f"{it:06d},{it_time * 1e15:.3e},{z_0 * 1e6:.3e},{a_0:.3e},{w_0 * 1e6:.3e},{c_tau * 1e6:.3e}\n"
-        )
-
-    diags_file.close()
-
-
-@ex
-@Project.operation
-@Project.pre.after(save_scalar_diags)
-@Project.post(are_files(("a0.png", "w0.png", "ctau.png")))
-def plot_scalar_diags(job: Job) -> None:
-    """
-    Plot the 1D diagnostics, ``a_0``, ``w_0`` and ``c_tau`` vs ``z_0``.
-
-    :param job: the job instance is a handle to the data of a unique statepoint
-    """
-    df_diags = pd.read_csv(job.fn("diags.txt"), header=0, index_col=0, comment="#")
-
-    z_0 = df_diags.loc[:, "z₀[μm]"].values
-    a_0 = df_diags.loc[:, "a₀"].values
-    w_0 = df_diags.loc[:, "w₀[μm]"].values
-    c_tau = df_diags.loc[:, "cτ[μm]"].values
-
-    fig, ax = pyplot.subplots(figsize=(10, 6))
-    sliceplots.plot1d(
-        ax=ax,
-        v_axis=a_0,  # y-axis
-        h_axis=z_0,  # x-axis
-        xlabel=r"$%s \;(\mu m)$" % "z",
-        ylabel=r"$%s$" % "a_0",
-    )
-    fig.savefig(job.fn("a0.png"))
-    pyplot.close(fig)
-
-    fig, ax = pyplot.subplots(figsize=(10, 6))
-    sliceplots.plot1d(
-        ax=ax,
-        v_axis=w_0,  # y-axis
-        h_axis=z_0,  # x-axis
-        xlabel=r"$%s \;(\mu m)$" % "z",
-        ylabel=r"$%s \;(\mu m)$" % "w_0",
-    )
-    fig.savefig(job.fn("w0.png"))
-    pyplot.close(fig)
-
-    fig, ax = pyplot.subplots(figsize=(10, 6))
-    sliceplots.plot1d(
-        ax=ax,
-        v_axis=c_tau,  # y-axis
-        h_axis=z_0,  # x-axis
-        xlabel=r"$%s \;(\mu m)$" % "z",
-        ylabel=r"$c \tau \;(\mu m)$",
-    )
-    fig.savefig(job.fn("ctau.png"))
-    pyplot.close(fig)
 
 
 if __name__ == "__main__":
