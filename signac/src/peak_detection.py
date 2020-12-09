@@ -1,6 +1,5 @@
 from collections import defaultdict
 import numpy as np
-import sliceplots
 from matplotlib import pyplot
 from cycler import cycler
 
@@ -68,12 +67,11 @@ def get_persistent_homology(seq):
 
 if __name__ == "__main__":
     npzfile = np.load("final_histogram.npz")
+    energy = npzfile["edges"]
+    charge = npzfile["counts"]
 
-    edges = npzfile["edges"]
-    counts = npzfile["counts"]
-
-    energy = np.array([edges[:-1], edges[1:]]).T.flatten()
-    charge = np.array([counts, counts]).T.flatten()
+    delta_energy = np.diff(energy)
+    energy = energy[1:]
 
     mask = (energy > 0) & (energy < 350)  # MeV
     energy = energy[mask]
@@ -83,13 +81,14 @@ if __name__ == "__main__":
 
     # plot it
     fig, ax = pyplot.subplots(figsize=(10, 6))
-    sliceplots.plot1d(
-        ax=ax,
-        v_axis=charge,
-        h_axis=energy,
-        xlabel=r"E (MeV)",
-        ylabel=r"dQ/dE (pC/MeV)",
+
+    ax.step(
+        energy,
+        charge,
     )
+    ax.set_xlabel("E (MeV)")
+    ax.set_ylabel("dQ/dE (pC/MeV)")
+
     for peak_number, peak in enumerate(
         h[:6]
     ):  # go through first peaks, in order of importance
@@ -98,7 +97,7 @@ if __name__ == "__main__":
         charge_value = charge[peak_index]
         persistence = peak.get_persistence(charge)
         ymin = charge_value - persistence
-        if persistence == float("inf"):
+        if np.isinf(persistence):
             ymin = 0
         ax.annotate(
             text=f"{peak_number}",
@@ -121,5 +120,13 @@ if __name__ == "__main__":
             color=STYLE[str(peak_index)]["color"],
             alpha=0.9,
         )
+        if peak_number == 1:
+            print(
+                f"peak {peak_number} at E = {energy_position} MeV from {energy[peak.left]} MeV to {energy[peak.right]} MeV"
+            )
+            Q = np.sum(
+                delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
+            )
+            print(f"Q = {Q:.0f} pC")
 
     fig.savefig("final_histogram.png")
