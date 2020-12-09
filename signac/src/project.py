@@ -631,7 +631,7 @@ def save_final_histogram(job: Job) -> None:
 def plot_final_histogram(job: Job) -> None:
     """Plot the electron spectrum corresponding to the last iteration."""
 
-    npzfile = np.load("final_histogram.npz")
+    npzfile = np.load(job.fn("final_histogram.npz"))
 
     edges = npzfile["edges"]
     counts = npzfile["counts"]
