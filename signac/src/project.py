@@ -649,7 +649,7 @@ def plot_final_histogram(job: Job) -> None:
 
     mask = (energy > 0) & (energy < 350)  # MeV
     energy = energy[mask]
-    charge = np.clip(charge, 0, 40)[mask]
+    charge = np.clip(charge, 0, 50)[mask]
 
     h = get_persistent_homology(charge)
 
