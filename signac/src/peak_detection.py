@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     mask = (energy > 0) & (energy < 350)  # MeV
     energy = energy[mask]
-    charge = np.clip(charge, 0, 50)[mask]
+    charge = np.clip(charge, 0, 60)[mask]
 
     h = get_persistent_homology(charge)
 
