@@ -45,7 +45,8 @@ def main():
             # The laser
             a0=2.4,  # Laser amplitude
             w0=18.7e-6,  # Laser waist
-            tau=22.0e-15,  # Laser duration, sec
+            tau_fwhm_i=25.0e-15,  # Laser duration, sec: FWHM in intensity from experiment
+            tau=None,  # fbpic laser duration, see converion below
             z0=-10.0e-6,  # Laser centroid
             zfoc=focus,  # Focal position
             lambda0=0.8e-6,  # Laser wavelength
@@ -71,6 +72,7 @@ def main():
             # Number of iterations to perform
             N_step=None,
         )
+        sp["tau"] = sp["tau_fwhm_i"] / math.sqrt(2 * math.log(2))
         laser = lwfa.Laser.from_a0(
             a0=sp["a0"] * u.dimensionless,
             τL=sp["tau"] * u.second,
