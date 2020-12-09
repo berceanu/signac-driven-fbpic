@@ -33,6 +33,7 @@ import colorcet as cc
 from openpmd_viewer import addons
 import unyt as u
 from signac.contrib.job import Job
+from peak_detection import get_persistent_homology, STYLE
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -639,9 +640,11 @@ def plot_final_histogram(job: Job) -> None:
     energy = np.array([edges[:-1], edges[1:]]).T.flatten()
     charge = np.array([counts, counts]).T.flatten()
 
-    mask = (energy > 70) & (energy < 500)  # MeV
+    mask = (energy > 70) & (energy < 400)  # MeV
     energy = energy[mask]
-    charge = np.clip(charge, 0, 1)[mask]
+    charge = np.clip(charge, 0, 35)[mask]
+
+    h = get_persistent_homology(charge)
 
     # plot it
     fig, ax = pyplot.subplots(figsize=(10, 6))
@@ -651,8 +654,23 @@ def plot_final_histogram(job: Job) -> None:
         h_axis=energy,
         xlabel=r"E (MeV)",
         ylabel=r"dQ/dE (pC/MeV)",
-        ylim=[0, 1.1],
+        ylim=[0, 35.1],
     )
+    for peak_number, peak in enumerate(h[:6]):  # go through first peaks, in order of importance
+        peak_index = peak.born
+        energy_position = energy[peak_index]
+        charge_value = charge[peak_index]
+        persistence = peak.get_persistence(charge)
+        ymin = charge_value - persistence
+        if persistence == float("inf"):
+            ymin = 0
+        ax.annotate(text=f"{peak_number}", xy=(energy_position + 5, charge_value + 0.02), xycoords="data",
+                    color=STYLE[str(peak_index)]["color"], size=14)
+        ax.axvline(x=energy_position, linestyle=STYLE[str(peak_index)]["linestyle"],
+                color=STYLE[str(peak_index)]["color"], linewidth=2)
+        ax.fill_between(energy, charge, ymin, where=(energy > energy[peak.left]) & (energy <= energy[peak.right]),
+                        color=STYLE[str(peak_index)]["color"], alpha=0.9)
+
     fig.savefig(job.fn("final_histogram.png"))
 
 
