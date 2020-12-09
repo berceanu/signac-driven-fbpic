@@ -641,11 +641,8 @@ def plot_final_histogram(job: Job) -> None:
     STYLE = defaultdict(lambda: next(loop_cy_iter))
 
     npzfile = np.load(job.fn("final_histogram.npz"))
-    edges = npzfile["edges"]
-    counts = npzfile["counts"]
-
-    energy = np.array([edges[:-1], edges[1:]]).T.flatten()
-    charge = np.array([counts, counts]).T.flatten()
+    energy = npzfile["edges"]
+    charge = npzfile["counts"]
 
     mask = (energy > 0) & (energy < 350)  # MeV
     energy = energy[mask]
@@ -655,13 +652,14 @@ def plot_final_histogram(job: Job) -> None:
 
     # plot it
     fig, ax = pyplot.subplots(figsize=(10, 6))
-    sliceplots.plot1d(
-        ax=ax,
-        v_axis=charge,
-        h_axis=energy,
-        xlabel=r"E (MeV)",
-        ylabel=r"dQ/dE (pC/MeV)",
+
+    ax.step(
+        energy,
+        charge,
     )
+    ax.set_xlabel("E (MeV)")
+    ax.set_ylabel("dQ/dE (pC/MeV)")
+
     for peak_number, peak in enumerate(
         h[:6]
     ):  # go through first peaks, in order of importance
@@ -670,7 +668,7 @@ def plot_final_histogram(job: Job) -> None:
         charge_value = charge[peak_index]
         persistence = peak.get_persistence(charge)
         ymin = charge_value - persistence
-        if persistence == float("inf"):
+        if np.isinf(persistence):
             ymin = 0
         ax.annotate(
             text=f"{peak_number}",
