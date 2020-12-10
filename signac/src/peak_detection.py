@@ -95,12 +95,18 @@ if __name__ == "__main__":
         peak_index = peak.born
         energy_position = energy[peak_index]
         charge_value = charge[peak_index]
+
         persistence = peak.get_persistence(charge)
         ymin = charge_value - persistence
         if np.isinf(persistence):
             ymin = 0
+
+        Q = np.sum(
+            delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
+        )
+
         ax.annotate(
-            text=f"{peak_number}",
+            text=f"{peak_number}, Q = {Q:.0f} pC",
             xy=(energy_position + 5, charge_value + 0.02),
             xycoords="data",
             color=STYLE[str(peak_index)]["color"],
@@ -119,9 +125,6 @@ if __name__ == "__main__":
             where=(energy > energy[peak.left]) & (energy <= energy[peak.right]),
             color=STYLE[str(peak_index)]["color"],
             alpha=0.9,
-        )
-        Q = np.sum(
-            delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
         )
         print(
             f"peak {peak_number} centered at {energy_position} MeV, from {energy[peak.left]} MeV to {energy[peak.right]} MeV, Q = {Q:.0f} pC"
