@@ -678,6 +678,9 @@ def plot_final_histogram(job: Job) -> None:
         Q = np.sum(
             delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
         )
+        if peak_number == 1:
+            job.doc["peak_position"] = energy_position
+            job.doc["peak_charge"] = Q
 
         ax.annotate(
             text=f"{peak_number}, Q = {Q:.0f} pC",
