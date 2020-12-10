@@ -120,13 +120,12 @@ if __name__ == "__main__":
             color=STYLE[str(peak_index)]["color"],
             alpha=0.9,
         )
-        if peak_number == 1:
-            print(
-                f"peak {peak_number} at E = {energy_position} MeV from {energy[peak.left]} MeV to {energy[peak.right]} MeV"
-            )
-            Q = np.sum(
-                delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
-            )
-            print(f"Q = {Q:.0f} pC")
+        print(
+            f"peak {peak_number} centered at {energy_position} MeV, from {energy[peak.left]} MeV to {energy[peak.right]} MeV"
+        )
+        Q = np.sum(
+            delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
+        )
+        print(f"Q = {Q:.0f} pC")
 
     fig.savefig("final_histogram.png")
