@@ -677,10 +677,10 @@ def plot_final_histogram(job: Job) -> None:
 
         Q = np.sum(
             delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
-        )
-        if peak_number == 1:
-            job.doc["peak_position"] = float("{:.1f}".format(energy_position))
-            job.doc["peak_charge"] = float("{:.0f}".format(Q))
+        )  # integrated charge
+        if peak_number == 1:  # tacitly assumes peak #1 is the one we care about
+            job.doc["peak_position"] = float("{:.1f}".format(energy_position))  # MeV
+            job.doc["peak_charge"] = float("{:.0f}".format(Q))  # pC
 
         ax.annotate(
             text=f"{peak_number}, Q = {Q:.0f} pC",
