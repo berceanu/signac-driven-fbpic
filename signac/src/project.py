@@ -705,6 +705,8 @@ def plot_final_histogram(job: Job) -> None:
         )
 
     fig.savefig(job.fn("final_histogram.png"))
+    pyplot.close(fig)
+
 
 
 @ex
