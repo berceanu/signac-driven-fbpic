@@ -25,8 +25,6 @@ def main():
 
     ax.set_xlabel("E (MeV)")
     ax.set_ylabel("dQ/dE (pC/MeV)")
-    ax.set_ylim(0, 35)
-    ax.set_xlim(1, 500)
 
     for zf, jobs in proj.groupby(key="zfoc"):
         job = next(jobs)  # assuming single job per group
