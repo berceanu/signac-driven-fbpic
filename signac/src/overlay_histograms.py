@@ -58,7 +58,7 @@ def main():
     ax.legend(frameon=False)
     ax.axvline(x=160, linewidth=0.75, linestyle="dashed", color="0.75")
 
-    fig.savefig("histograms.png", dpi=192, transparent=False)
+    fig.savefig("histograms.png", dpi=192)
 
     zfoc, peak_position, peak_charge = zip(*peak_position_charge)
 
