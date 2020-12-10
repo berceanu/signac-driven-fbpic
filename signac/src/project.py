@@ -644,6 +644,9 @@ def plot_final_histogram(job: Job) -> None:
     energy = npzfile["edges"]
     charge = npzfile["counts"]
 
+    delta_energy = np.diff(energy)
+    energy = energy[1:]
+
     mask = (energy > 0) & (energy < 350)  # MeV
     energy = energy[mask]
     charge = np.clip(charge, 0, 60)[mask]
@@ -666,12 +669,18 @@ def plot_final_histogram(job: Job) -> None:
         peak_index = peak.born
         energy_position = energy[peak_index]
         charge_value = charge[peak_index]
+
         persistence = peak.get_persistence(charge)
         ymin = charge_value - persistence
         if np.isinf(persistence):
             ymin = 0
+
+        Q = np.sum(
+            delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
+        )
+
         ax.annotate(
-            text=f"{peak_number}",
+            text=f"{peak_number}, Q = {Q:.0f} pC",
             xy=(energy_position + 5, charge_value + 0.02),
             xycoords="data",
             color=STYLE[str(peak_index)]["color"],
