@@ -15,7 +15,7 @@ import signac
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
 NUMBER_OF_H5 = 200
-
+SQRT_FACTOR = math.sqrt(2 * math.log(2))
 
 def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
@@ -44,9 +44,8 @@ def main():
             p_nt=12,  # Number of particles per cell along theta, should be 4*Nm
             # The laser
             a0=2.4,  # Laser amplitude
-            w0=18.7e-6,  # Laser waist
-            tau_fwhm_i=25.0e-15,  # Laser duration, sec: FWHM in intensity from experiment
-            tau=None,  # fbpic laser duration, see converion below
+            w0=22.0e-6 / SQRT_FACTOR,  # Laser waist, converted from experimental FWHM@intensity
+            tau=25.0e-15 / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
             z0=-10.0e-6,  # Laser centroid
             zfoc=focus,  # Focal position
             lambda0=0.8e-6,  # Laser wavelength
@@ -72,7 +71,6 @@ def main():
             # Number of iterations to perform
             N_step=None,
         )
-        sp["tau"] = sp["tau_fwhm_i"] / math.sqrt(2 * math.log(2))
         laser = lwfa.Laser.from_a0(
             a0=sp["a0"] * u.dimensionless,
             τL=sp["tau"] * u.second,
