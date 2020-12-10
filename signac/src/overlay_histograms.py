@@ -65,7 +65,7 @@ def main():
     fig, ax1 = pyplot.subplots(figsize=(golden * 8, 8))
     ax2 = ax1.twinx()
 
-    ax1.axhline(y=160, color="C1", linestyle="dotted")
+    ax1.hlines(y=160, xmin=zfoc[0], xmax=zfoc[-1], color="C1", linestyle="dotted")
     ax1.plot(zfoc, peak_position, "o--", color="C1")
     ax2.plot(zfoc, peak_charge, "o--", color="C0")
 
@@ -73,6 +73,18 @@ def main():
     ax1.set_ylabel("E (MeV)", color="C1")
     ax2.set_ylabel("Q (pC)", color="C0")
 
+    ax2.spines['top'].set_visible(False)
+    ax2.spines['bottom'].set_visible(False)
+
+    ax2.spines['left'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['left'].set_color('C1')
+    ax2.spines['right'].set_color('C0')
+
+    ax1.tick_params(axis='y', colors='C1')
+    ax2.tick_params(axis='y', colors='C0')
+
+    ax1.tick_params(labelbottom=True,labeltop=True)
     ax1.xaxis.set_major_locator(MultipleLocator(50))
 
     ax1.grid(which="major", axis="x", linewidth=0.75, linestyle="dashed", color="0.75")
