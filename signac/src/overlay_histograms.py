@@ -1,7 +1,5 @@
-import pathlib
 from collections import defaultdict
-from openpmd_viewer import addons
-from project import particle_energy_histogram
+import numpy as np
 from matplotlib import pyplot
 from cycler import cycler
 from scipy.constants import golden
@@ -10,11 +8,8 @@ import signac
 
 line_colors = ["C1", "C2", "C3"]
 line_styles = ["-", "--", ":", "-."]
-
 cyl = cycler(color=line_colors) * cycler(linestyle=line_styles)
-
 loop_cy_iter = cyl()
-
 STYLE = defaultdict(lambda: next(loop_cy_iter))
 
 
@@ -29,31 +24,25 @@ def main():
     for zf, jobs in proj.groupby(key="zfoc"):
         job = next(jobs)  # assuming single job per group
 
-        # get path to job's hdf5 files
-        h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-
-        # get last iteration from time series
-        time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
-        last_iteration = time_series.iterations[-1]
-
-        # compute 1D histogram
-        energy_hist, bin_edges, nrbins = particle_energy_histogram(
-            tseries=time_series,
-            it=last_iteration,
-        )
-
-        zfoc = (job.sp.zfoc * u.meter).to("micrometer")
+        zfoc = (job.sp.zfoc * u.meter).to(u.micrometer)
         label = f"$z_f$ = {zfoc:.0f}"
 
+        npzfile = np.load(job.fn("final_histogram.npz"))
+        energy = npzfile["edges"][1:]
+        charge = npzfile["counts"]
+
+        mask = (energy > 100) & (energy < 200)  # MeV
+        energy = energy[mask]
+        charge = np.clip(charge, 0, 60)[mask]
+
         ax.step(
-            bin_edges[1:],
-            energy_hist,
+            energy,
+            charge,
             label=label,
             color=STYLE[label]["color"],
             linestyle=STYLE[label]["linestyle"],
             linewidth=0.5,
         )
-
     ax.legend()
     fig.savefig("histograms.png", dpi=192, transparent=False)
 
