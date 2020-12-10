@@ -21,11 +21,21 @@ def main():
     ax.set_xlabel("E (MeV)")
     ax.set_ylabel("dQ/dE (pC/MeV)")
 
+    peak_position_charge = list()
+
     for zf, jobs in proj.groupby(key="zfoc"):
         job = next(jobs)  # assuming single job per group
 
         zfoc = (job.sp.zfoc * u.meter).to(u.micrometer)
         label = f"$z_f$ = {zfoc:.0f}"
+
+        peak_position_charge.append(
+            (
+                float(f"{zfoc.to_value():.0f}"),
+                job.doc.peak_position,
+                job.doc.peak_charge,
+            )
+        )
 
         npzfile = np.load(job.fn("final_histogram.npz"))
         energy = npzfile["edges"][1:]
@@ -43,8 +53,23 @@ def main():
             linestyle=STYLE[label]["linestyle"],
             linewidth=0.5,
         )
+
     ax.legend()
     fig.savefig("histograms.png", dpi=192, transparent=False)
+
+    zfoc, peak_position, peak_charge = zip(*peak_position_charge)
+
+    fig, ax = pyplot.subplots(figsize=(golden * 8, 8))
+    ax.plot(zfoc, peak_position)
+    ax.set_xlabel(r"$z_f$ ($\mathrm{\mu m}$)")
+    ax.set_ylabel("E (MeV)")
+    fig.savefig("positions.png")
+
+    fig, ax = pyplot.subplots(figsize=(golden * 8, 8))
+    ax.plot(zfoc, peak_charge)
+    ax.set_xlabel(r"$z_f$ ($\mathrm{\mu m}$)")
+    ax.set_ylabel("Q (pC)")
+    fig.savefig("charges.png")
 
 
 if __name__ == "__main__":
