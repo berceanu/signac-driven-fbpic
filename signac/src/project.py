@@ -15,7 +15,6 @@ import math
 import os
 import sys
 import glob
-from copy import copy
 from typing import Union, Iterable, Callable
 import pathlib
 from multiprocessing import Pool
@@ -26,8 +25,6 @@ import sliceplots
 from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot, colors, cm
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-import colorcet as cc
 from openpmd_viewer import addons
 import unyt as u
 from peak_detection import plot_electron_energy_spectrum
@@ -44,8 +41,6 @@ m_e = u.electron_mass.to_value("kg")
 m_p = u.proton_mass.to_value("kg")
 q_e = u.electron_charge.to_value("C")  # negative sign
 q_p = u.proton_charge.to_value("C")  # positive sign
-mc2 = (u.electron_mass * u.clight ** 2).to_value("MeV")
-# 0.511 MeV
 
 
 class OdinEnvironment(DefaultSlurmEnvironment):
