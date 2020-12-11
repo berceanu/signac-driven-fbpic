@@ -221,7 +221,6 @@ def are_rho_pngs(job: Job) -> bool:
 @Project.operation
 @Project.post(fbpic_ran)
 @Project.post.isfile("initial_density_profile.npz")
-@Project.post.isfile("initial_density_profile.png")
 def run_fbpic(job: Job) -> None:
     """
     This ``signac-flow`` operation runs a ``fbpic`` simulation.
@@ -286,38 +285,10 @@ def run_fbpic(job: Job) -> None:
 
         return n
 
-    # plot density profile for checking
+    # save density profile for subsequent plotting
     all_z = np.linspace(job.sp.zmin, job.sp.L_interact, 1000)
     dens = dens_func(all_z, 0.0)
     np.savez(job.fn("initial_density_profile.npz"), density=dens, z_meters=all_z)
-
-    def mark_on_plot(*, ax, parameter: str, y=1.1):
-        ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
-        ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
-        return ax
-
-    fig, ax = pyplot.subplots(figsize=(30, 4.8))
-
-    ax.plot(all_z * 1e6, dens)
-    ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
-    ax.set_ylim(0.0, 1.2)
-    ax.set_xlim(job.sp.zmin * 1e6 - 20, job.sp.L_interact * 1e6 + 20)
-    ax.set_ylabel("Density profile $n$")
-
-    mark_on_plot(ax=ax, parameter="zmin")
-    mark_on_plot(ax=ax, parameter="zmax")
-    mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
-    mark_on_plot(ax=ax, parameter="zfoc", y=0.5)
-    mark_on_plot(ax=ax, parameter="z0", y=0.5)
-    mark_on_plot(ax=ax, parameter="center_left", y=0.7)
-    mark_on_plot(ax=ax, parameter="center_right", y=0.7)
-    mark_on_plot(ax=ax, parameter="L_interact", y=0.7)
-    mark_on_plot(ax=ax, parameter="p_zmax")
-
-    ax.fill_between(all_z * 1e6, dens, alpha=0.5)
-
-    fig.savefig(job.fn("initial_density_profile.png"))
-    pyplot.close(fig)
 
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
@@ -413,9 +384,44 @@ def run_fbpic(job: Job) -> None:
     f.close()
 
 
-############
-# PLOTTING #
-############
+@ex
+@Project.operation
+@Project.pre.isfile("initial_density_profile.npz")
+@Project.post.isfile("initial_density_profile.png")
+def plot_initial_density_profile(job: Job) -> None:
+    """Plot the initial plasma density profile."""
+
+    def mark_on_plot(*, ax, parameter: str, y=1.1):
+        ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
+        ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
+        return ax
+
+    fig, ax = pyplot.subplots(figsize=(30, 4.8))
+
+    npzfile = np.load(job.fn("initial_density_profile.npz"))
+    dens = npzfile["density"]
+    all_z = npzfile["z_meters"]
+
+    ax.plot(all_z * 1e6, dens)
+    ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
+    ax.set_ylim(0.0, 1.2)
+    ax.set_xlim(job.sp.zmin * 1e6 - 20, job.sp.L_interact * 1e6 + 20)
+    ax.set_ylabel("Density profile $n$")
+
+    mark_on_plot(ax=ax, parameter="zmin")
+    mark_on_plot(ax=ax, parameter="zmax")
+    mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
+    mark_on_plot(ax=ax, parameter="zfoc", y=0.5)
+    mark_on_plot(ax=ax, parameter="z0", y=0.5)
+    mark_on_plot(ax=ax, parameter="center_left", y=0.7)
+    mark_on_plot(ax=ax, parameter="center_right", y=0.7)
+    mark_on_plot(ax=ax, parameter="L_interact", y=0.7)
+    mark_on_plot(ax=ax, parameter="p_zmax")
+
+    ax.fill_between(all_z * 1e6, dens, alpha=0.5)
+
+    fig.savefig(job.fn("initial_density_profile.png"))
+    pyplot.close(fig)
 
 
 def particle_energy_histogram(
