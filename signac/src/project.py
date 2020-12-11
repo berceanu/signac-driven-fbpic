@@ -28,7 +28,9 @@ import unyt as u
 from peak_detection import plot_electron_energy_spectrum
 from util import ffmpeg_command, shell_run
 from simulation_diagnostics import particle_energy_histogram, laser_density_plot
+from density_functions import plot_density_profile, make_gaussian_dens_func
 from signac.contrib.job import Job
+
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -75,14 +77,13 @@ class Project(FlowProject):
     Placeholder for ``FlowProject`` class.
     """
 
-    pass
-
 
 ex = Project.make_group(name="ex")
 
 
 @Project.label
 def progress(job) -> str:
+    """Show progress of fbpic simulation, based on completed/total .h5 files."""
     # get last iteration based on input parameters
     number_of_iterations = math.ceil((job.sp.N_step - 0) / job.sp.diag_period)
 
@@ -138,43 +139,15 @@ def are_rho_pngs(job: Job) -> bool:
 
     return set(files) == set(pngs)
 
-# TODO move to density_functions.py
+
 @ex
 @Project.operation
 @Project.post.isfile("initial_density_profile.png")
 def plot_initial_density_profile(job: Job) -> None:
     """Plot the initial plasma density profile."""
-
-    def mark_on_plot(*, ax, parameter: str, y=1.1):
-        ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
-        ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
-        return ax
-
-    all_z = np.linspace(job.sp.zmin, job.sp.L_interact, 1000)
-    dens = make_dens_func(job)(all_z, 0.0)
-
-    fig, ax = pyplot.subplots(figsize=(30, 4.8))
-
-    ax.plot(all_z * 1e6, dens)
-    ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
-    ax.set_ylim(0.0, 1.2)
-    ax.set_xlim(job.sp.zmin * 1e6 - 20, job.sp.L_interact * 1e6 + 20)
-    ax.set_ylabel("Density profile $n$")
-
-    mark_on_plot(ax=ax, parameter="zmin")
-    mark_on_plot(ax=ax, parameter="zmax")
-    mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
-    mark_on_plot(ax=ax, parameter="zfoc", y=0.5)
-    mark_on_plot(ax=ax, parameter="z0", y=0.5)
-    mark_on_plot(ax=ax, parameter="center_left", y=0.7)
-    mark_on_plot(ax=ax, parameter="center_right", y=0.7)
-    mark_on_plot(ax=ax, parameter="L_interact", y=0.7)
-    mark_on_plot(ax=ax, parameter="p_zmax")
-
-    ax.fill_between(all_z * 1e6, dens, alpha=0.5)
-
-    fig.savefig(job.fn("initial_density_profile.png"))
-    pyplot.close(fig)
+    plot_density_profile(
+        make_gaussian_dens_func, job.fn("initial_density_profile.png"), job
+    )
 
 
 @ex.with_directives(directives=dict(ngpu=1))
@@ -194,6 +167,7 @@ def run_fbpic(job: Job) -> None:
         ParticleDiagnostic,
         ParticleChargeDensityDiagnostic,
     )
+
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
     f = open(job.fn("stdout.txt"), "w")
@@ -208,7 +182,10 @@ def run_fbpic(job: Job) -> None:
         Nm=job.sp.Nm,
         dt=job.sp.dt,
         zmin=job.sp.zmin,
-        boundaries={"z": "open", "r": "open"},  # 'r': 'open' can also be used (more expensive)
+        boundaries={
+            "z": "open",
+            "r": "open",
+        },  # 'r': 'open' can also be used (more expensive)
         n_order=-1,
         use_cuda=True,
         verbose_level=2,
@@ -218,7 +195,7 @@ def run_fbpic(job: Job) -> None:
         q=u.electron_charge.to_value("C"),
         m=u.electron_mass.to_value("kg"),
         n=job.sp.n_e,
-        dens_func=make_dens_func(job),
+        dens_func=make_gaussian_dens_func(job),
         p_zmin=job.sp.p_zmin,
         p_zmax=job.sp.p_zmax,
         p_rmax=job.sp.p_rmax,
@@ -431,7 +408,7 @@ def plot_2d_hist(job: Job) -> None:
     z_0 = positions.to_value("micrometer")
     all_z = positions.to_value("meter")
 
-    dens = make_dens_func(job)(all_z, 0.0)
+    dens = make_gaussian_dens_func(job)(all_z, 0.0)
 
     # rescale for visibility, 1/5th of the histogram y axis
     v_axis_size = hist_edges[-1] - hist_edges[1]
