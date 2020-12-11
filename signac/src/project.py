@@ -717,7 +717,6 @@ def plot_final_histogram(job: Job) -> None:
     pyplot.close(fig)
 
 
-
 @ex
 @Project.operation
 @Project.pre.after(run_fbpic)
@@ -766,6 +765,7 @@ def save_histograms(job: Job) -> None:
 @ex
 @Project.operation
 @Project.pre.after(save_histograms)
+@Project.pre.isfile("initial_density_profile.npz")
 @Project.post.isfile("hist2d.png")
 def plot_2d_hist(job: Job) -> None:
     """
@@ -782,6 +782,10 @@ def plot_2d_hist(job: Job) -> None:
     npzfile = np.load(job.fn("initial_density_profile.npz"))
     dens = npzfile["density"]
     all_z = npzfile["z_meters"]
+
+    mask = all_z >= 0
+    all_z = all_z[mask]
+    dens = dens[mask]
 
     # compute moving window position for each iteration
     iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
@@ -803,7 +807,9 @@ def plot_2d_hist(job: Job) -> None:
         vslice_val=z_0[-1],  # can be changed to z_0[iteration]
         extent=(z_0[0], z_0[-1], hist_edges[1], hist_edges[-1]),
     )
-    hist2d.ax0.plot(all_z * 1e6, dens, linewidth=2, linestyle="dashed", color="0.75")
+    hist2d.ax0.plot(
+        all_z * 1e6, dens * 100, linewidth=2, linestyle="dashed", color="0.75"
+    )
 
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
