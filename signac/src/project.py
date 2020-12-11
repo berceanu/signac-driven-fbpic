@@ -33,13 +33,6 @@ from signac.contrib.job import Job
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
 
-# strip units
-c_light = u.clight.to_value("m/s")
-m_e = u.electron_mass.to_value("kg")
-m_p = u.proton_mass.to_value("kg")
-q_e = u.electron_charge.to_value("C")  # negative sign
-q_p = u.proton_charge.to_value("C")  # positive sign
-
 
 class OdinEnvironment(DefaultSlurmEnvironment):
     """Environment profile for the LGED cluster.
@@ -145,61 +138,7 @@ def are_rho_pngs(job: Job) -> bool:
 
     return set(files) == set(pngs)
 
-
-def make_dens_func(job):
-    def ramp(z, *, center, sigma, p):
-        """Gaussian-like function."""
-        return np.exp(-(((z - center) / sigma) ** p))
-
-    # The density profile
-    def dens_func(z, r):
-        """
-        User-defined function: density profile of the plasma
-
-        It should return the relative density with respect to n_plasma,
-        at the position x, y, z (i.e. return a number between 0 and 1)
-
-        Parameters
-        ----------
-        z, r: 1darrays of floats
-            Arrays with one element per macroparticle
-        Returns
-        -------
-        n : 1d array of floats
-            Array of relative density, with one element per macroparticles
-        """
-
-        # Allocate relative density
-        n = np.ones_like(z)
-
-        # before up-ramp
-        n = np.where(z < 0.0, 0.0, n)
-
-        # Make up-ramp
-        n = np.where(
-            z < job.sp.center_left,
-            ramp(z, center=job.sp.center_left, sigma=job.sp.sigma_left, p=job.sp.power),
-            n,
-        )
-
-        # Make down-ramp
-        n = np.where(
-            (z >= job.sp.center_right)
-            & (z < job.sp.center_right + 2 * job.sp.sigma_right),
-            ramp(
-                z, center=job.sp.center_right, sigma=job.sp.sigma_right, p=job.sp.power
-            ),
-            n,
-        )
-
-        # after down-ramp
-        n = np.where(z >= job.sp.center_right + 2 * job.sp.sigma_right, 0, n)
-
-        return n
-
-    return dens_func
-
-
+# TODO move to density_functions.py
 @ex
 @Project.operation
 @Project.post.isfile("initial_density_profile.png")
@@ -255,7 +194,6 @@ def run_fbpic(job: Job) -> None:
         ParticleDiagnostic,
         ParticleChargeDensityDiagnostic,
     )
-
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
     f = open(job.fn("stdout.txt"), "w")
@@ -270,17 +208,15 @@ def run_fbpic(job: Job) -> None:
         Nm=job.sp.Nm,
         dt=job.sp.dt,
         zmin=job.sp.zmin,
-        boundaries={"z": "open", "r": "open"},
+        boundaries={"z": "open", "r": "open"},  # 'r': 'open' can also be used (more expensive)
         n_order=-1,
         use_cuda=True,
         verbose_level=2,
     )
-    # 'r': 'open' can also be used, but is more computationally expensive
-
     # Add the plasma electrons
     plasma_elec = sim.add_new_species(
-        q=q_e,
-        m=m_e,
+        q=u.electron_charge.to_value("C"),
+        m=u.electron_mass.to_value("kg"),
         n=job.sp.n_e,
         dens_func=make_dens_func(job),
         p_zmin=job.sp.p_zmin,
@@ -290,7 +226,6 @@ def run_fbpic(job: Job) -> None:
         p_nr=job.sp.p_nr,
         p_nt=job.sp.p_nt,
     )
-
     # Create a Gaussian laser profile
     laser_profile = FlattenedGaussianLaser(
         a0=job.sp.a0,
@@ -306,9 +241,8 @@ def run_fbpic(job: Job) -> None:
         sim=sim,
         laser_profile=laser_profile,
     )
-
     # Configure the moving window
-    sim.set_moving_window(v=c_light)
+    sim.set_moving_window(v=u.clight.to_value("m/s"))
 
     # Add diagnostics
     write_dir = pathlib.Path(job.ws) / "diags"
@@ -323,13 +257,9 @@ def run_fbpic(job: Job) -> None:
         ParticleDiagnostic(
             period=job.sp.diag_period,
             species={"electrons": plasma_elec},
-            # select={"uz": [40.0, None]},
             comm=sim.comm,
             write_dir=write_dir,
         ),
-        # Since rho from `FieldDiagnostic` is 0 almost everywhere
-        # (neutral plasma), it is useful to see the charge density
-        # of individual particles
         ParticleChargeDensityDiagnostic(
             period=job.sp.diag_period,
             sim=sim,
@@ -364,7 +294,7 @@ def save_rho_pngs(job: Job) -> None:
     """
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     rho_path = pathlib.Path(job.ws) / "rhos"
-    time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
+    time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
 
     it_laser_density_plot = partial(
         laser_density_plot,
@@ -410,7 +340,7 @@ def save_final_histogram(job: Job) -> None:
     # compute 1D histogram
     energy_hist, bin_edges, _ = particle_energy_histogram(
         tseries=time_series,
-        it=last_iteration,
+        iteration=last_iteration,
         cutoff=np.inf,  # no cutoff
     )
     np.savez(job.fn("final_histogram.npz"), edges=bin_edges, counts=energy_hist)
@@ -446,13 +376,13 @@ def save_histograms(job: Job) -> None:
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    time_series = addons.LpaDiagnostics(h5_path, check_all_files=False)
+    time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
     number_of_iterations: int = time_series.iterations.size
 
     # Do a mock histogram in order to get the number of bins
     _, _, nrbins = particle_energy_histogram(
         tseries=time_series,
-        it=0,
+        iteration=0,
     )
     all_hist = np.empty(shape=(number_of_iterations, nrbins), dtype=np.float64)
     hist_edges = np.empty(shape=(nrbins + 1,), dtype=np.float64)
@@ -462,7 +392,7 @@ def save_histograms(job: Job) -> None:
         # generate 1D energy histogram
         energy_hist, bin_edges, _ = particle_energy_histogram(
             tseries=time_series,
-            it=it,
+            iteration=it,
         )
         # build up arrays for 2D energy histogram
         all_hist[idx, :] = energy_hist
