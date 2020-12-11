@@ -330,12 +330,13 @@ def save_final_histogram(job: Job) -> None:
 def plot_final_histogram(job: Job) -> None:
     """Plot the electron spectrum corresponding to the last iteration."""
 
-    peak_position, peak_charge = plot_electron_energy_spectrum(
+    plot_electron_energy_spectrum(
         job.fn("final_histogram.npz"), job.fn("final_histogram.png")
     )
 
-    job.doc["peak_position"] = float("{:.1f}".format(peak_position))  # MeV
-    job.doc["peak_charge"] = float("{:.1f}".format(peak_charge))  # pC
+    # FIXME
+    # job.doc["peak_position"] = float("{:.1f}".format(peak_position))  # MeV
+    # job.doc["peak_charge"] = float("{:.1f}".format(peak_charge))  # pC
 
 
 @ex
