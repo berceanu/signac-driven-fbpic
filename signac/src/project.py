@@ -783,15 +783,15 @@ def plot_2d_hist(job: Job) -> None:
     dens = npzfile["density"]
     all_z = npzfile["z_meters"]
 
-    mask = all_z >= 0
-    all_z = all_z[mask]
-    dens = dens[mask]
-
     # compute moving window position for each iteration
     iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
     times = iterations * job.sp.dt * u.second
     positions = times * u.clight
     z_0 = positions.to_value("micrometer")
+
+    mask = (all_z >= z_0[0]) & (all_z <= z_0[-1])
+    all_z = all_z[mask] * 1e6  # micrometers
+    dens = dens[mask] * 50  # rescale for visibility
 
     fig = pyplot.figure(figsize=(2 * 8, 8))
 
@@ -807,10 +807,7 @@ def plot_2d_hist(job: Job) -> None:
         vslice_val=z_0[-1],  # can be changed to z_0[iteration]
         extent=(z_0[0], z_0[-1], hist_edges[1], hist_edges[-1]),
     )
-    hist2d.ax0.plot(
-        all_z * 1e6, dens * 100, linewidth=2, linestyle="dashed", color="0.75"
-    )
-
+    hist2d.ax0.plot(all_z, dens, linewidth=2, linestyle="dashed", color="0.75")
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
 
