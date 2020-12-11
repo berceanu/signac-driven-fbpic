@@ -12,9 +12,7 @@ Note: All the lines marked with the CHANGEME comment contain customizable parame
 """
 import logging
 import math
-import os
 import sys
-import glob
 from typing import Union
 import pathlib
 from multiprocessing import Pool
@@ -95,12 +93,12 @@ def progress(job) -> str:
     # get last iteration based on input parameters
     number_of_iterations = math.ceil((job.sp.N_step - 0) / job.sp.diag_period)
 
-    h5_path = os.path.join(job.ws, "diags", "hdf5")
-    if not os.path.isdir(h5_path):
+    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
+    if not h5_path.is_dir():
         # {job_dir}/diags/hdf5 not present, ``fbpic`` didn't run
         return "0/%s" % number_of_iterations
 
-    h5_files = glob.glob(os.path.join(h5_path, "*.h5"))
+    h5_files = list(h5_path.glob("*.h5"))
 
     return f"{len(h5_files)}/{number_of_iterations}"
 
@@ -112,8 +110,8 @@ def fbpic_ran(job: Job) -> bool:
     :param job: the job instance is a handle to the data of a unique statepoint
     :return: True if all output files are in {job_dir}/diags/hdf5, False otherwise
     """
-    h5_path: Union[bytes, str] = os.path.join(job.ws, "diags", "hdf5")
-    if not os.path.isdir(h5_path):
+    h5_path: Union[bytes, str] = pathlib.Path(job.ws) / "diags" / "hdf5"
+    if not h5_path.is_dir():
         # {job_dir}/diags/hdf5 not present, ``fbpic`` didn't run
         did_it_run = False
         return did_it_run
@@ -137,7 +135,8 @@ def are_rho_pngs(job: Job) -> bool:
     :param job: the job instance is a handle to the data of a unique statepoint
     :return: True if .png files are there, False otherwise
     """
-    files = os.listdir(os.path.join(job.ws, "rhos"))
+    p = pathlib.Path(job.ws) / "rhos"
+    files = p.iterdir()
 
     # estimate iteration array based on input parameters
     iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
@@ -276,7 +275,7 @@ def run_fbpic(job: Job) -> None:
     sim.set_moving_window(v=c_light)
 
     # Add diagnostics
-    write_dir = os.path.join(job.ws, "diags")
+    write_dir = pathlib.Path(job.ws) / "diags"
     sim.diags = [
         FieldDiagnostic(
             period=job.sp.diag_period,
@@ -395,7 +394,7 @@ def generate_rho_movie(job: Job) -> None:
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     command = ffmpeg_command(
-        input_files=os.path.join(job.ws, "rhos", "rho*.png"),
+        input_files=pathlib.Path(job.ws) / "rhos" / "rho*.png",
         output_file=job.fn("rho.mp4"),
     )
     shell_run(command, shell=True)
@@ -516,7 +515,7 @@ def plot_2d_hist(job: Job) -> None:
     v_axis_size = hist_edges[-1] - hist_edges[1]
     dens = dens[mask] * v_axis_size / 5
     # upshift density to start from lower limit of histogram y axis
-    dens += hist_edges[1] - np.amin(dens)
+    dens += hist_edges[1] - dens.min()
 
     fig = pyplot.figure(figsize=(2 * 8, 8))
 
