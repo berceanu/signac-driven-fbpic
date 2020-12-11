@@ -15,7 +15,7 @@ import math
 import os
 import sys
 import glob
-from typing import Union, Iterable, Callable
+from typing import Union
 import pathlib
 from multiprocessing import Pool
 from functools import partial
@@ -24,7 +24,7 @@ import numpy as np
 import sliceplots
 from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
-from matplotlib import pyplot, colors, cm
+from matplotlib import pyplot
 from openpmd_viewer import addons
 import unyt as u
 from peak_detection import plot_electron_energy_spectrum
@@ -413,7 +413,7 @@ def save_final_histogram(job: Job) -> None:
     last_iteration = time_series.iterations[-1]
 
     # compute 1D histogram
-    energy_hist, bin_edges, nbins = particle_energy_histogram(
+    energy_hist, bin_edges, _ = particle_energy_histogram(
         tseries=time_series,
         it=last_iteration,
         cutoff=np.inf,  # no cutoff
