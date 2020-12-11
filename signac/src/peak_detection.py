@@ -116,11 +116,10 @@ def plot_electron_energy_spectrum(spectrum_file, fig_file) -> None:
             peak_charge = Q  # pC
 
         ax.annotate(
-            text=f"{peak_number}, Q = {Q:.0f} pC",
+            text=f"#{peak_number}, {Q:.0f} pC",
             xy=(energy_position + 5, charge_value + 0.02),
             xycoords="data",
             color=STYLE[str(peak_index)]["color"],
-            size=14,
         )
         ax.axvline(
             x=energy_position,
