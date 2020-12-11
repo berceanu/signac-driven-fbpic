@@ -7,6 +7,7 @@ from scipy.constants import golden
 import unyt as u
 import signac
 
+
 line_colors = ["C1", "C2", "C3"]
 line_styles = ["-", "--", ":", "-."]
 cyl = cycler(color=line_colors) * cycler(linestyle=line_styles)
@@ -24,7 +25,7 @@ def main():
     ax.set_xlabel("E (MeV)")
     ax.set_ylabel("dQ/dE (pC/MeV)")
 
-    for zf, jobs in proj.groupby(key="zfoc"):
+    for _, jobs in proj.groupby(key="zfoc"):
         job = next(jobs)  # assuming single job per group
 
         zfoc = (job.sp.zfoc * u.meter).to(u.micrometer)
@@ -91,8 +92,8 @@ def main():
     ax1.tick_params(axis="y", colors="C1")
     ax2.tick_params(axis="y", colors="C0")
 
-    ax1.tick_params(labelbottom=True, labeltop=True)
     ax1.xaxis.set_major_locator(MultipleLocator(50))
+    ax1.tick_params(labelbottom=True, labeltop=True)
 
     ax1.grid(which="major", axis="x", linewidth=0.75, linestyle="dashed", color="0.75")
 
