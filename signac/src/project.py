@@ -794,7 +794,9 @@ def plot_2d_hist(job: Job) -> None:
     mask = (all_z >= z_0[0]) & (all_z <= z_0[-1])
     all_z = all_z[mask] * 1e6  # micrometers
     # rescale for visibility, 1/5th of the histogram y axis
-    dens = dens[mask] * v_axis_size / 5 + 5  # slight upshift
+    dens = dens[mask] * v_axis_size / 5
+    # upshift density to start from lower limit of histogram y axis
+    dens += hist_edges[1] - np.amin(dens)
 
     fig = pyplot.figure(figsize=(2 * 8, 8))
 
@@ -810,7 +812,7 @@ def plot_2d_hist(job: Job) -> None:
         vslice_val=z_0[-1],  # can be changed to z_0[iteration]
         extent=(z_0[0], z_0[-1], hist_edges[1], hist_edges[-1]),
     )
-    hist2d.ax0.plot(all_z, dens, linewidth=2, linestyle="dashed", color="0.75")
+    hist2d.ax0.plot(all_z, dens, linewidth=2.5, linestyle="dashed", color="0.75")
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
 
