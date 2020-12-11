@@ -67,6 +67,23 @@ def get_persistent_homology(seq):
     return sorted(peaks, key=lambda p: p.get_persistence(seq), reverse=True)
 
 
+def integrated_charge(spectrum_file, from_energy, to_energy):
+    """Compute the integrated charge between the two energy limits."""
+
+    npzfile = np.load(spectrum_file)
+    energy = npzfile["edges"]
+    charge = npzfile["counts"]
+
+    delta_energy = np.diff(energy)
+    energy = energy[1:]
+
+    mask = (energy >= from_energy) & (energy <= to_energy)  # MeV
+
+    Q = np.sum(delta_energy[mask] * charge[mask])  # integrated charge
+
+    return Q
+
+
 def plot_electron_energy_spectrum(spectrum_file, fig_file) -> None:
     """Plot the electron spectrum from file."""
 
@@ -93,9 +110,6 @@ def plot_electron_energy_spectrum(spectrum_file, fig_file) -> None:
     ax.set_xlabel("E (MeV)")
     ax.set_ylabel("dQ/dE (pC/MeV)")
 
-    peak_position = 0.0
-    peak_charge = 0.0
-
     for peak_number, peak in enumerate(
         h[:6]
     ):  # go through first peaks, in order of importance
@@ -111,10 +125,6 @@ def plot_electron_energy_spectrum(spectrum_file, fig_file) -> None:
         Q = np.sum(
             delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
         )  # integrated charge
-        if peak_number == 1:  # tacitly assumes peak #1 is the one we care about
-            peak_position = energy_position  # MeV
-            peak_charge = Q  # pC
-
         ax.annotate(
             text=f"#{peak_number}, {Q:.0f} pC",
             xy=(energy_position + 5, charge_value + 0.02),
@@ -138,8 +148,6 @@ def plot_electron_energy_spectrum(spectrum_file, fig_file) -> None:
     fig.savefig(fig_file)
     pyplot.close(fig)
 
-    return peak_position, peak_charge
-
 
 def main():
     import random
@@ -151,10 +159,10 @@ def main():
     ids = [job.id for job in proj]
     job = proj.open_job(id=random.choice(ids))
 
-    pos, q = plot_electron_energy_spectrum(
-        job.fn("final_histogram.npz"), "final_histogram.png"
-    )
-    print(f"job {job.id} has a peak at {pos} MeV, containing {q} pC")
+    plot_electron_energy_spectrum(job.fn("final_histogram.npz"), "final_histogram.png")
+
+    Q = integrated_charge(job.fn("final_histogram.npz"), from_energy=100, to_energy=200)
+    print(f"{Q} pc between 100 and 200 Mev")
 
 
 if __name__ == "__main__":
