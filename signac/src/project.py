@@ -25,7 +25,11 @@ from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot
 from openpmd_viewer import addons
 import unyt as u
-from peak_detection import plot_electron_energy_spectrum
+from peak_detection import (
+    plot_electron_energy_spectrum,
+    integrated_charge,
+    peak_position,
+)
 from util import ffmpeg_command, shell_run
 from simulation_diagnostics import particle_energy_histogram, laser_density_plot
 from density_functions import plot_density_profile, make_gaussian_dens_func
@@ -334,9 +338,22 @@ def plot_final_histogram(job: Job) -> None:
         job.fn("final_histogram.npz"), job.fn("final_histogram.png")
     )
 
-    # FIXME
-    # job.doc["peak_position"] = float("{:.1f}".format(peak_position))  # MeV
-    # job.doc["peak_charge"] = float("{:.1f}".format(peak_charge))  # pC
+
+@ex
+@Project.operation
+@Project.pre.after(save_final_histogram)
+@Project.post(lambda job: bool(job.doc.get("peak_charge", False)))
+@Project.post(lambda job: bool(job.doc.get("peak_position", False)))
+def get_peak_charge_and_position(job: Job) -> None:
+    int_charge = integrated_charge(
+        job.fn("final_histogram.npz"), from_energy=100, to_energy=200
+    )
+    peak_pos = peak_position(
+        job.fn("final_histogram.npz"), from_energy=100, to_energy=200
+    )
+
+    job.doc["peak_position"] = float("{:.1f}".format(peak_pos))  # MeV
+    job.doc["peak_charge"] = float("{:.1f}".format(int_charge))  # pC
 
 
 @ex

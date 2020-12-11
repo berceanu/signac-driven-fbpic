@@ -84,6 +84,22 @@ def integrated_charge(spectrum_file, from_energy, to_energy):
     return Q
 
 
+def peak_position(spectrum_file, from_energy, to_energy):
+    """Find position of max charge in given interval."""
+
+    npzfile = np.load(spectrum_file)
+    energy = npzfile["edges"][1:]
+    charge = npzfile["counts"]
+
+    mask = (energy >= from_energy) & (energy <= to_energy)  # MeV
+    energy = energy[mask]
+    charge = charge[mask]
+
+    idx_max = np.argmax(charge)
+
+    return energy[idx_max]
+
+
 def plot_electron_energy_spectrum(spectrum_file, fig_file) -> None:
     """Plot the electron spectrum from file."""
 
@@ -126,7 +142,7 @@ def plot_electron_energy_spectrum(spectrum_file, fig_file) -> None:
             delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
         )  # integrated charge
         ax.annotate(
-            text=f"#{peak_number}, {Q:.0f} pC",
+            text=f"#{peak_number}, {Q:.0f} pC, {energy_position:.1f} MeV",
             xy=(energy_position + 5, charge_value + 0.02),
             xycoords="data",
             color=STYLE[str(peak_index)]["color"],
@@ -162,7 +178,9 @@ def main():
     plot_electron_energy_spectrum(job.fn("final_histogram.npz"), "final_histogram.png")
 
     Q = integrated_charge(job.fn("final_histogram.npz"), from_energy=100, to_energy=200)
-    print(f"{Q} pc between 100 and 200 Mev")
+    pos = peak_position(job.fn("final_histogram.npz"), from_energy=100, to_energy=200)
+
+    print(f"{Q} pc between 100 and 200 MeV. peak at {pos:.1f} MeV")
 
 
 if __name__ == "__main__":
