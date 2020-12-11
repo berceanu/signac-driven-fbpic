@@ -46,5 +46,9 @@ def shell_run(*cmd, **kwargs) -> str:
     return stdout
 
 
+def main():
+    print(ffmpeg_command())
+
+
 if __name__ == "__main__":
-    pass
+    main()
