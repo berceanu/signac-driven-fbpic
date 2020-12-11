@@ -8,10 +8,6 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import unyt as u
 
 
-q_e = u.electron_charge.to_value("C")  # negative sign
-mc2 = (u.electron_mass * u.clight ** 2).to_value("MeV")  # 0.511 MeV
-
-
 def laser_density_plot(
     iteration,
     tseries,
@@ -51,7 +47,7 @@ def laser_density_plot(
     fig, ax = pyplot.subplots(figsize=(10, 6))
 
     im_rho = ax.imshow(
-        rho / (np.abs(q_e) * n_c),
+        rho / (u.elementary_charge.to_value("C") * n_c),
         extent=rho_info.imshow_extent * 1e6,  # conversion to microns
         origin="lower",
         norm=colors.SymLogNorm(linthresh=1e-4, linscale=0.15, base=10),
@@ -114,7 +110,7 @@ def laser_density_plot(
 
 def particle_energy_histogram(
     tseries,
-    it: int,
+    iteration: int,
     energy_min=1,
     energy_max=500,
     delta_energy=1,
@@ -124,7 +120,7 @@ def particle_energy_histogram(
     Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
 
     :param tseries: whole simulation time series
-    :param it: time step in the simulation
+    :param iteration: time step in the simulation
     :param energy_min: lower energy threshold (MeV)
     :param energy_max: upper energy threshold (MeV)
     :param delta_energy: size of each energy bin (MeV)
@@ -134,8 +130,10 @@ def particle_energy_histogram(
     nbins = (energy_max - energy_min) // delta_energy
     energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
 
-    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=it)
-    energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
+    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=iteration)
+    energy = (u.electron_mass * u.clight ** 2).to_value("MeV") * np.sqrt(
+        1 + ux ** 2 + uy ** 2 + uz ** 2
+    )
 
     # Explanation of weights:
     #     1. convert electron charge from C to pC (factor 1e12)
@@ -153,5 +151,27 @@ def particle_energy_histogram(
     return hist, energy_bins, nbins
 
 
+def main():
+    import random
+    from openpmd_viewer.addons import LpaDiagnostics
+    import signac
+
+    random.seed(42)
+
+    proj = signac.get_project(search=False)
+    ids = [job.id for job in proj]
+
+    job = proj.open_job(id=random.choice(ids))
+
+    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
+    time_series = LpaDiagnostics(h5_path, check_all_files=True)
+
+    it = random.choice(time_series.iterations.tolist())
+    print(f"job {job.id}, iteration {it}")
+
+    laser_density_plot(iteration=it, tseries=time_series)
+    particle_energy_histogram(tseries=time_series, iteration=it)
+
+
 if __name__ == "__main__":
-    pass
+    main()
