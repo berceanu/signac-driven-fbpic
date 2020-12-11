@@ -220,6 +220,8 @@ def are_rho_pngs(job: Job) -> bool:
 @directives(ngpu=1)
 @Project.operation
 @Project.post(fbpic_ran)
+@Project.post.isfile("initial_density_profile.npz")
+@Project.post.isfile("initial_density_profile.png")
 def run_fbpic(job: Job) -> None:
     """
     This ``signac-flow`` operation runs a ``fbpic`` simulation.
@@ -287,6 +289,7 @@ def run_fbpic(job: Job) -> None:
     # plot density profile for checking
     all_z = np.linspace(job.sp.zmin, job.sp.L_interact, 1000)
     dens = dens_func(all_z, 0.0)
+    np.savez(job.fn("initial_density_profile.npz"), density=dens, z_meters=all_z)
 
     def mark_on_plot(*, ax, parameter: str, y=1.1):
         ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
@@ -313,7 +316,7 @@ def run_fbpic(job: Job) -> None:
 
     ax.fill_between(all_z * 1e6, dens, alpha=0.5)
 
-    fig.savefig(job.fn("check_density.png"))
+    fig.savefig(job.fn("initial_density_profile.png"))
     pyplot.close(fig)
 
     # redirect stdout to "stdout.txt"
@@ -621,7 +624,7 @@ def save_final_histogram(job: Job) -> None:
         it=last_iteration,
         cutoff=np.inf,  # no cutoff
     )
-    np.savez(job.fn("final_histogram"), edges=bin_edges, counts=energy_hist)
+    np.savez(job.fn("final_histogram.npz"), edges=bin_edges, counts=energy_hist)
 
 
 @ex
@@ -770,6 +773,9 @@ def plot_2d_hist(job: Job) -> None:
     hist_edges = np.loadtxt(
         job.fn("hist_edges.txt"), dtype=np.float64, comments="#", ndmin=1
     )
+    npzfile = np.load(job.fn("initial_density_profile.npz"))
+    dens = npzfile["density"]
+    all_z = npzfile["z_meters"]
 
     # compute moving window position for each iteration
     iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
@@ -777,8 +783,11 @@ def plot_2d_hist(job: Job) -> None:
     positions = times * u.clight
     z_0 = positions.to_value("micrometer")
 
+    fig = pyplot.figure(figsize=(2 * 8, 8))
+
     # plot 2D energy-charge histogram
     hist2d = sliceplots.Plot2D(
+        fig=fig,
         arr2d=all_hist.T,  # 2D data
         h_axis=z_0,  # x-axis
         v_axis=hist_edges[1:],  # y-axis
@@ -788,6 +797,8 @@ def plot_2d_hist(job: Job) -> None:
         vslice_val=z_0[-1],  # can be changed to z_0[iteration]
         extent=(z_0[0], z_0[-1], hist_edges[1], hist_edges[-1]),
     )
+    hist2d.ax0.plot(all_z * 1e6, dens, linewidth=2, linestyle="dashed", color="0.75")
+
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
 
