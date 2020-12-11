@@ -202,17 +202,6 @@ def make_dens_func(job):
 
 @ex
 @Project.operation
-@Project.post.isfile("initial_density_profile.npz")
-def save_initial_density_profile(job: Job) -> None:
-    """Save the initial plasma density profile for subsequent plotting."""
-    all_z = np.linspace(job.sp.zmin, job.sp.L_interact, 1000)
-    dens = make_dens_func(job)(all_z, 0.0)
-    np.savez(job.fn("initial_density_profile.npz"), density=dens, z_meters=all_z)
-
-
-@ex
-@Project.operation
-@Project.pre.isfile("initial_density_profile.npz")
 @Project.post.isfile("initial_density_profile.png")
 def plot_initial_density_profile(job: Job) -> None:
     """Plot the initial plasma density profile."""
@@ -221,11 +210,10 @@ def plot_initial_density_profile(job: Job) -> None:
         ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
         return ax
 
-    fig, ax = pyplot.subplots(figsize=(30, 4.8))
+    all_z = np.linspace(job.sp.zmin, job.sp.L_interact, 1000)
+    dens = make_dens_func(job)(all_z, 0.0)
 
-    npzfile = np.load(job.fn("initial_density_profile.npz"))
-    dens = npzfile["density"]
-    all_z = npzfile["z_meters"]
+    fig, ax = pyplot.subplots(figsize=(30, 4.8))
 
     ax.plot(all_z * 1e6, dens)
     ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
@@ -253,7 +241,6 @@ def plot_initial_density_profile(job: Job) -> None:
 @directives(ngpu=1)
 @Project.operation
 @Project.post(fbpic_ran)
-@Project.post.isfile("initial_density_profile.npz")
 def run_fbpic(job: Job) -> None:
     """
     This ``signac-flow`` operation runs a ``fbpic`` simulation.
@@ -491,7 +478,6 @@ def save_histograms(job: Job) -> None:
 @ex
 @Project.operation
 @Project.pre.after(save_histograms)
-@Project.pre.isfile("initial_density_profile.npz")
 @Project.post.isfile("hist2d.png")
 def plot_2d_hist(job: Job) -> None:
     """
@@ -505,22 +491,19 @@ def plot_2d_hist(job: Job) -> None:
     hist_edges = np.loadtxt(
         job.fn("hist_edges.txt"), dtype=np.float64, comments="#", ndmin=1
     )
-    npzfile = np.load(job.fn("initial_density_profile.npz"))
-    dens = npzfile["density"]
-    all_z = npzfile["z_meters"]
-
     # compute moving window position for each iteration
     iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
     times = iterations * job.sp.dt * u.second
     positions = times * u.clight
-    z_0 = positions.to_value("micrometer")
 
-    # use same z range as the histogram
-    mask = (all_z >= z_0[0]) & (all_z <= z_0[-1])
-    all_z = all_z[mask] * 1e6  # micrometers
+    z_0 = positions.to_value("micrometer")
+    all_z = positions.to_value("meter")
+
+    dens = make_dens_func(job)(all_z, 0.0)
+
     # rescale for visibility, 1/5th of the histogram y axis
     v_axis_size = hist_edges[-1] - hist_edges[1]
-    dens = dens[mask] * v_axis_size / 5
+    dens *= v_axis_size / 5
     # upshift density to start from lower limit of histogram y axis
     dens += hist_edges[1] - dens.min()
 
@@ -538,7 +521,7 @@ def plot_2d_hist(job: Job) -> None:
         vslice_val=z_0[-1],  # can be changed to z_0[iteration]
         extent=(z_0[0], z_0[-1], hist_edges[1], hist_edges[-1]),
     )
-    hist2d.ax0.plot(all_z, dens, linewidth=2.5, linestyle="dashed", color="0.75")
+    hist2d.ax0.plot(all_z * 1e6, dens, linewidth=2.5, linestyle="dashed", color="0.75")
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
 
