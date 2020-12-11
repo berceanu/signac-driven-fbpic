@@ -27,7 +27,7 @@ from openpmd_viewer import addons
 import unyt as u
 from peak_detection import plot_electron_energy_spectrum
 from util import ffmpeg_command, shell_run
-from sim_diags import particle_energy_histogram, laser_density_plot
+from simulation_diagnostics import particle_energy_histogram, laser_density_plot
 from signac.contrib.job import Job
 
 logger = logging.getLogger(__name__)
@@ -148,8 +148,8 @@ def are_rho_pngs(job: Job) -> bool:
 
 def make_dens_func(job):
     def ramp(z, *, center, sigma, p):
-    """Gaussian-like function."""
-    return np.exp(-(((z - center) / sigma) ** p))
+        """Gaussian-like function."""
+        return np.exp(-(((z - center) / sigma) ** p))
 
     # The density profile
     def dens_func(z, r):
@@ -205,6 +205,7 @@ def make_dens_func(job):
 @Project.post.isfile("initial_density_profile.png")
 def plot_initial_density_profile(job: Job) -> None:
     """Plot the initial plasma density profile."""
+
     def mark_on_plot(*, ax, parameter: str, y=1.1):
         ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
         ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
@@ -254,6 +255,7 @@ def run_fbpic(job: Job) -> None:
         ParticleDiagnostic,
         ParticleChargeDensityDiagnostic,
     )
+
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
     f = open(job.fn("stdout.txt"), "w")
