@@ -1,5 +1,15 @@
 """Module containing various simulation diagnostic tools."""
+import pathlib
+from copy import copy
 import numpy as np
+import colorcet as cc
+from matplotlib import pyplot, colors, cm
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+import unyt as u
+
+
+q_e = u.electron_charge.to_value("C")  # negative sign
+mc2 = (u.electron_mass * u.clight ** 2).to_value("MeV")  # 0.511 MeV
 
 
 def laser_density_plot(
