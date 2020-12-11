@@ -1,3 +1,5 @@
+"""Module containing peak-detection algorithm and related functionality."""
+
 from collections import defaultdict
 import numpy as np
 from matplotlib import pyplot
@@ -65,8 +67,10 @@ def get_persistent_homology(seq):
     return sorted(peaks, key=lambda p: p.get_persistence(seq), reverse=True)
 
 
-if __name__ == "__main__":
-    npzfile = np.load("final_histogram.npz")
+def plot_electron_energy_spectrum(spectrum_file, fig_file) -> None:
+    """Plot the electron spectrum from file."""
+
+    npzfile = np.load(spectrum_file)
     energy = npzfile["edges"]
     charge = npzfile["counts"]
 
@@ -89,6 +93,9 @@ if __name__ == "__main__":
     ax.set_xlabel("E (MeV)")
     ax.set_ylabel("dQ/dE (pC/MeV)")
 
+    peak_position = 0.0
+    peak_charge = 0.0
+
     for peak_number, peak in enumerate(
         h[:6]
     ):  # go through first peaks, in order of importance
@@ -103,7 +110,10 @@ if __name__ == "__main__":
 
         Q = np.sum(
             delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
-        )
+        )  # integrated charge
+        if peak_number == 1:  # tacitly assumes peak #1 is the one we care about
+            peak_position = energy_position  # MeV
+            peak_charge = Q  # pC
 
         ax.annotate(
             text=f"{peak_number}, Q = {Q:.0f} pC",
@@ -126,8 +136,12 @@ if __name__ == "__main__":
             color=STYLE[str(peak_index)]["color"],
             alpha=0.9,
         )
-        print(
-            f"peak {peak_number} centered at {energy_position} MeV, from {energy[peak.left]} MeV to {energy[peak.right]} MeV, Q = {Q:.0f} pC"
-        )
+    fig.savefig(fig_file)
+    pyplot.close(fig)
 
-    fig.savefig("final_histogram.png")
+    return peak_position, peak_charge
+
+
+if __name__ == "__main__":
+    pos, q = plot_electron_energy_spectrum("final_histogram.npz", "final_histogram.png")
+    print(pos, q)

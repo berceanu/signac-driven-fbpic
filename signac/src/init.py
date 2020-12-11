@@ -17,6 +17,7 @@ import signac
 NUMBER_OF_H5 = 200
 SQRT_FACTOR = math.sqrt(2 * math.log(2))
 
+
 def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
     project = signac.init_project(
@@ -44,8 +45,10 @@ def main():
             p_nt=12,  # Number of particles per cell along theta, should be 4*Nm
             # The laser
             a0=2.4,  # Laser amplitude
-            w0=22.0e-6 / SQRT_FACTOR,  # Laser waist, converted from experimental FWHM@intensity
-            tau=25.0e-15 / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
+            w0=22.0e-6
+            / SQRT_FACTOR,  # Laser waist, converted from experimental FWHM@intensity
+            tau=25.0e-15
+            / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
             z0=-10.0e-6,  # Laser centroid
             zfoc=focus,  # Focal position
             lambda0=0.8e-6,  # Laser wavelength

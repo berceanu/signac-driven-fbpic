@@ -14,7 +14,6 @@ import logging
 import math
 import os
 import sys
-import subprocess
 import glob
 from copy import copy
 from typing import Union, Iterable, Callable
@@ -31,7 +30,9 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import colorcet as cc
 from openpmd_viewer import addons
 import unyt as u
-from peak_detection import get_persistent_homology
+from peak_detection import plot_electron_energy_spectrum
+from util import ffmpeg_command, shell_run
+from sim_diags import particle_energy_histogram, laser_density_plot
 from signac.contrib.job import Job
 
 logger = logging.getLogger(__name__)
@@ -82,63 +83,16 @@ class OdinEnvironment(DefaultSlurmEnvironment):
             ),
         )
 
+
 class Project(FlowProject):
     """
     Placeholder for ``FlowProject`` class.
     """
+
     pass
 
+
 ex = Project.make_group(name="ex")
-
-
-def are_files(file_names: Iterable[str]) -> Callable[[Job], bool]:
-    """Check if given file names are in the ``job`` dir.
-    Useful for pre- and post- operation conditions.
-
-    :param file_names: iterable containing file names
-    :return: anonymous function that does the check
-    """
-    return lambda job: all(job.isfile(fn) for fn in file_names)
-
-
-def sh(*cmd, **kwargs) -> str:
-    """
-    Run the command ``cmd`` in the shell.
-
-    :param cmd: the command to be run, with separate arguments
-    :param kwargs: optional keyword arguments for ``Popen``, eg. shell=True
-    :return: the shell STDOUT and STDERR
-    """
-    logger.info(cmd[0])
-    stdout = (
-        subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs
-        )
-        .communicate()[0]
-        .decode("utf-8")
-    )
-    logger.info(stdout)
-    return stdout
-
-
-def ffmpeg_command(
-    frame_rate: float = 10.0,  # CHANGEME
-    input_files: str = "pic%04d.png",  # pic0001.png, pic0002.png, ...
-    output_file: str = "test.mp4",
-) -> str:
-    """
-    Build up the command string for running ``ffmpeg``.
-    For details, see `this blog post <http://hamelot.io/visualization/using-ffmpeg-to-convert-a-set-of-images-into-a-video/>`_
-
-    :param frame_rate: desired video framerate, in fps
-    :param input_files: shell-like wildcard pattern (globbing)
-    :param output_file: name of video output
-    :return: the command that needs to be executed in the shell for producing the video from the input files
-    """
-    return (
-        rf"ffmpeg -framerate {frame_rate} -pattern_type glob -i '{input_files}' "
-        rf"-c:v libx264 -vf fps=25 -pix_fmt yuv420p {output_file}"
-    )
 
 
 @Project.label
@@ -196,147 +150,6 @@ def are_rho_pngs(job: Job) -> bool:
     pngs = (f"rho{it:06d}.png" for it in iterations)
 
     return set(files) == set(pngs)
-
-
-def particle_energy_histogram(
-    tseries,
-    it: int,
-    energy_min=1,
-    energy_max=500,
-    delta_energy=1,
-    cutoff=35,  # CHANGEME
-):
-    """
-    Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
-
-    :param tseries: whole simulation time series
-    :param it: time step in the simulation
-    :param energy_min: lower energy threshold (MeV)
-    :param energy_max: upper energy threshold (MeV)
-    :param delta_energy: size of each energy bin (MeV)
-    :param cutoff: upper threshold for the histogram, in pC / MeV
-    :return: histogram values and bin edges
-    """
-    nbins = (energy_max - energy_min) // delta_energy
-    energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
-
-    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=it)
-    energy = mc2 * np.sqrt(1 + ux ** 2 + uy ** 2 + uz ** 2)
-
-    # Explanation of weights:
-    #     1. convert electron charge from C to pC (factor 1e12)
-    #     2. multiply by weight w to get real number of electrons
-    #     3. divide by energy bin size delta_energy to get charge / MeV
-    hist, _ = np.histogram(
-        energy,
-        bins=energy_bins,
-        weights=u.elementary_charge.to_value("pC") / delta_energy * w,
-    )
-
-    # cut off histogram
-    np.clip(hist, a_min=None, a_max=cutoff, out=hist)
-
-    return hist, energy_bins, nbins
-
-
-def laser_density_plot(
-    iteration,
-    tseries,
-    rho_field_name="rho_electrons",
-    laser_polarization="x",
-    save_path=pathlib.Path.cwd(),
-    n_c=1.7419595910637713e27,  # 1/m^3
-    E0=4013376052599.5396,  # V/m
-) -> None:
-    """
-    Plot on the same figure the laser pulse envelope and the electron density.
-    """
-
-    laser_cmap = copy(cc.m_fire)
-    laser_cmap.set_under("black", alpha=0)
-
-    rho, rho_info = tseries.get_field(
-        field=rho_field_name,
-        iteration=iteration,
-    )
-    envelope, env_info = tseries.get_laser_envelope(
-        iteration=iteration, pol=laser_polarization
-    )
-    # get longitudinal field
-    e_z_of_z, e_z_of_z_info = tseries.get_field(
-        field="E",
-        coord="z",
-        iteration=iteration,
-        slice_across="r",
-    )
-    # the field "rho" has (SI) units of charge/volume (Q/V), C/(m^3)
-    # the initial density n_e has units of N/V, N = electron number
-    # multiply by electron charge q_e to get (N e) / V
-    # so we get Q / N e, which is C/C, i.e. dimensionless
-    # Note: one can also normalize by the critical density n_c
-
-    fig, ax = pyplot.subplots(figsize=(10, 6))
-
-    im_rho = ax.imshow(
-        rho / (np.abs(q_e) * n_c),
-        extent=rho_info.imshow_extent * 1e6,  # conversion to microns
-        origin="lower",
-        norm=colors.SymLogNorm(linthresh=1e-4, linscale=0.15, base=10),
-        cmap=cm.get_cmap("cividis"),
-    )
-    im_envelope = ax.imshow(
-        envelope / E0,
-        extent=env_info.imshow_extent * 1e6,
-        origin="lower",
-        cmap=laser_cmap,
-    )
-    im_envelope.set_clim(vmin=1.0)
-
-    # plot longitudinal field
-    ax.plot(e_z_of_z_info.z * 1e6, e_z_of_z / E0 * 15 - 15, color="0.75")
-    ax.axhline(-15, color="0.65", ls="-.")
-
-    cbaxes_rho = inset_axes(
-        ax,
-        width="3%",  # width = 10% of parent_bbox width
-        height="46%",  # height : 50%
-        loc=2,
-        bbox_to_anchor=(1.01, 0.0, 1, 1),
-        bbox_transform=ax.transAxes,
-        borderpad=0,
-    )
-    cbaxes_env = inset_axes(
-        ax,
-        width="3%",  # width = 5% of parent_bbox width
-        height="46%",  # height : 50%
-        loc=3,
-        bbox_to_anchor=(1.01, 0.0, 1, 1),
-        bbox_transform=ax.transAxes,
-        borderpad=0,
-    )
-    cbar_env = fig.colorbar(
-        mappable=im_envelope,
-        orientation="vertical",
-        ticklocation="right",
-        cax=cbaxes_env,
-    )
-    cbar_rho = fig.colorbar(
-        mappable=im_rho, orientation="vertical", ticklocation="right", cax=cbaxes_rho
-    )
-    cbar_env.set_label(r"$eE_{x} / m c \omega_\mathrm{L}$")
-    cbar_rho.set_label(r"$n_{e} / n_\mathrm{cr}$")
-
-    ax.set_ylabel(r"${} \;(\mu m)$".format(rho_info.axes[0]))
-    ax.set_xlabel(r"${} \;(\mu m)$".format(rho_info.axes[1]))
-
-    current_time = (tseries.current_t * u.second).to("picosecond")
-    ax.set_title(f"t = {current_time:.2f}")
-
-    filename = save_path / f"rho{iteration:06d}.png"
-
-    fig.subplots_adjust(right=0.85)
-    fig.savefig(filename)
-    pyplot.close(fig)
 
 
 @ex.with_directives(directives=dict(ngpu=1))
@@ -590,8 +403,7 @@ def generate_rho_movie(job: Job) -> None:
         input_files=os.path.join(job.ws, "rhos", "rho*.png"),
         output_file=job.fn("rho.mp4"),
     )
-
-    sh(command, shell=True)
+    shell_run(command, shell=True)
 
 
 @ex
@@ -621,87 +433,19 @@ def save_final_histogram(job: Job) -> None:
 def plot_final_histogram(job: Job) -> None:
     """Plot the electron spectrum corresponding to the last iteration."""
 
-    from collections import defaultdict
-    from cycler import cycler
-
-    line_colors = ["C1", "C2", "C3", "C4", "C5", "C6"]
-    line_styles = ["-", "--", ":", "-.", (0, (1, 10)), (0, (5, 10))]
-    cyl = cycler(color=line_colors) + cycler(linestyle=line_styles)
-    loop_cy_iter = cyl()
-    STYLE = defaultdict(lambda: next(loop_cy_iter))
-
-    npzfile = np.load(job.fn("final_histogram.npz"))
-    energy = npzfile["edges"]
-    charge = npzfile["counts"]
-
-    delta_energy = np.diff(energy)
-    energy = energy[1:]
-
-    mask = (energy > 0) & (energy < 350)  # MeV
-    energy = energy[mask]
-    charge = np.clip(charge, 0, 60)[mask]
-
-    h = get_persistent_homology(charge)
-
-    # plot it
-    fig, ax = pyplot.subplots(figsize=(10, 6))
-
-    ax.step(
-        energy,
-        charge,
+    peak_position, peak_charge = plot_electron_energy_spectrum(
+        job.fn("final_histogram.npz"), job.fn("final_histogram.png")
     )
-    ax.set_xlabel("E (MeV)")
-    ax.set_ylabel("dQ/dE (pC/MeV)")
 
-    for peak_number, peak in enumerate(
-        h[:6]
-    ):  # go through first peaks, in order of importance
-        peak_index = peak.born
-        energy_position = energy[peak_index]
-        charge_value = charge[peak_index]
-
-        persistence = peak.get_persistence(charge)
-        ymin = charge_value - persistence
-        if np.isinf(persistence):
-            ymin = 0
-
-        Q = np.sum(
-            delta_energy[peak.left : peak.right] * charge[peak.left : peak.right]
-        )  # integrated charge
-        if peak_number == 1:  # tacitly assumes peak #1 is the one we care about
-            job.doc["peak_position"] = float("{:.1f}".format(energy_position))  # MeV
-            job.doc["peak_charge"] = float("{:.1f}".format(Q))  # pC
-
-        ax.annotate(
-            text=f"{peak_number}, Q = {Q:.0f} pC",
-            xy=(energy_position + 5, charge_value + 0.02),
-            xycoords="data",
-            color=STYLE[str(peak_index)]["color"],
-            size=14,
-        )
-        ax.axvline(
-            x=energy_position,
-            linestyle=STYLE[str(peak_index)]["linestyle"],
-            color=STYLE[str(peak_index)]["color"],
-            linewidth=2,
-        )
-        ax.fill_between(
-            energy,
-            charge,
-            ymin,
-            where=(energy > energy[peak.left]) & (energy <= energy[peak.right]),
-            color=STYLE[str(peak_index)]["color"],
-            alpha=0.9,
-        )
-
-    fig.savefig(job.fn("final_histogram.png"))
-    pyplot.close(fig)
+    job.doc["peak_position"] = float("{:.1f}".format(peak_position))  # MeV
+    job.doc["peak_charge"] = float("{:.1f}".format(peak_charge))  # pC
 
 
 @ex
 @Project.operation
 @Project.pre.after(run_fbpic)
-@Project.post(are_files(("all_hist.txt", "hist_edges.txt")))
+@Project.post.isfile("all_hist.txt")
+@Project.post.isfile("hist_edges.txt")
 def save_histograms(job: Job) -> None:
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
