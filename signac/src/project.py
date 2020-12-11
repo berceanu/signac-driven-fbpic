@@ -146,28 +146,10 @@ def are_rho_pngs(job: Job) -> bool:
     return set(files) == set(pngs)
 
 
-@ex.with_directives(directives=dict(ngpu=1))
-@directives(ngpu=1)
-@Project.operation
-@Project.post(fbpic_ran)
-@Project.post.isfile("initial_density_profile.npz")
-def run_fbpic(job: Job) -> None:
-    """
-    This ``signac-flow`` operation runs a ``fbpic`` simulation.
-
-    :param job: the job instance is a handle to the data of a unique statepoint
-    """
-    from fbpic.main import Simulation
-    from fbpic.lpa_utils.laser import add_laser_pulse, FlattenedGaussianLaser
-    from fbpic.openpmd_diag import (
-        FieldDiagnostic,
-        ParticleDiagnostic,
-        ParticleChargeDensityDiagnostic,
-    )
-
+def make_dens_func(job):
     def ramp(z, *, center, sigma, p):
-        """Gaussian-like function."""
-        return np.exp(-(((z - center) / sigma) ** p))
+    """Gaussian-like function."""
+    return np.exp(-(((z - center) / sigma) ** p))
 
     # The density profile
     def dens_func(z, r):
@@ -215,11 +197,76 @@ def run_fbpic(job: Job) -> None:
 
         return n
 
-    # save density profile for subsequent plotting
+    return dens_func
+
+
+@ex
+@Project.operation
+@Project.post.isfile("initial_density_profile.npz")
+def save_initial_density_profile(job: Job) -> None:
+    """Save the initial plasma density profile for subsequent plotting."""
     all_z = np.linspace(job.sp.zmin, job.sp.L_interact, 1000)
-    dens = dens_func(all_z, 0.0)
+    dens = make_dens_func(job)(all_z, 0.0)
     np.savez(job.fn("initial_density_profile.npz"), density=dens, z_meters=all_z)
 
+
+@ex
+@Project.operation
+@Project.pre.isfile("initial_density_profile.npz")
+@Project.post.isfile("initial_density_profile.png")
+def plot_initial_density_profile(job: Job) -> None:
+    """Plot the initial plasma density profile."""
+    def mark_on_plot(*, ax, parameter: str, y=1.1):
+        ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
+        ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
+        return ax
+
+    fig, ax = pyplot.subplots(figsize=(30, 4.8))
+
+    npzfile = np.load(job.fn("initial_density_profile.npz"))
+    dens = npzfile["density"]
+    all_z = npzfile["z_meters"]
+
+    ax.plot(all_z * 1e6, dens)
+    ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
+    ax.set_ylim(0.0, 1.2)
+    ax.set_xlim(job.sp.zmin * 1e6 - 20, job.sp.L_interact * 1e6 + 20)
+    ax.set_ylabel("Density profile $n$")
+
+    mark_on_plot(ax=ax, parameter="zmin")
+    mark_on_plot(ax=ax, parameter="zmax")
+    mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
+    mark_on_plot(ax=ax, parameter="zfoc", y=0.5)
+    mark_on_plot(ax=ax, parameter="z0", y=0.5)
+    mark_on_plot(ax=ax, parameter="center_left", y=0.7)
+    mark_on_plot(ax=ax, parameter="center_right", y=0.7)
+    mark_on_plot(ax=ax, parameter="L_interact", y=0.7)
+    mark_on_plot(ax=ax, parameter="p_zmax")
+
+    ax.fill_between(all_z * 1e6, dens, alpha=0.5)
+
+    fig.savefig(job.fn("initial_density_profile.png"))
+    pyplot.close(fig)
+
+
+@ex.with_directives(directives=dict(ngpu=1))
+@directives(ngpu=1)
+@Project.operation
+@Project.post(fbpic_ran)
+@Project.post.isfile("initial_density_profile.npz")
+def run_fbpic(job: Job) -> None:
+    """
+    This ``signac-flow`` operation runs a ``fbpic`` simulation.
+
+    :param job: the job instance is a handle to the data of a unique statepoint
+    """
+    from fbpic.main import Simulation
+    from fbpic.lpa_utils.laser import add_laser_pulse, FlattenedGaussianLaser
+    from fbpic.openpmd_diag import (
+        FieldDiagnostic,
+        ParticleDiagnostic,
+        ParticleChargeDensityDiagnostic,
+    )
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
     f = open(job.fn("stdout.txt"), "w")
@@ -246,7 +293,7 @@ def run_fbpic(job: Job) -> None:
         q=q_e,
         m=m_e,
         n=job.sp.n_e,
-        dens_func=dens_func,
+        dens_func=make_dens_func(job),
         p_zmin=job.sp.p_zmin,
         p_zmax=job.sp.p_zmax,
         p_rmax=job.sp.p_rmax,
@@ -312,46 +359,6 @@ def run_fbpic(job: Job) -> None:
     # redirect stdout back and close "stdout.txt"
     sys.stdout = orig_stdout
     f.close()
-
-
-@ex
-@Project.operation
-@Project.pre.isfile("initial_density_profile.npz")
-@Project.post.isfile("initial_density_profile.png")
-def plot_initial_density_profile(job: Job) -> None:
-    """Plot the initial plasma density profile."""
-
-    def mark_on_plot(*, ax, parameter: str, y=1.1):
-        ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
-        ax.axvline(x=job.sp[parameter] * 1e6, linestyle="--", color="red")
-        return ax
-
-    fig, ax = pyplot.subplots(figsize=(30, 4.8))
-
-    npzfile = np.load(job.fn("initial_density_profile.npz"))
-    dens = npzfile["density"]
-    all_z = npzfile["z_meters"]
-
-    ax.plot(all_z * 1e6, dens)
-    ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
-    ax.set_ylim(0.0, 1.2)
-    ax.set_xlim(job.sp.zmin * 1e6 - 20, job.sp.L_interact * 1e6 + 20)
-    ax.set_ylabel("Density profile $n$")
-
-    mark_on_plot(ax=ax, parameter="zmin")
-    mark_on_plot(ax=ax, parameter="zmax")
-    mark_on_plot(ax=ax, parameter="p_zmin", y=0.9)
-    mark_on_plot(ax=ax, parameter="zfoc", y=0.5)
-    mark_on_plot(ax=ax, parameter="z0", y=0.5)
-    mark_on_plot(ax=ax, parameter="center_left", y=0.7)
-    mark_on_plot(ax=ax, parameter="center_right", y=0.7)
-    mark_on_plot(ax=ax, parameter="L_interact", y=0.7)
-    mark_on_plot(ax=ax, parameter="p_zmax")
-
-    ax.fill_between(all_z * 1e6, dens, alpha=0.5)
-
-    fig.savefig(job.fn("initial_density_profile.png"))
-    pyplot.close(fig)
 
 
 @ex.with_directives(directives=dict(np=3))
