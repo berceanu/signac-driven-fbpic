@@ -325,7 +325,6 @@ def laser_density_plot(
     )
     cbar_env.set_label(r"$eE_{x} / m c \omega_\mathrm{L}$")
     cbar_rho.set_label(r"$n_{e} / n_\mathrm{cr}$")
-    # cbar_rho.set_ticks([1e-4,1e-2,1e0]) FIXME
 
     ax.set_ylabel(r"${} \;(\mu m)$".format(rho_info.axes[0]))
     ax.set_xlabel(r"${} \;(\mu m)$".format(rho_info.axes[1]))
