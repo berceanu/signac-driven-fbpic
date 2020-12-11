@@ -83,9 +83,6 @@ class OdinEnvironment(DefaultSlurmEnvironment):
         )
 
 
-#####################
-# UTILITY FUNCTIONS #
-#####################
 
 
 def are_files(file_names: Iterable[str]) -> Callable[[Job], bool]:
@@ -149,10 +146,6 @@ class Project(FlowProject):
 ex = Project.make_group(name="ex")
 
 
-####################
-# OPERATION LABELS #
-####################
-
 
 @Project.label
 def progress(job) -> str:
@@ -169,9 +162,6 @@ def progress(job) -> str:
     return f"{len(h5_files)}/{number_of_iterations}"
 
 
-###############################
-# INITIALIZE & RUN SIMULATION #
-###############################
 
 
 def fbpic_ran(job: Job) -> bool:
