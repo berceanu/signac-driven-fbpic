@@ -79,7 +79,7 @@ def integrated_charge(spectrum_file, from_energy, to_energy):
 
     mask = (energy >= from_energy) & (energy <= to_energy)  # MeV
 
-    Q = np.sum(delta_energy[mask] * charge[mask])  # integrated charge
+    Q = np.sum(delta_energy[mask] * charge[mask])  # integrated charge, pC
 
     return Q
 
@@ -95,9 +95,7 @@ def peak_position(spectrum_file, from_energy, to_energy):
     energy = energy[mask]
     charge = charge[mask]
 
-    idx_max = np.argmax(charge)
-
-    return energy[idx_max]
+    return energy[np.argmax(charge)]  # MeV
 
 
 def plot_electron_energy_spectrum(spectrum_file, fig_file) -> None:
@@ -180,7 +178,7 @@ def main():
     Q = integrated_charge(job.fn("final_histogram.npz"), from_energy=100, to_energy=200)
     pos = peak_position(job.fn("final_histogram.npz"), from_energy=100, to_energy=200)
 
-    print(f"{Q} pc between 100 and 200 MeV. peak at {pos:.1f} MeV")
+    print(f"{Q:.1f} pc between 100 and 200 MeV, peak at {pos:.1f} MeV")
 
 
 if __name__ == "__main__":
