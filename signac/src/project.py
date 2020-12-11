@@ -130,7 +130,7 @@ def are_rho_pngs(job: Job) -> bool:
     :return: True if .png files are there, False otherwise
     """
     p = pathlib.Path(job.ws) / "rhos"
-    files = p.iterdir()
+    files = [fn.name for fn in p.glob("*.png")]
 
     # estimate iteration array based on input parameters
     iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
