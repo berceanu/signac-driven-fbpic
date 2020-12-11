@@ -160,7 +160,6 @@ def main():
 
     proj = signac.get_project(search=False)
     ids = [job.id for job in proj]
-
     job = proj.open_job(id=random.choice(ids))
 
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
@@ -170,7 +169,7 @@ def main():
     print(f"job {job.id}, iteration {it}")
 
     laser_density_plot(iteration=it, tseries=time_series)
-    particle_energy_histogram(tseries=time_series, iteration=it)
+    _, _, _ = particle_energy_histogram(tseries=time_series, iteration=it)
 
 
 if __name__ == "__main__":

@@ -150,13 +150,12 @@ def main():
 
     proj = signac.get_project(search=False)
     ids = [job.id for job in proj]
-
     job = proj.open_job(id=random.choice(ids))
 
     pos, q = plot_electron_energy_spectrum(
         job.fn("final_histogram.npz"), "final_histogram.png"
     )
-    print(f"job {job.id} has a peak at {pos} MeV, containing charge {q} pC")
+    print(f"job {job.id} has a peak at {pos} MeV, containing {q} pC")
 
 
 if __name__ == "__main__":
