@@ -789,11 +789,11 @@ def plot_2d_hist(job: Job) -> None:
     positions = times * u.clight
     z_0 = positions.to_value("micrometer")
 
-    v_axis_size = hist_edges[-1] - hist_edges[1]
     # use same z range as the histogram
     mask = (all_z >= z_0[0]) & (all_z <= z_0[-1])
     all_z = all_z[mask] * 1e6  # micrometers
     # rescale for visibility, 1/5th of the histogram y axis
+    v_axis_size = hist_edges[-1] - hist_edges[1]
     dens = dens[mask] * v_axis_size / 5
     # upshift density to start from lower limit of histogram y axis
     dens += hist_edges[1] - np.amin(dens)
