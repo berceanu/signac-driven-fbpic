@@ -10,7 +10,7 @@ def ffmpeg_command(
     frame_rate: float = 10.0,  # CHANGEME
     input_files: str = "pic%04d.png",  # pic0001.png, pic0002.png, ...
     output_file: str = "test.mp4",
-) -> str:
+):
     """
     Build up the command string for running ``ffmpeg``.
     http://hamelot.io/visualization/using-ffmpeg-to-convert-a-set-of-images-into-a-video/
@@ -26,7 +26,7 @@ def ffmpeg_command(
     )
 
 
-def shell_run(*cmd, **kwargs) -> str:
+def shell_run(*cmd, **kwargs):
     """
     Run the command ``cmd`` in the shell.
 

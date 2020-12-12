@@ -98,7 +98,7 @@ def peak_position(spectrum_file, from_energy, to_energy):
     return energy[np.argmax(charge)]  # MeV
 
 
-def plot_electron_energy_spectrum(spectrum_file, fig_file) -> None:
+def plot_electron_energy_spectrum(spectrum_file, fig_file):
     """Plot the electron spectrum from file."""
 
     npzfile = np.load(spectrum_file)

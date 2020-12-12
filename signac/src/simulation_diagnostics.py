@@ -16,7 +16,7 @@ def laser_density_plot(
     save_path=pathlib.Path.cwd(),
     n_c=1.7419595910637713e27,  # 1/m^3
     E0=4013376052599.5396,  # V/m
-) -> None:
+):
     """
     Plot on the same figure the laser pulse envelope and the electron density.
     """

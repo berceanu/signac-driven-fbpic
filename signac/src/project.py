@@ -33,7 +33,6 @@ from peak_detection import (
 from util import ffmpeg_command, shell_run
 from simulation_diagnostics import particle_energy_histogram, laser_density_plot
 from density_functions import plot_density_profile, make_gaussian_dens_func
-from signac.contrib.job import Job
 
 
 logger = logging.getLogger(__name__)
@@ -86,7 +85,7 @@ ex = Project.make_group(name="ex")
 
 
 @Project.label
-def progress(job) -> str:
+def progress(job):
     """Show progress of fbpic simulation, based on completed/total .h5 files."""
     # get last iteration based on input parameters
     number_of_iterations = math.ceil((job.sp.N_step - 0) / job.sp.diag_period)
@@ -101,7 +100,7 @@ def progress(job) -> str:
     return f"{len(h5_files)}/{number_of_iterations}"
 
 
-def fbpic_ran(job: Job) -> bool:
+def fbpic_ran(job):
     """
     Check if ``fbpic`` produced all the output .h5 files.
 
@@ -126,7 +125,7 @@ def fbpic_ran(job: Job) -> bool:
     return did_it_run
 
 
-def are_rho_pngs(job: Job) -> bool:
+def are_rho_pngs(job):
     """
     Check if all the {job_dir}/rhos/rho{it:06d}.png files are present.
 
@@ -147,7 +146,7 @@ def are_rho_pngs(job: Job) -> bool:
 @ex
 @Project.operation
 @Project.post.isfile("initial_density_profile.png")
-def plot_initial_density_profile(job: Job) -> None:
+def plot_initial_density_profile(job):
     """Plot the initial plasma density profile."""
     plot_density_profile(
         make_gaussian_dens_func, job.fn("initial_density_profile.png"), job
@@ -158,7 +157,7 @@ def plot_initial_density_profile(job: Job) -> None:
 @directives(ngpu=1)
 @Project.operation
 @Project.post(fbpic_ran)
-def run_fbpic(job: Job) -> None:
+def run_fbpic(job):
     """
     This ``signac-flow`` operation runs a ``fbpic`` simulation.
 
@@ -266,7 +265,7 @@ def run_fbpic(job: Job) -> None:
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
-def save_rho_pngs(job: Job) -> None:
+def save_rho_pngs(job):
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
     * save a snapshot of the plasma density field ``rho`` to {job_dir}/rhos/rho{it:06d}.png
@@ -294,7 +293,7 @@ def save_rho_pngs(job: Job) -> None:
 @Project.operation
 @Project.pre.after(save_rho_pngs)
 @Project.post.isfile("rho.mp4")
-def generate_rho_movie(job: Job) -> None:
+def generate_rho_movie(job):
     """
     Generate a movie from all the .png files in {job_dir}/rhos/
 
@@ -311,7 +310,7 @@ def generate_rho_movie(job: Job) -> None:
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.isfile("final_histogram.npz")
-def save_final_histogram(job: Job) -> None:
+def save_final_histogram(job):
     """Save the histogram corresponding to the last iteration."""
 
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
@@ -331,7 +330,7 @@ def save_final_histogram(job: Job) -> None:
 @Project.operation
 @Project.pre.after(save_final_histogram)
 @Project.post.isfile("final_histogram.png")
-def plot_final_histogram(job: Job) -> None:
+def plot_final_histogram(job):
     """Plot the electron spectrum corresponding to the last iteration."""
 
     plot_electron_energy_spectrum(
@@ -344,7 +343,7 @@ def plot_final_histogram(job: Job) -> None:
 @Project.pre.after(save_final_histogram)
 @Project.post(lambda job: bool(job.doc.get("peak_charge", False)))
 @Project.post(lambda job: bool(job.doc.get("peak_position", False)))
-def get_peak_charge_and_position(job: Job) -> None:
+def get_peak_charge_and_position(job):
     int_charge = integrated_charge(
         job.fn("final_histogram.npz"), from_energy=100, to_energy=200
     )
@@ -361,7 +360,7 @@ def get_peak_charge_and_position(job: Job) -> None:
 @Project.pre.after(run_fbpic)
 @Project.post.isfile("all_hist.txt")
 @Project.post.isfile("hist_edges.txt")
-def save_histograms(job: Job) -> None:
+def save_histograms(job):
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
 
@@ -406,7 +405,7 @@ def save_histograms(job: Job) -> None:
 @Project.operation
 @Project.pre.after(save_histograms)
 @Project.post.isfile("hist2d.png")
-def plot_2d_hist(job: Job) -> None:
+def plot_2d_hist(job):
     """
     Plot the 2D histogram, composed of the 1D slices for each iteration.
 
