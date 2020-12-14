@@ -49,23 +49,6 @@ $ [time] python3 src/project.py run
 The optional `time` command will give the total runtime once the project
 operations are all completed.
 
-## Submit jobs to SLURM
-
-In order to execute the project through the SLURM workload manager, 
-
-```console
-$ python src/project.py submit [--pretend]
-```
-
-This has to be run for a total of 4 times, as different operations are being submitted:
-
-```console
-1. run_fbpic
-2. create_dir_diags_rhos & plot_snapshots_000000
-3. post_process_results
-4. plot_2d_hist & plot_1d_diags & generate_movie
-```
-
 # Notes
 
 - all commands should be ran from the directory that contains this README file
