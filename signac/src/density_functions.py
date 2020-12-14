@@ -2,6 +2,56 @@
 from itertools import cycle
 import numpy as np
 from matplotlib import pyplot
+from scipy import interpolate
+from density_reader import read_density  # FIXME
+
+def make_experimental_dens_func(job):
+    position_m, norm_density = read_density("density_1_inlet_spacers.txt")
+
+    interp_z_min = position_m.min()
+    interp_z_max = position_m.max()
+
+    rho = interpolate.interp1d(
+        position_m, norm_density, bounds_error=False, fill_value=(0.0, 0.0)
+    )
+
+    # The density profile
+    def dens_func(z, r):
+        """
+        User-defined function: density profile of the plasma
+
+        It should return the relative density with respect to n_plasma,
+        at the position x, y, z (i.e. return a number between 0 and 1)
+
+        Parameters
+        ----------
+        z, r: 1darrays of floats
+            Arrays with one element per macroparticle
+        Returns
+        -------
+        n : 1d array of floats
+            Array of relative density, with one element per macroparticles
+        """
+
+        # Allocate relative density
+        n = np.ones_like(z)
+
+        # only compute n if z is inside the interpolation bounds
+        n = np.where(np.logical_and(z > interp_z_min, z < interp_z_max), rho(z), n)
+
+        # Make linear ramp
+        n = np.where(
+            z < job.sp.ramp_start + job.sp.ramp_length,
+            (z - job.sp.ramp_start) / job.sp.ramp_length * rho(interp_z_min),
+            n,
+        )
+
+        # Supress density before the ramp
+        n = np.where(z < job.sp.ramp_start, 0.0, n)
+
+        return n
+
+    return dens_func
 
 
 def make_gaussian_dens_func(job):
