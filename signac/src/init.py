@@ -5,12 +5,11 @@ Iterates over all defined state points and initializes
 the associated job workspace directories."""
 import logging
 import pathlib
-
 import math
-import shutil
+import numpy as np
+
 import unyt as u
 import signac
-import numpy as np
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
@@ -30,7 +29,7 @@ def main():
             Nz=2048,  # Number of gridpoints along z
             zmin=-4000.0e-6,  # Left end of the simulation box (meters)
             zmax=-200.0e-6,  # Right end of the simulation box (meters)
-            Nr=512,  # Number of gridpoints along r
+            Nr=256,  # Number of gridpoints along r
             rmax=300.0e-6,  # Length of the box along r (meters)
             Nm=4,  # Number of modes used
             # The particles
@@ -41,7 +40,7 @@ def main():
             n_e=ne,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
-            p_nt=4,  # Number of particles per cell along theta
+            p_nt=16,  # Number of particles per cell along theta, should be 4*Nm
             # do not change below this line ##############
             p_zmax=68400.0e-6,  # Position of the end of the plasma (meters)
             # The density profile
@@ -60,7 +59,6 @@ def main():
             # Number of iterations to perform
             N_step=None,
         )
-
         sp["L_interact"] = sp["p_zmax"] - sp["p_zmin"]
         sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value("m/s")
         sp["T_interact"] = (
@@ -71,14 +69,12 @@ def main():
 
         project.open_job(sp).init()
 
-    project.write_statepoints()
-
     for job in project:
-        shutil.copy(
-            "density_1_inlet_spacers.txt", job.fn("density_1_inlet_spacers.txt")
-        )
-        shutil.copy("exp_4deg.txt", job.fn("exp_4deg.txt"))
-
+        for txt_file in ("density_1_inlet_spacers.txt", "exp_4deg.txt"):
+            src = pathlib.Path(txt_file)
+            dest = pathlib.Path(job.fn(txt_file))
+            dest.write_text(src.read_text())
+                  
         p = pathlib.Path(job.ws)
         pathlib.Path(p / "rhos").mkdir(parents=True, exist_ok=True)
         pathlib.Path(p / "centroids").mkdir(parents=True, exist_ok=True)
