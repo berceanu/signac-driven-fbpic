@@ -1,4 +1,4 @@
-##!/usr/bin/env python3
+#!/usr/bin/env python3
 """This module contains the operation functions for this project.
 
 The workflow defined in this file can be executed from the command
@@ -13,7 +13,6 @@ Note: All the lines marked with the CHANGEME comment contain customizable parame
 import logging
 import math
 import sys
-from typing import Union
 import pathlib
 from multiprocessing import Pool
 from functools import partial
@@ -107,7 +106,7 @@ def fbpic_ran(job):
     :param job: the job instance is a handle to the data of a unique statepoint
     :return: True if all output files are in {job_dir}/diags/hdf5, False otherwise
     """
-    h5_path: Union[bytes, str] = pathlib.Path(job.ws) / "diags" / "hdf5"
+    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     if not h5_path.is_dir():
         # {job_dir}/diags/hdf5 not present, ``fbpic`` didn't run
         did_it_run = False
