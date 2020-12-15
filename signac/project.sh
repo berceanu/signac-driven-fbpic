@@ -4,4 +4,5 @@
 # Usage: ./project.sh N
 
 # parallel on N GPUs
-python src/project.py submit -o ex --bundle=$1 --parallel
+python src/project.py submit -o ex --bundle=$1 --parallel --pretend
+
