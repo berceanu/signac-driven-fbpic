@@ -148,7 +148,7 @@ def are_centroid_pngs(job):
 @Project.post.isfile("bunch_z_mu_x_mu.png")
 def plot_initial_bunch(job):
     df = read_bunch(job.fn("exp_4deg.txt"))
-    shade_bunch(df, "z_mu", "x_mu")
+    shade_bunch(df, "z_mu", "x_mu", export_path=pathlib.Path(job.ws))
 
 
 @ex

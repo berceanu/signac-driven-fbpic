@@ -1,3 +1,4 @@
+import pathlib
 import pandas as pd
 import numpy as np
 import datashader as ds
@@ -31,18 +32,20 @@ def read_bunch(txt_file):
     return df
 
 
-def shade_bunch(df, coord1, coord2):
+def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
     cvs = ds.Canvas(
         plot_width=4200, plot_height=700, x_range=(-1800, 1800), y_range=(-300, 300)
     )
     agg = cvs.points(df, coord1, coord2)
     img = ds.tf.shade(agg, cmap=fire, how="linear")
-    export_image(img, f"bunch_{coord1}_{coord2}", background="black", export_path=".")
+    export_image(
+        img, f"bunch_{coord1}_{coord2}", background="black", export_path=export_path
+    )
 
 
 def main():
     # FIXME read from workspace
-    
+
     # plot via datashader
     df = read_bunch("exp_4deg.txt")
 
