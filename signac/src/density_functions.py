@@ -131,14 +131,10 @@ def plot_density_profile(profile_maker, fig_fname, job):
 
     params_to_annotate = (
         "zmin",
-        "z0",
         "zmax",
         "p_zmin",
-        "zfoc",
-        "center_left",
-        "center_right",
-        "L_interact",
         "p_zmax",
+        "L_interact",
     )
     y_annotation_positions = (0.5, 0.7, 0.9, 1.1)
     pos_cycle = cycle(y_annotation_positions)
@@ -148,6 +144,14 @@ def plot_density_profile(profile_maker, fig_fname, job):
     for p, y_pos in params_and_positions:
         mark_on_plot(ax=ax, parameter=p, y=y_pos)
 
+    ax.hlines(
+        y=1.0,
+        xmin=all_z[0] * 1e6,
+        xmax=all_z[-1] * 1e6,
+        linewidth=0.75,
+        linestyle="dashed",
+        color="0.75",
+    )
     ax.fill_between(all_z * 1e6, dens, alpha=0.3)
 
     fig.savefig(fig_fname)
