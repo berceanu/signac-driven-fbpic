@@ -7,7 +7,7 @@ from scipy import interpolate
 from density_reader import read_density  # FIXME
 
 def make_experimental_dens_func(job):
-    position_m, norm_density = read_density("density_1_inlet_spacers.txt")
+    position_m, norm_density = read_density(job.fn("density_1_inlet_spacers.txt"))
 
     interp_z_min = position_m.min()
     interp_z_max = position_m.max()

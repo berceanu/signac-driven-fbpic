@@ -1,14 +1,9 @@
 import pandas as pd
 import numpy as np
-from scipy.constants import physical_constants
 import datashader as ds
 from datashader.utils import export_image
 from colorcet import fire
-
-c_light = physical_constants["speed of light in vacuum"][0]
-m_e = physical_constants["electron mass"][0]
-q_e = physical_constants["elementary charge"][0]
-mc2 = m_e * c_light ** 2 / (q_e * 1e6)  # 0.511 MeV
+import unyt as u
 
 
 def read_bunch(txt_file):
@@ -29,25 +24,33 @@ def read_bunch(txt_file):
     df["gamma"] = np.sqrt(1 + df.ux ** 2 + df.uy ** 2 + df.uz ** 2)
 
     # compute energy
-    df["energy_MeV"] = mc2 * df.gamma
+    df["energy_MeV"] = (u.electron_mass * u.clight ** 2).to_value("MeV") * df.gamma
 
     df["percent_c"] = np.sqrt(1 - 1 / df.gamma ** 2) * 100.0
 
     return df
 
 
-def shade_bunch(coord1, coord2):
-    cvs = ds.Canvas(plot_width=4200, plot_height=700, x_range=(-1800, 1800), y_range=(-300, 300))
+def shade_bunch(df, coord1, coord2):
+    cvs = ds.Canvas(
+        plot_width=4200, plot_height=700, x_range=(-1800, 1800), y_range=(-300, 300)
+    )
     agg = cvs.points(df, coord1, coord2)
     img = ds.tf.shade(agg, cmap=fire, how="linear")
     export_image(img, f"bunch_{coord1}_{coord2}", background="black", export_path=".")
 
 
-if __name__ == "__main__":
+def main():
+    # FIXME read from workspace
+    
     # plot via datashader
-    df = read_bunch("../exp_4deg.txt")
+    df = read_bunch("exp_4deg.txt")
 
     print(df.describe())
-    print(df[["x_mu","y_mu","z_mu"]].describe())
+    print(df[["x_mu", "y_mu", "z_mu"]].describe())
 
-    shade_bunch("z_mu", "x_mu")
+    shade_bunch(df, "z_mu", "x_mu")
+
+
+if __name__ == "__main__":
+    main()

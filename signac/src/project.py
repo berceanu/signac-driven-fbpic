@@ -24,7 +24,7 @@ import unyt as u
 from util import ffmpeg_command, shell_run
 from simulation_diagnostics import density_plot, centroid_plot
 from density_functions import plot_density_profile, make_experimental_dens_func
-
+from visualize_initial_bunch import read_bunch, shade_bunch
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -144,6 +144,16 @@ def are_centroid_pngs(job):
 
 @ex
 @Project.operation
+@Project.pre.isfile("exp_4deg.txt")
+@Project.post.isfile("bunch_z_mu_x_mu.png")
+def plot_initial_bunch(job):
+    df = read_bunch(job.fn("exp_4deg.txt"))
+    shade_bunch(df, "z_mu", "x_mu")
+
+
+@ex
+@Project.operation
+@Project.pre.isfile("density_1_inlet_spacers.txt")
 @Project.post.isfile("initial_density_profile.png")
 def plot_initial_density_profile(job):
     """Plot the initial plasma density profile."""
@@ -174,6 +184,7 @@ def run_fbpic(job):
     # orig_stdout = sys.stdout
     # f = open(job.fn("stdout.txt"), "w")
     # sys.stdout = f
+    # FIXME
 
     # Initialize the simulation object
     sim = Simulation(
@@ -262,11 +273,12 @@ def run_fbpic(job):
     np.random.seed(0)
 
     # Run the simulation
-    sim.step(job.sp.N_step, show_progress=True)
+    sim.step(job.sp.N_step, show_progress=True)  # FIXME
 
     # redirect stdout back and close "stdout.txt"
     # sys.stdout = orig_stdout
     # f.close()
+    # FIXME
 
 
 @ex.with_directives(directives=dict(np=3))
