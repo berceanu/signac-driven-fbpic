@@ -12,23 +12,15 @@ Note: All the lines marked with the CHANGEME comment contain customizable parame
 """
 import logging
 import math
-import sys
 import pathlib
 from multiprocessing import Pool
 from functools import partial
 
 import numpy as np
-import sliceplots
 from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
-from matplotlib import pyplot
 from openpmd_viewer import addons
 import unyt as u
-from peak_detection import (
-    plot_electron_energy_spectrum,
-    integrated_charge,
-    peak_position,
-)
 from util import ffmpeg_command, shell_run
 from simulation_diagnostics import density_plot, centroid_plot
 from density_functions import plot_density_profile, make_experimental_dens_func
@@ -141,11 +133,14 @@ def are_pngs(job, stem):
 
     return set(files) == set(pngs)
 
+
 def are_rho_pngs(job):
     return are_pngs(job, "rho")
 
+
 def are_centroid_pngs(job):
     return are_pngs(job, "centroid")
+
 
 @ex
 @Project.operation
@@ -174,7 +169,6 @@ def run_fbpic(job):
         ParticleChargeDensityDiagnostic,
     )
     from fbpic.lpa_utils.bunch import add_particle_bunch_file
-
 
     # redirect stdout to "stdout.txt"
     # orig_stdout = sys.stdout
@@ -301,9 +295,7 @@ def save_pngs(job):
         n_e=job.sp.n_e,
     )
     it_centroid_plot = partial(
-        centroid_plot,
-        tseries=time_series, 
-        save_path=centroid_path
+        centroid_plot, tseries=time_series, save_path=centroid_path
     )
 
     with Pool(3) as pool:
@@ -311,36 +303,32 @@ def save_pngs(job):
         pool.map(it_density_plot, time_series.iterations.tolist())
 
 
+def generate_movie(job, stem):
+    """
+    Generate a movie from all the .png files in {job_dir}/`stem`s/
+    :param job: the job instance is a handle to the data of a unique statepoint
+    """
+    command = ffmpeg_command(
+        input_files=pathlib.Path(job.ws) / f"{stem}s" / f"{stem}*.png",
+        output_file=job.fn(f"{stem}.mp4"),
+    )
+    shell_run(command, shell=True)
+
+
 @ex
 @Project.operation
 @Project.pre.after(save_pngs)
 @Project.post.isfile("rho.mp4")
 def generate_rho_movie(job):
-    """
-    Generate a movie from all the .png files in {job_dir}/rhos/
+    generate_movie(job, stem="rho")
 
-    :param job: the job instance is a handle to the data of a unique statepoint
-    """
-    command = ffmpeg_command(
-        input_files=pathlib.Path(job.ws) / "rhos" / "rho*.png",
-        output_file=job.fn("rho.mp4"),
-    )
-    shell_run(command, shell=True)
 
 @ex
 @Project.operation
-@Project.pre(are_centroid_pngs)
+@Project.pre.after(save_pngs)
 @Project.post.isfile("centroid.mp4")
 def generate_centroid_movie(job):
-    """
-    :param job: the job instance is a handle to the data of a unique statepoint
-    """
-    command = ffmpeg_command(
-        input_files=pathlib.Path(job.ws) / "centroids" / "centroid*.png",
-        output_file=job.fn("centroid.mp4"),
-    )
-    shell_run(command, shell=True)
-
+    generate_movie(job, stem="centroid")
 
 
 if __name__ == "__main__":
