@@ -66,6 +66,7 @@ def main():
         ) / u.clight.to_value("m/s")
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
         sp["diag_period"] = math.ceil(sp["N_step"] / NUMBER_OF_H5)
+        sp["N_step"] = 200  # FIXME
 
         project.open_job(sp).init()
 

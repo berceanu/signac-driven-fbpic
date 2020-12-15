@@ -30,7 +30,7 @@ from peak_detection import (
     peak_position,
 )
 from util import ffmpeg_command, shell_run
-from simulation_diagnostics import particle_energy_histogram, laser_density_plot
+from simulation_diagnostics import density_plot, centroid_plot
 from density_functions import plot_density_profile, make_experimental_dens_func
 
 
@@ -177,9 +177,9 @@ def run_fbpic(job):
 
 
     # redirect stdout to "stdout.txt"
-    orig_stdout = sys.stdout
-    f = open(job.fn("stdout.txt"), "w")
-    sys.stdout = f
+    # orig_stdout = sys.stdout
+    # f = open(job.fn("stdout.txt"), "w")
+    # sys.stdout = f
 
     # Initialize the simulation object
     sim = Simulation(
@@ -225,7 +225,7 @@ def run_fbpic(job):
     )
 
     # The electron beam
-    Qtot = 200.0e-12  # Charge in Coulomb
+    Qtot = -200.0e-12  # Charge in Coulomb
 
     # particles beam from txt file
     bunch = add_particle_bunch_file(
@@ -233,7 +233,7 @@ def run_fbpic(job):
         q=u.electron_charge.to_value("C"),
         m=u.electron_mass.to_value("kg"),
         filename="exp_4deg.txt",
-        n_physical_particles=Qtot / q_e,
+        n_physical_particles=Qtot / u.electron_charge.to_value("C"),
         z_off=-1900e-6,
         z_injection_plane=job.sp.p_zmin,
     )
@@ -268,11 +268,11 @@ def run_fbpic(job):
     np.random.seed(0)
 
     # Run the simulation
-    sim.step(job.sp.N_step, show_progress=False)
+    sim.step(job.sp.N_step, show_progress=True)
 
     # redirect stdout back and close "stdout.txt"
-    sys.stdout = orig_stdout
-    f.close()
+    # sys.stdout = orig_stdout
+    # f.close()
 
 
 @ex.with_directives(directives=dict(np=3))
@@ -280,7 +280,8 @@ def run_fbpic(job):
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
-def save_rho_pngs(job):
+@Project.post(are_centroid_pngs)
+def save_pngs(job):
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
     * save a snapshot of the plasma density field ``rho`` to {job_dir}/rhos/rho{it:06d}.png
@@ -289,39 +290,30 @@ def save_rho_pngs(job):
     """
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     rho_path = pathlib.Path(job.ws) / "rhos"
+    centroid_path = pathlib.Path(job.ws) / "centroids"
     time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
 
-    it_laser_density_plot = partial(
-        laser_density_plot,
+    it_density_plot = partial(
+        density_plot,
         tseries=time_series,
         rho_field_name="rho_electrons",
         save_path=rho_path,
-        n_c=job.sp.n_c,
-        E0=job.sp.E0,
+        n_e=job.sp.n_e,
     )
-    # FIXME
-    field_snapshot(
-        tseries=time_series,
-        it=it,
-        field_name="rho",
-        normalization_factor=1.0 / (-q_e * job.sp.n_e),
-        path=rho_path,
-        zlabel=r"$n/n_e$",
-        vmin=0.0,
-        vmax=1.0,  # CHANGEME
-        hslice_val=0,
+    it_centroid_plot = partial(
+        centroid_plot,
+        tseries=time_series, 
+        save_path=centroid_path
     )
-    # FIXME
-    centroid_plot(tseries=time_series, it=it, path=centroid_path)
-
 
     with Pool(3) as pool:
-        pool.map(it_laser_density_plot, time_series.iterations.tolist())
+        pool.map(it_centroid_plot, time_series.iterations.tolist())
+        pool.map(it_density_plot, time_series.iterations.tolist())
 
 
 @ex
 @Project.operation
-@Project.pre.after(save_rho_pngs)
+@Project.pre.after(save_pngs)
 @Project.post.isfile("rho.mp4")
 def generate_rho_movie(job):
     """
