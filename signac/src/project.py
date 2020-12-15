@@ -124,38 +124,28 @@ def fbpic_ran(job):
     return did_it_run
 
 
-def are_rho_pngs(job):
+def are_pngs(job, stem):
     """
-    Check if all the {job_dir}/rhos/rho{it:06d}.png files are present.
+    Check if all the {job_dir}/`stem`s/`stem`{it:06d}.png files are present.
 
     :param job: the job instance is a handle to the data of a unique statepoint
     :return: True if .png files are there, False otherwise
     """
-    p = pathlib.Path(job.ws) / "rhos"
+    p = pathlib.Path(job.ws) / f"{stem}s"
     files = [fn.name for fn in p.glob("*.png")]
 
     # estimate iteration array based on input parameters
     iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
 
-    pngs = (f"rho{it:06d}.png" for it in iterations)
+    pngs = (f"{stem}{it:06d}.png" for it in iterations)
 
     return set(files) == set(pngs)
+
+def are_rho_pngs(job):
+    return are_pngs(job, "rho")
 
 def are_centroid_pngs(job):
-    """
-    :param job: the job instance is a handle to the data of a unique statepoint
-    :return: True if .png files are there, False otherwise
-    """
-    p = pathlib.Path(job.ws) / "centroids"
-    files = [fn.name for fn in p.glob("*.png")]
-
-    # estimate iteration array based on input parameters
-    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
-
-    pngs = (f"centroid{it:06d}.png" for it in iterations)
-
-    return set(files) == set(pngs)
-
+    return are_pngs(job, "centroid")
 
 @ex
 @Project.operation
