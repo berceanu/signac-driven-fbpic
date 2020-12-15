@@ -142,6 +142,7 @@ def main():
 
     proj = signac.get_project(search=False)
     job = proj.open_job(id="548df05f5de26d318d9481bdfae35fb4")
+    # FIXME choose random job
 
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     time_series = LpaDiagnostics(h5_path, check_all_files=True)

@@ -29,6 +29,7 @@ def read_density(txt_file, every_nth=20, offset=True):
 
 
 def main():
+    # FIXME read from workspace
     position_m, norm_density = read_density("density_1_inlet_spacers.txt")
     print(position_m[:10] * 1e6, norm_density[:10])
 
