@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-python src/project.py exec plot_initial_density_profile 9e90533e099bd1d91f7940712e1463cf --show-traceback
+python src/project.py exec plot_initial_density_profile bc13def92f55a0826900539b47e7dc0d --show-traceback
