@@ -8,90 +8,90 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import unyt as u
 
 # FIXME
-def centroid_plot(
-    tseries: OpenPMDTimeSeries,
-    it: int,
-    path="./",
-) -> None:
-    """
-    Plot a line through the centroids of each z-slice in the particle positions phase space.
-    """
-    fig, ax = pyplot.subplots(figsize=(7, 5))
-    z, x = tseries.get_particle(["z", "x"], species="bunch", iteration=it, plot=True)
+# def centroid_plot(
+#     tseries: OpenPMDTimeSeries,
+#     it: int,
+#     path="./",
+# ) -> None:
+#     """
+#     Plot a line through the centroids of each z-slice in the particle positions phase space.
+#     """
+#     fig, ax = pyplot.subplots(figsize=(7, 5))
+#     z, x = tseries.get_particle(["z", "x"], species="bunch", iteration=it, plot=True)
 
-    img = ax.get_images()[0]
-    z_min, z_max, x_min, x_max = img.get_extent()
-    hist_data = img.get_array()
+#     img = ax.get_images()[0]
+#     z_min, z_max, x_min, x_max = img.get_extent()
+#     hist_data = img.get_array()
 
-    r, c = np.shape(hist_data)
-    z_coords = np.linspace(z_min, z_max, c)
-    x_coords = np.linspace(x_min, x_max, r)
-    z_m, x_m = np.meshgrid(z_coords, x_coords)
+#     r, c = np.shape(hist_data)
+#     z_coords = np.linspace(z_min, z_max, c)
+#     x_coords = np.linspace(x_min, x_max, r)
+#     z_m, x_m = np.meshgrid(z_coords, x_coords)
 
-    centroid = np.ma.average(x_m, weights=hist_data, axis=0)
+#     centroid = np.ma.average(x_m, weights=hist_data, axis=0)
 
-    ax.plot(z_coords, centroid)
+#     ax.plot(z_coords, centroid)
 
-    filename = os.path.join(path, f"centroid{it:06d}.png")
-    fig.savefig(filename)
-    pyplot.close(fig)
+#     filename = os.path.join(path, f"centroid{it:06d}.png")
+#     fig.savefig(filename)
+#     pyplot.close(fig)
 
 # FIXME
-def field_snapshot(
-    tseries: OpenPMDTimeSeries,
-    it: int,
-    field_name: str,
-    normalization_factor=1,
-    coord: Optional[str] = None,
-    m="all",
-    theta=0.0,
-    chop: Optional[List[float]] = None,
-    path="./",
-    **kwargs,
-) -> None:
-    """
-    Plot the ``field_name`` field from ``tseries`` at step ``iter``.
+# def field_snapshot(
+#     tseries: OpenPMDTimeSeries,
+#     it: int,
+#     field_name: str,
+#     normalization_factor=1,
+#     coord: Optional[str] = None,
+#     m="all",
+#     theta=0.0,
+#     chop: Optional[List[float]] = None,
+#     path="./",
+#     **kwargs,
+# ) -> None:
+#     """
+#     Plot the ``field_name`` field from ``tseries`` at step ``iter``.
 
-    :param path: path to output file
-    :param tseries: whole simulation time series
-    :param it: time step in the simulation
-    :param field_name: which field to extract, eg. 'rho', 'E', 'B' or 'J'
-    :param normalization_factor: normalization factor for the extracted field
-    :param coord: which component of the field to extract, eg. 'r', 't' or 'z'
-    :param m: 'all' for extracting the sum of all the azimuthal modes
-    :param theta: the angle of the plane of observation, with respect to the 'x' axis
-    :param chop: adjusting extent of simulation box plot
-    :param kwargs: extra plotting arguments, eg. labels, data limits etc.
-    :return: saves field plot image to disk
-    """
-    if chop is None:  # how much to cut out from simulation domain
-        chop = [0, 0, 0, 0]  # CHANGEME
+#     :param path: path to output file
+#     :param tseries: whole simulation time series
+#     :param it: time step in the simulation
+#     :param field_name: which field to extract, eg. 'rho', 'E', 'B' or 'J'
+#     :param normalization_factor: normalization factor for the extracted field
+#     :param coord: which component of the field to extract, eg. 'r', 't' or 'z'
+#     :param m: 'all' for extracting the sum of all the azimuthal modes
+#     :param theta: the angle of the plane of observation, with respect to the 'x' axis
+#     :param chop: adjusting extent of simulation box plot
+#     :param kwargs: extra plotting arguments, eg. labels, data limits etc.
+#     :return: saves field plot image to disk
+#     """
+#     if chop is None:  # how much to cut out from simulation domain
+#         chop = [0, 0, 0, 0]  # CHANGEME
 
-    field, info = tseries.get_field(
-        field=field_name, coord=coord, iteration=it, m=m, theta=theta
-    )
+#     field, info = tseries.get_field(
+#         field=field_name, coord=coord, iteration=it, m=m, theta=theta
+#     )
 
-    field *= normalization_factor
+#     field *= normalization_factor
 
-    plot = sliceplots.Plot2D(
-        arr2d=field,
-        h_axis=info.z * 1e6,
-        v_axis=info.r * 1e6,
-        xlabel=r"${} \;(\mu m)$".format(info.axes[1]),
-        ylabel=r"${} \;(\mu m)$".format(info.axes[0]),
-        extent=(
-            info.zmin * 1e6 + chop[0],
-            info.zmax * 1e6 + chop[1],
-            info.rmin * 1e6 + chop[2],
-            info.rmax * 1e6 + chop[3],
-        ),
-        cbar=True,
-        text=f"iteration {it}",
-        **kwargs,
-    )
+#     plot = sliceplots.Plot2D(
+#         arr2d=field,
+#         h_axis=info.z * 1e6,
+#         v_axis=info.r * 1e6,
+#         xlabel=r"${} \;(\mu m)$".format(info.axes[1]),
+#         ylabel=r"${} \;(\mu m)$".format(info.axes[0]),
+#         extent=(
+#             info.zmin * 1e6 + chop[0],
+#             info.zmax * 1e6 + chop[1],
+#             info.rmin * 1e6 + chop[2],
+#             info.rmax * 1e6 + chop[3],
+#         ),
+#         cbar=True,
+#         text=f"iteration {it}",
+#         **kwargs,
+#     )
 
-    filename = os.path.join(path, f"{field_name}{it:06d}.png")
-    plot.canvas.print_figure(filename)
+#     filename = os.path.join(path, f"{field_name}{it:06d}.png")
+#     plot.canvas.print_figure(filename)
 
 
 def laser_density_plot(
