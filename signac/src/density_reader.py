@@ -28,7 +28,10 @@ def read_density(txt_file, every_nth=20, offset=True):
     return df.position_m.to_numpy(), df.norm_density.to_numpy()
 
 
-if __name__ == "__main__":
-    position_m, norm_density = read_density("../density_1_inlet_spacers.txt")
+def main():
+    position_m, norm_density = read_density("density_1_inlet_spacers.txt")
+    print(position_m[:10] * 1e6, norm_density[:10])
 
-    print(position_m*1e6)
+
+if __name__ == "__main__":
+    main()
