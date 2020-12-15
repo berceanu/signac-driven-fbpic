@@ -2,6 +2,7 @@
 from itertools import cycle
 import numpy as np
 from matplotlib import pyplot
+from matplotlib.gridspec import GridSpec
 from scipy import interpolate
 from density_reader import read_density  # FIXME
 
@@ -37,7 +38,7 @@ def make_experimental_dens_func(job):
         n = np.ones_like(z)
 
         # only compute n if z is inside the interpolation bounds
-        n = np.where(np.logical_and(z > interp_z_min, z < interp_z_max), rho(z), n)
+        n = np.where(np.logical_and(z >= interp_z_min, z <= interp_z_max), rho(z), n)
 
         # Make linear ramp
         n = np.where(
@@ -121,16 +122,26 @@ def plot_density_profile(profile_maker, fig_fname, job):
     all_z = np.linspace(job.sp.zmin, job.sp.L_interact, 1000)
     dens = profile_maker(job)(all_z, 0.0)
 
-    fig, ax = pyplot.subplots(figsize=(30, 4.8))
+    fig = pyplot.figure(figsize=(30, 4.8))
+    G = GridSpec(2, 1, figure=fig)
+    ax_top = fig.add_subplot(G[0, :])
+    ax_bottom = fig.add_subplot(G[1, :])
 
-    ax.plot(all_z * 1e6, dens)
-    ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
-    ax.set_ylim(0.0, 1.2)
-    ax.set_xlim(job.sp.zmin * 1e6 - 20, job.sp.L_interact * 1e6 + 20)
-    ax.set_ylabel("Density profile $n$")
+    for ax in (ax_top, ax_bottom):
+        ax.plot(all_z * 1e6, dens)
+        ax.fill_between(all_z * 1e6, dens, alpha=0.3)
+        ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
+        ax.set_ylim(0.0, 1.2)
+        ax.set_xlim(left=job.sp.zmin * 1e6 - 20)
+        ax.set_ylabel("Density profile $n$")
+
+
+    ax_top.set_xlim(right=job.sp.L_interact * 1e6 + 20)
+    ax_bottom.set_xlim(right=(job.sp.ramp_start + job.sp.ramp_length) * 1e6)
 
     params_to_annotate = (
         "zmin",
+        "ramp_start",
         "zmax",
         "p_zmin",
         "p_zmax",
@@ -142,9 +153,10 @@ def plot_density_profile(profile_maker, fig_fname, job):
     params_and_positions = [(p, next(pos_cycle)) for p in params_to_annotate]
 
     for p, y_pos in params_and_positions:
-        mark_on_plot(ax=ax, parameter=p, y=y_pos)
+        for ax in (ax_top, ax_bottom):
+            mark_on_plot(ax=ax, parameter=p, y=y_pos)
 
-    ax.hlines(
+    ax_top.hlines(
         y=1.0,
         xmin=all_z[0] * 1e6,
         xmax=all_z[-1] * 1e6,
@@ -152,7 +164,6 @@ def plot_density_profile(profile_maker, fig_fname, job):
         linestyle="dashed",
         color="0.75",
     )
-    ax.fill_between(all_z * 1e6, dens, alpha=0.3)
 
     fig.savefig(fig_fname)
     pyplot.close(fig)
