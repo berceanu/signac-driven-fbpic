@@ -20,7 +20,7 @@ def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
     project = signac.init_project(
         "fbpic-project",
-        # workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",  # FIXME
+        workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
 
     for ne in np.linspace(10, 10e2, 2) * 1e14 * 1e6:  # 16 FIXME
@@ -66,7 +66,6 @@ def main():
         ) / u.clight.to_value("m/s")
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
         sp["diag_period"] = math.ceil(sp["N_step"] / NUMBER_OF_H5)
-        sp["N_step"] = 200  # FIXME
 
         project.open_job(sp).init()
 
