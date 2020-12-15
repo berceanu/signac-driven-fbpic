@@ -20,10 +20,10 @@ def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
     project = signac.init_project(
         "fbpic-project",
-        workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
+        # workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",  # FIXME
     )
 
-    for ne in np.linspace(10, 10e2, 16) * 1e14 * 1e6:
+    for ne in np.linspace(10, 10e2, 2) * 1e14 * 1e6:  # 16 FIXME
         sp = dict(
             # The simulation box
             Nz=2048,  # Number of gridpoints along z
@@ -76,8 +76,8 @@ def main():
             dest.write_text(src.read_text())
                   
         p = pathlib.Path(job.ws)
-        pathlib.Path(p / "rhos").mkdir(parents=True, exist_ok=True)
-        pathlib.Path(p / "centroids").mkdir(parents=True, exist_ok=True)
+        for folder in ("rhos", "centroids"):
+            pathlib.Path(p / folder).mkdir(parents=True, exist_ok=True)
 
 
 if __name__ == "__main__":
