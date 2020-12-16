@@ -1,10 +1,38 @@
 """Repository of `fbpic` density functions."""
 from itertools import cycle
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot
 from matplotlib.gridspec import GridSpec
 from scipy import interpolate
-from density_reader import read_density  # FIXME
+
+
+def read_density(txt_file, every_nth=20, offset=True):
+    df = pd.read_csv(
+        txt_file,
+        delim_whitespace=True,
+        names=["position_mm", "density_cm_3", "error_density_cm_3"],
+    )
+
+    # convert to meters
+    df["position_m"] = df.position_mm * 1e-3
+
+    # substract offset
+    if offset:
+        df.position_m = df.position_m - df.position_m.iloc[0]
+
+    # normalize density
+    df["norm_density"] = df.density_cm_3 / df.density_cm_3.max()
+    # check density values between 0 and 1
+    if not df.norm_density.between(0, 1).any():
+        raise ValueError("The density contains values outside the range [0,1].")
+
+    # return every nth item
+    df = df.iloc[::every_nth, :]
+
+    # return data as numpy arrays
+    return df.position_m.to_numpy(), df.norm_density.to_numpy()
+
 
 def make_experimental_dens_func(job):
     position_m, norm_density = read_density(job.fn("density_1_inlet_spacers.txt"))
@@ -135,7 +163,6 @@ def plot_density_profile(profile_maker, fig_fname, job):
         ax.set_xlim(left=job.sp.zmin * 1e6 - 20)
         ax.set_ylabel("Density profile $n$")
 
-
     ax_top.set_xlim(right=job.sp.L_interact * 1e6 + 20)
     ax_bottom.set_xlim(right=(job.sp.ramp_start + job.sp.ramp_length) * 1e6)
 
@@ -179,7 +206,9 @@ def main():
     ids = [job.id for job in proj]
     job = proj.open_job(id=random.choice(ids))
 
-    plot_density_profile(make_experimental_dens_func, "initial_density_profile.png", job)
+    plot_density_profile(
+        make_experimental_dens_func, "initial_density_profile.png", job
+    )
 
 
 if __name__ == "__main__":
