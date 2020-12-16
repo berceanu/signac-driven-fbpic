@@ -137,17 +137,20 @@ def particle_energy_histogram(
 
 
 def main():
+    import random
     from openpmd_viewer.addons import LpaDiagnostics
     import signac
 
+    random.seed(42)
+
     proj = signac.get_project(search=False)
-    job = proj.open_job(id="548df05f5de26d318d9481bdfae35fb4")
-    # FIXME choose random job
+    ids = [job.id for job in proj]
+    job = proj.open_job(id=random.choice(ids))
 
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     time_series = LpaDiagnostics(h5_path, check_all_files=True)
 
-    it = time_series.iterations[-1]
+    it = random.choice(time_series.iterations.tolist())
     print(f"job {job.id}, iteration {it}")
 
     # _, _, _ = particle_energy_histogram(tseries=time_series, iteration=it)

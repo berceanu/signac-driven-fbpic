@@ -44,10 +44,19 @@ def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
 
 
 def main():
-    # FIXME read from workspace
+    import random
+    from openpmd_viewer.addons import LpaDiagnostics
+    import signac
+
+    random.seed(42)
+
+    proj = signac.get_project(search=False)
+    ids = [job.id for job in proj]
+    job = proj.open_job(id=random.choice(ids))
+    print(f"job {job.id}")
 
     # plot via datashader
-    df = read_bunch("exp_4deg.txt")
+    df = read_bunch(job.fn("exp_4deg.txt"))
 
     print(df.describe())
     print(df[["x_mu", "y_mu", "z_mu"]].describe())
