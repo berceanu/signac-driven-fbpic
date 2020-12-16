@@ -20,7 +20,7 @@ from functools import partial
 import numpy as np
 from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
-from openpmd_viewer import addons
+from openpmd_viewer.addons import LpaDiagnostics
 import unyt as u
 from util import ffmpeg_command, shell_run
 from simulation_diagnostics import density_plot, centroid_plot
@@ -105,7 +105,7 @@ def fbpic_ran(job):
         did_it_run = False
         return did_it_run
 
-    time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
+    time_series = LpaDiagnostics(h5_path, check_all_files=True)
     iterations: np.ndarray = time_series.iterations
 
     # estimate iteration array based on input parameters
@@ -296,7 +296,7 @@ def save_pngs(job):
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     rho_path = pathlib.Path(job.ws) / "rhos"
     centroid_path = pathlib.Path(job.ws) / "centroids"
-    time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
+    time_series = LpaDiagnostics(h5_path, check_all_files=True)
 
     it_density_plot = partial(
         density_plot,
