@@ -89,7 +89,7 @@ def density_plot(
     filename = save_path / f"rho{iteration:06d}.png"
 
     fig.subplots_adjust(right=0.85)
-    fig.savefig(filename)
+    fig.savefig(filename, dpi=192)
     pyplot.close(fig)
 
 
