@@ -84,10 +84,6 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
         Unit_Dimension.M: 1,
     }
 
-    electrons["weighting"][SCALAR].make_constant(
-        n_physical_particles / n_macro_particles
-    )
-
     # position
     particlePos_x = df.x_m.to_numpy(dtype=np.float64)
     particlePos_y = df.y_m.to_numpy(dtype=np.float64)
@@ -97,6 +93,13 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
     electrons["position"]["x"].reset_dataset(d)
     electrons["position"]["y"].reset_dataset(d)
     electrons["position"]["z"].reset_dataset(d)
+
+    # weighting
+    fill_value = n_physical_particles / n_macro_particles
+    particle_weighting = np.full_like(particlePos_x, fill_value)
+
+    d = Dataset(particle_weighting.dtype, extent=particle_weighting.shape)
+    electrons["weighting"][SCALAR].reset_dataset(d)
 
     # momentum
     mc = u.electron_mass.to_value("kg") * u.clight.to_value("m/s")
@@ -127,6 +130,8 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
     electrons["momentum"]["x"].store_chunk(particleMom_x)
     electrons["momentum"]["y"].store_chunk(particleMom_y)
     electrons["momentum"]["z"].store_chunk(particleMom_z)
+
+    electrons["weighting"][SCALAR].store_chunk(particle_weighting)
 
     # at any point in time you may decide to dump already created output to
     # disk note that this will make some operations impossible (e.g. renaming
