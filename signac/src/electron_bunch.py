@@ -66,23 +66,22 @@ def bunch_openpmd_to_dataframe(workdir=pathlib.Path.cwd()):
     # uy = electrons["momentum"]["y"]
     # uz = electrons["momentum"]["z"]
 
-    all_data = x_m.load_chunk()
+    x_m_data = x_m.load_chunk()
+    
     f.flush()
-    print("Full x_m is of shape {0} and starts with:".format(all_data.shape))
-    print(all_data[:5])
+
+    print("Full x_m is of shape {0} and starts with:".format(x_m_data.shape))
+    print(x_m_data[:5])
 
     # unit system agnostic dimension
     unitDim = electrons["position"].unit_dimension
     print(unitDim)
-    # ...
-    # io.Unit_Dimension.M
 
     # conversion to SI
     x_unit = electrons["position"]["x"].unit_SI
     print(x_unit)
 
-    # please multiply your read data (x_data) with x_unit to covert to SI
-    # x_data = E_x.load_chunk()
+    # please multiply your read data (x_m_data) with x_unit to covert to SI
 
     del f
 
