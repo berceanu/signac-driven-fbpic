@@ -265,7 +265,7 @@ def run_fbpic(job):
         sim=sim,
         q=u.electron_charge.to_value("C"),
         m=u.electron_mass.to_value("kg"),
-        ts_path=pathlib.Path(job.ws / "bunch"),
+        ts_path=pathlib.Path(job.ws) / "bunch",
         z_off=-1900e-6,
         species="bunch",
         iteration=0,
