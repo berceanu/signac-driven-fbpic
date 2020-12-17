@@ -47,6 +47,46 @@ def read_bunch(txt_file):
     )
     return df
 
+def bunch_openpmd_to_dataframe(workdir=pathlib.Path.cwd()):
+    f = Series(str(workdir / "bunch" / "data_%05T.h5"), Access.read_only)
+
+    cur_it = f.iterations[0]
+    electrons = cur_it.particles["bunch"]
+
+    # print(electrons["bunch_charge"])
+
+    charge = electrons["charge"][SCALAR]
+    print(charge[0])
+
+    x_m = electrons["position"]["x"]
+    y_m = electrons["position"]["y"]
+    z_m = electrons["position"]["z"]
+
+    # ux = electrons["momentum"]["x"]
+    # uy = electrons["momentum"]["y"]
+    # uz = electrons["momentum"]["z"]
+
+    all_data = x_m.load_chunk()
+    f.flush()
+    print("Full E/x is of shape {0} and starts with:".format(all_data.shape))
+    print(all_data[:5])
+
+    # unit system agnostic dimension
+    unitDim = electrons["position"].unit_dimension
+    print(unitDim)
+    # ...
+    # io.Unit_Dimension.M
+
+    # conversion to SI
+    x_unit = electrons["position"].unit_SI
+    print(x_unit)
+
+    # please multiply your read data (x_data) with x_unit to covert to SI
+    # x_data = E_x.load_chunk()
+
+    del f
+
+
 
 def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
     # read bunch data from txt file
@@ -78,11 +118,13 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
         Unit_Dimension.T: 1,
         Unit_Dimension.I: 1,
     }
+    electrons["charge"].unit_SI = 1.
 
     electrons["mass"][SCALAR].make_constant(u.electron_mass.to_value("kg"))
     electrons["mass"].unit_dimension = {
         Unit_Dimension.M: 1,
     }
+    electrons["mass"].unit_SI = 1.
 
     # position
     particlePos_x = df.x_m.to_numpy(dtype=np.float64)
@@ -93,6 +135,10 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
     electrons["position"]["x"].reset_dataset(d)
     electrons["position"]["y"].reset_dataset(d)
     electrons["position"]["z"].reset_dataset(d)
+    electrons["position"].unit_dimension = {
+        Unit_Dimension.L: 1,
+    }
+    electrons["position"].unit_SI = 1.
 
     # weighting
     fill_value = n_physical_particles / n_macro_particles
@@ -116,6 +162,7 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
         Unit_Dimension.L: 1,
         Unit_Dimension.T: -1,
     }
+    electrons["momentum"].unit_SI = 1.
 
     # positionOffset
     electrons["positionOffset"]["x"].make_constant(0.0)
@@ -179,7 +226,7 @@ def main():
         export_dir=pathlib.Path.cwd(),
     )
     # shade_bunch(df, "z_mu", "x_mu", export_path=pathlib.Path.cwd() / "bunch")
-
+    bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
 
 if __name__ == "__main__":
     main()
