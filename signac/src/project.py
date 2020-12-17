@@ -25,7 +25,7 @@ import unyt as u
 from util import ffmpeg_command, shell_run
 from simulation_diagnostics import density_plot, centroid_plot
 from density_functions import plot_density_profile, make_experimental_dens_func
-from bunch import read_bunch, shade_bunch
+from electron_bunch import read_bunch, shade_bunch
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
