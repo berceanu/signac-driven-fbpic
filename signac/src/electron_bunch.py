@@ -1,21 +1,44 @@
 import pathlib
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot
 import datashader as ds
 from datashader.utils import export_image
 from colorcet import fire
 import unyt as u
 from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, Unit_Dimension
 from openpmd_viewer.addons import LpaDiagnostics
-
+from simulation_diagnostics import particle_energy_histogram
 
 SCALAR = Mesh_Record_Component.SCALAR
 
+
 def diagnose_bunch(opmd_dir):
     time_series = LpaDiagnostics(opmd_dir, check_all_files=True)
-    cur_it = time_series.iterations[0]
-    print(cur_it)
-    
+
+    hist, energy_bins, nbins = particle_energy_histogram(
+        tseries=time_series, iteration=0, species="bunch", cutoff=np.inf
+    )
+
+    fig, ax = pyplot.subplots()
+
+    ax.set_xlabel("E (MeV)")
+    ax.set_ylabel("dQ/dE (pC/MeV)")
+
+    energy = energy_bins[1:]
+    charge = hist
+
+    mask = (energy > 50) & (energy < 150)  # MeV
+    energy = energy[mask]
+    charge = charge[mask]
+
+    ax.step(
+        energy,
+        charge,
+    )
+    fig.savefig("bunch/histogram.png")  # FIXME
+    pyplot.close(fig)
+
 
 def write_bunch_openpmd(bunch_txt, outdir=pathlib.Path.cwd()):
     # read bunch data from txt file
@@ -158,6 +181,8 @@ def main():
     # write_bunch_openpmd(bunch_txt=job.fn("exp_4deg.txt"), outdir=pathlib.Path(job.ws))
     write_bunch_openpmd(bunch_txt=job.fn("exp_4deg.txt"))
     diagnose_bunch(pathlib.Path.cwd() / "bunch")
+    # diagnose_bunch(pathlib.Path(job.ws) / "diags" / "hdf5")
+
 
 if __name__ == "__main__":
     main()
