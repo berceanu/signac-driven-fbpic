@@ -46,6 +46,8 @@ def main():
             # The density profile
             ramp_start=-100.0e-6,
             ramp_length=100.0e-6,  # increase (up to `p_zmax`) !
+            # The injected electron bunch
+            bunch_charge=-200.0e-12,  # Charge in Coulomb
             # The interaction length of the simulation (meters)
             # increase (up to `p_zmax`) to simulate longer distance!
             L_interact=None,

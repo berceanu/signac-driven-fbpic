@@ -229,16 +229,14 @@ def run_fbpic(job):
         p_nt=job.sp.p_nt,
     )
 
-    # The electron beam
-    Qtot = -200.0e-12  # Charge in Coulomb
-
+    # The electron bunch
     # particles beam from txt file
     bunch = add_particle_bunch_file(
         sim=sim,
         q=u.electron_charge.to_value("C"),
         m=u.electron_mass.to_value("kg"),
         filename="exp_4deg.txt",
-        n_physical_particles=Qtot / u.electron_charge.to_value("C"),
+        n_physical_particles=job.sp.bunch_charge / u.electron_charge.to_value("C"),
         z_off=-1900e-6,
         z_injection_plane=job.sp.p_zmin,
     )
