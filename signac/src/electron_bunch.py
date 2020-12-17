@@ -11,6 +11,7 @@ from openpmd_viewer.addons import LpaDiagnostics
 from simulation_diagnostics import particle_energy_histogram
 
 SCALAR = Mesh_Record_Component.SCALAR
+mc = u.electron_mass.to_value("kg") * u.clight.to_value("m/s")
 
 
 def plot_bunch_energy_histogram(opmd_dir, export_dir):
@@ -56,35 +57,47 @@ def bunch_openpmd_to_dataframe(workdir=pathlib.Path.cwd()):
     # print(electrons["bunch_charge"])
 
     charge = electrons["charge"][SCALAR]
-    print(charge[0])
+    # print(charge[0])
 
     x_m = electrons["position"]["x"]
     y_m = electrons["position"]["y"]
     z_m = electrons["position"]["z"]
 
-    # ux = electrons["momentum"]["x"]
-    # uy = electrons["momentum"]["y"]
-    # uz = electrons["momentum"]["z"]
+    ux = electrons["momentum"]["x"]
+    uy = electrons["momentum"]["y"]
+    uz = electrons["momentum"]["z"]
 
     x_m_data = x_m.load_chunk()
-    
+    y_m_data = y_m.load_chunk()
+    z_m_data = z_m.load_chunk()
+
+    ux_data = ux.load_chunk()
+    uy_data = uy.load_chunk() / mc
+    uz_data = uz.load_chunk() / mc
+
+
     f.flush()
 
-    print("Full x_m is of shape {0} and starts with:".format(x_m_data.shape))
-    print(x_m_data[:5])
+    d = {"x_m": x_m_data, "y_m": y_m_data, "z_m": z_m_data, "ux": ux_data / mc, "uy": uy_data / mc, "uz": uz_data / mc}
+    df = pd.DataFrame(d)
+
+    # print("Full x_m is of shape {0} and starts with:".format(x_m_data.shape))
+    # print(x_m_data[:5])
 
     # unit system agnostic dimension
     unitDim = electrons["position"].unit_dimension
-    print(unitDim)
+    # print(unitDim)
 
     # conversion to SI
     x_unit = electrons["position"]["x"].unit_SI
-    print(x_unit)
+    # print(x_unit)
 
     # please multiply your read data (x_m_data) with x_unit to covert to SI
 
     del f
 
+    print(df.describe())
+    return df
 
 
 def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
@@ -148,7 +161,6 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
     electrons["weighting"][SCALAR].reset_dataset(d)
 
     # momentum
-    mc = u.electron_mass.to_value("kg") * u.clight.to_value("m/s")
     particleMom_x = df.ux.to_numpy(dtype=np.float64) * mc
     particleMom_y = df.uy.to_numpy(dtype=np.float64) * mc
     particleMom_z = df.uz.to_numpy(dtype=np.float64) * mc
@@ -220,7 +232,7 @@ def main():
 
     # plot via datashader
     df = read_bunch(job.fn("exp_4deg.txt"))
-    # print(df.describe())  TODO uncomment
+    print(df.describe())
 
     plot_bunch_energy_histogram(
         opmd_dir=pathlib.Path(job.ws) / "bunch",
