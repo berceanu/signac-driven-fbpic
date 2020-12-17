@@ -13,13 +13,12 @@ from simulation_diagnostics import particle_energy_histogram
 SCALAR = Mesh_Record_Component.SCALAR
 
 
-def diagnose_bunch(opmd_dir):
+def plot_bunch_energy_histogram(opmd_dir, export_dir):
     time_series = LpaDiagnostics(opmd_dir, check_all_files=True)
 
-    hist, energy_bins, nbins = particle_energy_histogram(
+    hist, energy_bins, _ = particle_energy_histogram(
         tseries=time_series, iteration=0, species="bunch", cutoff=np.inf
     )
-
     fig, ax = pyplot.subplots()
 
     ax.set_xlabel("E (MeV)")
@@ -36,7 +35,7 @@ def diagnose_bunch(opmd_dir):
         energy,
         charge,
     )
-    fig.savefig("bunch/histogram.png")  # FIXME
+    fig.savefig(pathlib.Path(export_dir) / "energy_histogram.png")
     pyplot.close(fig)
 
 
@@ -143,6 +142,7 @@ def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
         plot_width=4200, plot_height=700, x_range=(-1800, 1800), y_range=(-300, 300)
     )
     # TODO read from openPMD
+    # TODO export images to job.ws / "bunch"
     # convert to microns
     df["x_mu"] = df.x_m * 1e6
     df["y_mu"] = df.y_m * 1e6
@@ -169,12 +169,11 @@ def main():
     df = read_bunch(job.fn("exp_4deg.txt"))
     print(df.describe())
 
-    shade_bunch(df, "z_mu", "x_mu")
-
-    # write_bunch_openpmd(bunch_txt=job.fn("exp_4deg.txt"), outdir=pathlib.Path(job.ws))
-    write_bunch_openpmd(bunch_txt=job.fn("exp_4deg.txt"), bunch_charge=-200.0e-12)
-    diagnose_bunch(pathlib.Path.cwd() / "bunch")
-    # diagnose_bunch(pathlib.Path(job.ws) / "diags" / "hdf5")
+    plot_bunch_energy_histogram(
+        opmd_dir=pathlib.Path(job.ws) / "bunch",
+        export_dir=pathlib.Path.cwd(),
+    )
+    # shade_bunch(df, "z_mu", "x_mu", export_path=pathlib.Path.cwd() / "bunch")
 
 
 if __name__ == "__main__":

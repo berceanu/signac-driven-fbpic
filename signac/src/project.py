@@ -25,7 +25,12 @@ import unyt as u
 from util import ffmpeg_command, shell_run
 from simulation_diagnostics import density_plot, centroid_plot
 from density_functions import plot_density_profile, make_experimental_dens_func
-from electron_bunch import read_bunch, shade_bunch, write_bunch_openpmd
+from electron_bunch import (
+    read_bunch,
+    shade_bunch,
+    write_bunch_openpmd,
+    plot_bunch_energy_histogram,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -153,6 +158,18 @@ def bunch_txt_to_opmd(job):
         bunch_txt=job.fn("exp_4deg.txt"),
         bunch_charge=job.sp.bunch_charge,
         outdir=pathlib.Path(job.ws),
+    )
+
+
+@ex
+@Project.operation
+@Project.pre.after(bunch_txt_to_opmd)
+@Project.post.isfile("bunch/energy_histogram.png")
+def bunch_histogram(job):
+    bunch_dir = pathlib.Path(job.ws) / "bunch"
+    plot_bunch_energy_histogram(
+        opmd_dir=bunch_dir,
+        export_dir=bunch_dir,
     )
 
 
