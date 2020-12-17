@@ -68,7 +68,7 @@ def bunch_openpmd_to_dataframe(workdir=pathlib.Path.cwd()):
 
     all_data = x_m.load_chunk()
     f.flush()
-    print("Full E/x is of shape {0} and starts with:".format(all_data.shape))
+    print("Full x_m is of shape {0} and starts with:".format(all_data.shape))
     print(all_data[:5])
 
     # unit system agnostic dimension
@@ -78,7 +78,7 @@ def bunch_openpmd_to_dataframe(workdir=pathlib.Path.cwd()):
     # io.Unit_Dimension.M
 
     # conversion to SI
-    x_unit = electrons["position"].unit_SI
+    x_unit = electrons["position"]["x"].unit_SI
     print(x_unit)
 
     # please multiply your read data (x_data) with x_unit to covert to SI
@@ -221,20 +221,21 @@ def main():
 
     # plot via datashader
     df = read_bunch(job.fn("exp_4deg.txt"))
-    print(df.describe())
+    # print(df.describe())  TODO uncomment
 
     plot_bunch_energy_histogram(
         opmd_dir=pathlib.Path(job.ws) / "bunch",
         export_dir=pathlib.Path.cwd(),
     )
     # shade_bunch(df, "z_mu", "x_mu", export_path=pathlib.Path.cwd() / "bunch")
-    # bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
 
-    write_bunch_openpmd(
-        bunch_txt=job.fn("exp_4deg.txt"),
-        outdir=pathlib.Path(job.ws),
-        bunch_charge=-200.0e-12,
-    )
+    bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
+
+    # write_bunch_openpmd(
+    #     bunch_txt=job.fn("exp_4deg.txt"),
+    #     outdir=pathlib.Path.cwd(),
+    #     bunch_charge=-200.0e-12,
+    # ) TODO uncomment
 
 if __name__ == "__main__":
     main()
