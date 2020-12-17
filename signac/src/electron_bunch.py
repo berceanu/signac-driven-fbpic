@@ -6,12 +6,16 @@ from datashader.utils import export_image
 from colorcet import fire
 import unyt as u
 from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, Unit_Dimension
+from openpmd_viewer.addons import LpaDiagnostics
 
 
 SCALAR = Mesh_Record_Component.SCALAR
 
+def diagnose_bunch(opmd_file):
+    time_series = LpaDiagnostics(opmd_file, check_all_files=True)
+    
 
-def bunch_to_openpmd(bunch_txt, outdir=pathlib.Path.cwd()):
+def write_bunch_openpmd(bunch_txt, outdir=pathlib.Path.cwd()):
     # read bunch data from txt file
     df = pd.read_csv(
         bunch_txt,
@@ -134,7 +138,6 @@ def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
 
 def main():
     import random
-    from openpmd_viewer.addons import LpaDiagnostics
     import signac
 
     random.seed(42)
@@ -150,9 +153,9 @@ def main():
 
     # shade_bunch(df, "z_mu", "x_mu")
 
-    # bunch_to_openpmd(bunch_txt=job.fn("exp_4deg.txt"), outdir=pathlib.Path(job.ws))
-    bunch_to_openpmd(bunch_txt=job.fn("exp_4deg.txt"))
-
+    # write_bunch_openpmd(bunch_txt=job.fn("exp_4deg.txt"), outdir=pathlib.Path(job.ws))
+    write_bunch_openpmd(bunch_txt=job.fn("exp_4deg.txt"))
+    diagnose_bunch("data_00000.h5")
 
 if __name__ == "__main__":
     main()
