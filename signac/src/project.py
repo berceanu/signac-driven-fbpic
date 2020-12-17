@@ -179,7 +179,7 @@ def run_fbpic(job):
         ParticleDiagnostic,
         ParticleChargeDensityDiagnostic,
     )
-    from fbpic.lpa_utils.bunch import add_particle_bunch_file
+    from fbpic.lpa_utils.bunch import add_particle_bunch_openPMD
 
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
@@ -231,13 +231,14 @@ def run_fbpic(job):
 
     # The electron bunch
     # particles beam from txt file
-    bunch = add_particle_bunch_file(
+    bunch = add_particle_bunch_openPMD(
         sim=sim,
         q=u.electron_charge.to_value("C"),
         m=u.electron_mass.to_value("kg"),
-        filename="exp_4deg.txt",
-        n_physical_particles=job.sp.bunch_charge / u.electron_charge.to_value("C"),
+        ts_path=pathlib.Path(job.ws / "bunch"),
         z_off=-1900e-6,
+        species="bunch",
+        iteration=0,
         z_injection_plane=job.sp.p_zmin,
     )
 
