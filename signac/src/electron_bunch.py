@@ -118,13 +118,13 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
         Unit_Dimension.T: 1,
         Unit_Dimension.I: 1,
     }
-    electrons["charge"].unit_SI = 1.
+    electrons["charge"][SCALAR].unit_SI = 1.
 
     electrons["mass"][SCALAR].make_constant(u.electron_mass.to_value("kg"))
     electrons["mass"].unit_dimension = {
         Unit_Dimension.M: 1,
     }
-    electrons["mass"].unit_SI = 1.
+    electrons["mass"][SCALAR].unit_SI = 1.
 
     # position
     particlePos_x = df.x_m.to_numpy(dtype=np.float64)
@@ -138,7 +138,8 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
     electrons["position"].unit_dimension = {
         Unit_Dimension.L: 1,
     }
-    electrons["position"].unit_SI = 1.
+    for coord in "x", "y", "z":
+        electrons["position"][coord].unit_SI = 1.
 
     # weighting
     fill_value = n_physical_particles / n_macro_particles
@@ -162,7 +163,8 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
         Unit_Dimension.L: 1,
         Unit_Dimension.T: -1,
     }
-    electrons["momentum"].unit_SI = 1.
+    for coord in "x", "y", "z":
+        electrons["momentum"][coord].unit_SI = 1.
 
     # positionOffset
     electrons["positionOffset"]["x"].make_constant(0.0)
@@ -226,7 +228,13 @@ def main():
         export_dir=pathlib.Path.cwd(),
     )
     # shade_bunch(df, "z_mu", "x_mu", export_path=pathlib.Path.cwd() / "bunch")
-    bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
+    # bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
+
+    write_bunch_openpmd(
+        bunch_txt=job.fn("exp_4deg.txt"),
+        outdir=pathlib.Path(job.ws),
+        bunch_charge=-200.0e-12,
+    )
 
 if __name__ == "__main__":
     main()
