@@ -40,13 +40,19 @@ def diagnose_bunch(opmd_dir):
     pyplot.close(fig)
 
 
-def write_bunch_openpmd(bunch_txt, outdir=pathlib.Path.cwd()):
-    # read bunch data from txt file
+def read_bunch(txt_file):
     df = pd.read_csv(
-        bunch_txt,
+        txt_file,
         delim_whitespace=True,
         names=["x_m", "y_m", "z_m", "ux", "uy", "uz"],
     )
+    return df
+
+
+def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
+    # read bunch data from txt file
+    df = read_bunch(bunch_txt)
+
     # open file for writing
     f = Series(str(outdir / "bunch" / "data_%05T.h5"), Access.create)
 
@@ -61,7 +67,12 @@ def write_bunch_openpmd(bunch_txt, outdir=pathlib.Path.cwd()):
 
     # particles
     electrons = cur_it.particles["bunch"]
-    electrons.set_attribute("attribute", "value")  # FIXME
+
+    n_physical_particles = bunch_charge / u.electron_charge.to_value("C")
+    n_macro_particles = df.shape[0]
+    electrons.set_attribute("bunch_charge", bunch_charge)
+    electrons.set_attribute("n_physical_particles", n_physical_particles)
+    electrons.set_attribute("n_macro_particles", n_macro_particles)
 
     electrons["charge"][SCALAR].make_constant(u.electron_charge.to_value("C"))
     electrons["charge"].unit_dimension = {
@@ -74,12 +85,14 @@ def write_bunch_openpmd(bunch_txt, outdir=pathlib.Path.cwd()):
         Unit_Dimension.M: 1,
     }
 
-    electrons["weighting"][SCALAR].make_constant(4993.207300706606)  # FIXME
+    electrons["weighting"][SCALAR].make_constant(
+        n_physical_particles / n_macro_particles
+    )
 
     # position
-    particlePos_x = df.x_m.to_numpy(dtype=np.float32)
-    particlePos_y = df.y_m.to_numpy(dtype=np.float32)
-    particlePos_z = df.z_m.to_numpy(dtype=np.float32)
+    particlePos_x = df.x_m.to_numpy(dtype=np.float64)
+    particlePos_y = df.y_m.to_numpy(dtype=np.float64)
+    particlePos_z = df.z_m.to_numpy(dtype=np.float64)
 
     d = Dataset(particlePos_x.dtype, extent=particlePos_x.shape)
     electrons["position"]["x"].reset_dataset(d)
@@ -88,9 +101,9 @@ def write_bunch_openpmd(bunch_txt, outdir=pathlib.Path.cwd()):
 
     # momentum
     mc = u.electron_mass.to_value("kg") * u.clight.to_value("m/s")
-    particleMom_x = df.ux.to_numpy(dtype=np.float32) * mc
-    particleMom_y = df.uy.to_numpy(dtype=np.float32) * mc
-    particleMom_z = df.uz.to_numpy(dtype=np.float32) * mc
+    particleMom_x = df.ux.to_numpy(dtype=np.float64) * mc
+    particleMom_y = df.uy.to_numpy(dtype=np.float64) * mc
+    particleMom_z = df.uz.to_numpy(dtype=np.float64) * mc
 
     d = Dataset(particleMom_x.dtype, extent=particleMom_x.shape)
     electrons["momentum"]["x"].reset_dataset(d)
@@ -125,35 +138,15 @@ def write_bunch_openpmd(bunch_txt, outdir=pathlib.Path.cwd()):
     del f
 
 
-def read_bunch(txt_file):
-    df = pd.read_csv(
-        txt_file,
-        delim_whitespace=True,
-        names=["x_m", "y_m", "z_m", "ux", "uy", "uz"],
+def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
+    cvs = ds.Canvas(
+        plot_width=4200, plot_height=700, x_range=(-1800, 1800), y_range=(-300, 300)
     )
     # convert to microns
     df["x_mu"] = df.x_m * 1e6
     df["y_mu"] = df.y_m * 1e6
     df["z_mu"] = df.z_m * 1e6
 
-    # remove first 3 columns
-    # df = df.drop(["x_m", "y_m", "z_m"], axis=1)
-
-    # compute gamma factor
-    df["gamma"] = np.sqrt(1 + df.ux ** 2 + df.uy ** 2 + df.uz ** 2)
-
-    # compute energy
-    df["energy_MeV"] = (u.electron_mass * u.clight ** 2).to_value("MeV") * df.gamma
-
-    df["percent_c"] = np.sqrt(1 - 1 / df.gamma ** 2) * 100.0
-
-    return df
-
-
-def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
-    cvs = ds.Canvas(
-        plot_width=4200, plot_height=700, x_range=(-1800, 1800), y_range=(-300, 300)
-    )
     agg = cvs.points(df, coord1, coord2)
     img = ds.tf.shade(agg, cmap=fire, how="linear")
     export_image(
@@ -173,13 +166,13 @@ def main():
 
     # plot via datashader
     df = read_bunch(job.fn("exp_4deg.txt"))
-    # print(df.describe())
+    print(df.describe())
     # print(df[["x_mu", "y_mu", "z_mu"]].describe())
 
-    # shade_bunch(df, "z_mu", "x_mu")
+    shade_bunch(df, "z_mu", "x_mu")
 
     # write_bunch_openpmd(bunch_txt=job.fn("exp_4deg.txt"), outdir=pathlib.Path(job.ws))
-    write_bunch_openpmd(bunch_txt=job.fn("exp_4deg.txt"))
+    write_bunch_openpmd(bunch_txt=job.fn("exp_4deg.txt"), bunch_charge=-200.0e-12)
     diagnose_bunch(pathlib.Path.cwd() / "bunch")
     # diagnose_bunch(pathlib.Path(job.ws) / "diags" / "hdf5")
 
