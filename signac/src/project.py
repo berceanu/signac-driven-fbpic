@@ -25,7 +25,8 @@ import unyt as u
 from util import ffmpeg_command, shell_run
 from simulation_diagnostics import density_plot, centroid_plot
 from density_functions import plot_density_profile, make_experimental_dens_func
-from electron_bunch import read_bunch, shade_bunch
+from electron_bunch import read_bunch, shade_bunch, write_bunch_openpmd
+
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -141,6 +142,18 @@ def are_rho_pngs(job):
 
 def are_centroid_pngs(job):
     return are_pngs(job, "centroid")
+
+
+@ex
+@Project.operation
+@Project.pre.isfile("exp_4deg.txt")
+@Project.post.isfile("bunch/data_00000.h5")
+def bunch_txt_to_opmd(job):
+    write_bunch_openpmd(
+        bunch_txt=job.fn("exp_4deg.txt"),
+        bunch_charge=job.sp.bunch_charge,
+        outdir=pathlib.Path(job.ws),
+    )
 
 
 @ex
