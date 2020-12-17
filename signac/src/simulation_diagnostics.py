@@ -100,6 +100,7 @@ def particle_energy_histogram(
     energy_max=500,
     delta_energy=1,
     cutoff=35,  # CHANGEME
+    species=None,
 ):
     """
     Compute the weighted particle energy histogram from ``tseries`` at step ``iteration``.
@@ -115,7 +116,12 @@ def particle_energy_histogram(
     nbins = (energy_max - energy_min) // delta_energy
     energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
 
-    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=iteration)
+    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=iteration, species=species)
+
+    if (np.ndim(w) == 1) and (w.size == 1):
+        fill_value = w.item(0)
+        w = np.full_like(ux, fill_value)
+
     energy = (u.electron_mass * u.clight ** 2).to_value("MeV") * np.sqrt(
         1 + ux ** 2 + uy ** 2 + uz ** 2
     )
