@@ -142,6 +142,7 @@ def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
     cvs = ds.Canvas(
         plot_width=4200, plot_height=700, x_range=(-1800, 1800), y_range=(-300, 300)
     )
+    # TODO read from openPMD
     # convert to microns
     df["x_mu"] = df.x_m * 1e6
     df["y_mu"] = df.y_m * 1e6
@@ -167,7 +168,6 @@ def main():
     # plot via datashader
     df = read_bunch(job.fn("exp_4deg.txt"))
     print(df.describe())
-    # print(df[["x_mu", "y_mu", "z_mu"]].describe())
 
     shade_bunch(df, "z_mu", "x_mu")
 
