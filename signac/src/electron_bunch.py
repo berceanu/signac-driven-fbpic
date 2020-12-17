@@ -11,8 +11,10 @@ from openpmd_viewer.addons import LpaDiagnostics
 
 SCALAR = Mesh_Record_Component.SCALAR
 
-def diagnose_bunch(opmd_file):
-    time_series = LpaDiagnostics(opmd_file, check_all_files=True)
+def diagnose_bunch(opmd_dir):
+    time_series = LpaDiagnostics(opmd_dir, check_all_files=True)
+    cur_it = time_series.iterations[0]
+    print(cur_it)
     
 
 def write_bunch_openpmd(bunch_txt, outdir=pathlib.Path.cwd()):
@@ -23,7 +25,7 @@ def write_bunch_openpmd(bunch_txt, outdir=pathlib.Path.cwd()):
         names=["x_m", "y_m", "z_m", "ux", "uy", "uz"],
     )
     # open file for writing
-    f = Series(str(outdir / "data_%05T.h5"), Access.create)
+    f = Series(str(outdir / "bunch" / "data_%05T.h5"), Access.create)
 
     # all required openPMD attributes will be set to reasonable default values
     # (all ones, all zeros, empty strings,...)
@@ -155,7 +157,7 @@ def main():
 
     # write_bunch_openpmd(bunch_txt=job.fn("exp_4deg.txt"), outdir=pathlib.Path(job.ws))
     write_bunch_openpmd(bunch_txt=job.fn("exp_4deg.txt"))
-    diagnose_bunch("data_00000.h5")
+    diagnose_bunch(pathlib.Path.cwd() / "bunch")
 
 if __name__ == "__main__":
     main()
