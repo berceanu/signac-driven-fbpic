@@ -238,12 +238,11 @@ def main():
         outdir=pathlib.Path.cwd(),
         bunch_charge=-200.0e-12,  # Coulomb
     )
-    df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
-
     plot_bunch_energy_histogram(
         opmd_dir=pathlib.Path.cwd() / "bunch",
         export_dir=pathlib.Path.cwd() / "bunch",
     )
+    df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
     shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
 
 

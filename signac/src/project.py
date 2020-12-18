@@ -26,10 +26,10 @@ from util import ffmpeg_command, shell_run
 from simulation_diagnostics import density_plot, centroid_plot
 from density_functions import plot_density_profile, make_experimental_dens_func
 from electron_bunch import (
-    read_bunch,
     shade_bunch,
     write_bunch_openpmd,
     plot_bunch_energy_histogram,
+    bunch_openpmd_to_dataframe,
 )
 
 
@@ -176,10 +176,10 @@ def bunch_histogram(job):
 @ex
 @Project.operation
 @Project.pre.isfile("exp_4deg.txt")
-@Project.post.isfile("bunch_z_mu_x_mu.png")
+@Project.post.isfile("bunch/bunch_z_um_x_um.png")
 def plot_initial_bunch(job):
-    df = read_bunch(job.fn("exp_4deg.txt"))
-    shade_bunch(df, "z_mu", "x_mu", export_path=pathlib.Path(job.ws))
+    df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
+    shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path(job.ws) / "bunch")
 
 
 @ex
