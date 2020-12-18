@@ -10,6 +10,7 @@ from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, Unit_Dim
 from openpmd_viewer.addons import LpaDiagnostics
 from simulation_diagnostics import particle_energy_histogram
 from collections import namedtuple
+from functools import partial
 
 SCALAR = Mesh_Record_Component.SCALAR
 mc = u.electron_mass.to_value("kg") * u.clight.to_value("m/s")
@@ -17,7 +18,7 @@ mc = u.electron_mass.to_value("kg") * u.clight.to_value("m/s")
 Sphere = namedtuple("Sphere", "x y z r")
 
 
-def count_electrons_in_sphere(workdir):
+def bunch_density(radius, workdir):
     df = bunch_openpmd_to_dataframe(workdir=workdir)
 
     pos_x = df.x_um.to_numpy(dtype=np.float64)
@@ -25,7 +26,7 @@ def count_electrons_in_sphere(workdir):
     pos_z = df.z_um.to_numpy(dtype=np.float64)
 
     sphere = Sphere(
-        np.mean(pos_x), np.mean(pos_y), np.mean(pos_z), 10.0
+        np.mean(pos_x), np.mean(pos_y), np.mean(pos_z), radius
     )  # radius in um
 
     sph_x = np.full_like(pos_x, sphere.x)
@@ -278,8 +279,21 @@ def main():
     shade_bunch(df, "z_um", "y_um", export_path=pathlib.Path.cwd() / "bunch")
     shade_bunch(df, "y_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
 
-    n_bunch = count_electrons_in_sphere(workdir=pathlib.Path(job.ws))
-    print(f"{n_bunch:.1e}")
+    bunch_rho = partial(bunch_density, workdir=pathlib.Path(job.ws))
+
+    # n_bunch = bunch_density(workdir=pathlib.Path(job.ws), radius=10.)  # micrometer
+    radii = np.linspace(1., 200., 200)
+    densities = [bunch_rho(r) for r in radii]
+    print(densities)
+
+    fig, ax = pyplot.subplots()
+    ax.set_xlabel(r"%s $\;(\mu m)$" % "Sphere radius")
+    ax.set_ylabel(r"%s $\;(\mathrm{cm}^{-3})$" % "n_bunch")
+
+    ax.plot(radii, densities)
+    fig.savefig("bunch/radii.png")
+    # for r, rho in densities:
+        # print(f"r = {r}, rho = {rho/1e+10:.1f}")
 
 
 if __name__ == "__main__":
