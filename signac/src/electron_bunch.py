@@ -48,16 +48,20 @@ def read_bunch(txt_file):
     )
     return df
 
+
 def bunch_openpmd_to_dataframe(workdir=pathlib.Path.cwd()):
     f = Series(str(workdir / "bunch" / "data_%05T.h5"), Access.read_only)
 
     cur_it = f.iterations[0]
     electrons = cur_it.particles["bunch"]
 
-    # print(electrons["bunch_charge"])
+    # charge = electrons["charge"][SCALAR]
+    # unit_dim = electrons["charge"].unit_dimension
+    # x_unit = electrons["charge"][SCALAR].unit_SI
 
-    charge = electrons["charge"][SCALAR]
-    # print(charge[0])
+    # for attribute in ("bunch_charge", "n_physical_particles", "n_macro_particles"):
+    #     value = electrons.get_attribute(attribute)
+    #     print(f"{attribute}: {value}")
 
     x_m = electrons["position"]["x"]
     y_m = electrons["position"]["y"]
@@ -67,36 +71,37 @@ def bunch_openpmd_to_dataframe(workdir=pathlib.Path.cwd()):
     uy = electrons["momentum"]["y"]
     uz = electrons["momentum"]["z"]
 
+    w = electrons["weighting"][SCALAR]
+
     x_m_data = x_m.load_chunk()
     y_m_data = y_m.load_chunk()
     z_m_data = z_m.load_chunk()
 
     ux_data = ux.load_chunk()
-    uy_data = uy.load_chunk() / mc
-    uz_data = uz.load_chunk() / mc
+    uy_data = uy.load_chunk()
+    uz_data = uz.load_chunk()
 
+    w_data = w.load_chunk()
 
     f.flush()
 
-    d = {"x_m": x_m_data, "y_m": y_m_data, "z_m": z_m_data, "ux": ux_data / mc, "uy": uy_data / mc, "uz": uz_data / mc}
+    d = {
+        "x_m": x_m_data,
+        "y_m": y_m_data,
+        "z_m": z_m_data,
+        "ux": ux_data / mc,
+        "uy": uy_data / mc,
+        "uz": uz_data / mc,
+        "w": w_data,
+    }
     df = pd.DataFrame(d)
 
-    # print("Full x_m is of shape {0} and starts with:".format(x_m_data.shape))
-    # print(x_m_data[:5])
-
-    # unit system agnostic dimension
-    unitDim = electrons["position"].unit_dimension
-    # print(unitDim)
-
-    # conversion to SI
-    x_unit = electrons["position"]["x"].unit_SI
-    # print(x_unit)
-
-    # please multiply your read data (x_m_data) with x_unit to covert to SI
+    # multiply your read data with x_unit to covert to SI
+    # unit_dim = electrons["position"].unit_dimension
+    # x_unit = electrons["position"]["x"].unit_SI
 
     del f
 
-    print(df.describe())
     return df
 
 
@@ -130,13 +135,13 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
         Unit_Dimension.T: 1,
         Unit_Dimension.I: 1,
     }
-    electrons["charge"][SCALAR].unit_SI = 1.
+    electrons["charge"][SCALAR].unit_SI = 1.0
 
     electrons["mass"][SCALAR].make_constant(u.electron_mass.to_value("kg"))
     electrons["mass"].unit_dimension = {
         Unit_Dimension.M: 1,
     }
-    electrons["mass"][SCALAR].unit_SI = 1.
+    electrons["mass"][SCALAR].unit_SI = 1.0
 
     # position
     particlePos_x = df.x_m.to_numpy(dtype=np.float64)
@@ -151,7 +156,7 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
         Unit_Dimension.L: 1,
     }
     for coord in "x", "y", "z":
-        electrons["position"][coord].unit_SI = 1.
+        electrons["position"][coord].unit_SI = 1.0
 
     # weighting
     fill_value = n_physical_particles / n_macro_particles
@@ -175,7 +180,7 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
         Unit_Dimension.T: -1,
     }
     for coord in "x", "y", "z":
-        electrons["momentum"][coord].unit_SI = 1.
+        electrons["momentum"][coord].unit_SI = 1.0
 
     # positionOffset
     electrons["positionOffset"]["x"].make_constant(0.0)
@@ -232,7 +237,7 @@ def main():
 
     # plot via datashader
     df = read_bunch(job.fn("exp_4deg.txt"))
-    print(df.describe())
+    # print(df.describe())
 
     plot_bunch_energy_histogram(
         opmd_dir=pathlib.Path(job.ws) / "bunch",
@@ -247,6 +252,7 @@ def main():
     #     outdir=pathlib.Path.cwd(),
     #     bunch_charge=-200.0e-12,
     # ) TODO uncomment
+
 
 if __name__ == "__main__":
     main()
