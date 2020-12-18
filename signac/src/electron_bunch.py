@@ -9,9 +9,40 @@ import unyt as u
 from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, Unit_Dimension
 from openpmd_viewer.addons import LpaDiagnostics
 from simulation_diagnostics import particle_energy_histogram
+from collections import namedtuple
 
 SCALAR = Mesh_Record_Component.SCALAR
 mc = u.electron_mass.to_value("kg") * u.clight.to_value("m/s")
+
+Sphere = namedtuple("Sphere", "x y z r")
+
+
+def count_electrons_in_sphere(workdir):
+    df = bunch_openpmd_to_dataframe(workdir=workdir)
+
+    pos_x = df.x_um.to_numpy(dtype=np.float64)
+    pos_y = df.y_um.to_numpy(dtype=np.float64)
+    pos_z = df.z_um.to_numpy(dtype=np.float64)
+
+    sphere = Sphere(
+        np.mean(pos_x), np.mean(pos_y), np.mean(pos_z), 10.0
+    )  # radius in um
+
+    sph_x = np.full_like(pos_x, sphere.x)
+    sph_y = np.full_like(pos_y, sphere.y)
+    sph_z = np.full_like(pos_z, sphere.z)
+    sph_r = np.full_like(pos_x, sphere.r)
+
+    mask = (pos_x - sph_x) ** 2 + (pos_y - sph_y) ** 2 + (
+        pos_z - sph_z
+    ) ** 2 < sph_r ** 2
+
+    electron_count = np.count_nonzero(mask)
+    volume = 4 / 3 * np.pi * (sphere.r * u.micrometer) ** 3
+
+    density = (electron_count / volume).to(u.cm ** (-3))
+
+    return density
 
 
 def plot_bunch_energy_histogram(opmd_dir, export_dir):
@@ -244,6 +275,11 @@ def main():
     )
     df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
     shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
+    shade_bunch(df, "z_um", "y_um", export_path=pathlib.Path.cwd() / "bunch")
+    shade_bunch(df, "y_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
+
+    n_bunch = count_electrons_in_sphere(workdir=pathlib.Path(job.ws))
+    print(f"{n_bunch:.1e}")
 
 
 if __name__ == "__main__":
