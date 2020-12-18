@@ -86,9 +86,9 @@ def bunch_openpmd_to_dataframe(workdir=pathlib.Path.cwd()):
     f.flush()
 
     d = {
-        "x_m": x_m_data,
-        "y_m": y_m_data,
-        "z_m": z_m_data,
+        "x_um": x_m_data * 1e6,  # meters to microns
+        "y_um": y_m_data * 1e6,
+        "z_um": z_m_data * 1e6,
         "ux": ux_data / mc,
         "uy": uy_data / mc,
         "uz": uz_data / mc,
@@ -211,13 +211,7 @@ def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
     cvs = ds.Canvas(
         plot_width=4200, plot_height=700, x_range=(-1800, 1800), y_range=(-300, 300)
     )
-    # TODO read from openPMD
     # TODO export images to job.ws / "bunch"
-    # convert to microns
-    df["x_mu"] = df.x_m * 1e6
-    df["y_mu"] = df.y_m * 1e6
-    df["z_mu"] = df.z_m * 1e6
-
     agg = cvs.points(df, coord1, coord2)
     img = ds.tf.shade(agg, cmap=fire, how="linear")
     export_image(
@@ -235,23 +229,22 @@ def main():
     job = random.choice(list(proj))
     print(f"job {job.id}")
 
-    # plot via datashader
     df = read_bunch(job.fn("exp_4deg.txt"))
-    # print(df.describe())
+    print(df.describe())
+    del df
+
+    write_bunch_openpmd(
+        bunch_txt=job.fn("exp_4deg.txt"),
+        outdir=pathlib.Path.cwd(),
+        bunch_charge=-200.0e-12,  # Coulomb
+    )
+    df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
 
     plot_bunch_energy_histogram(
-        opmd_dir=pathlib.Path(job.ws) / "bunch",
-        export_dir=pathlib.Path.cwd(),
+        opmd_dir=pathlib.Path.cwd() / "bunch",
+        export_dir=pathlib.Path.cwd() / "bunch",
     )
-    # shade_bunch(df, "z_mu", "x_mu", export_path=pathlib.Path.cwd() / "bunch")
-
-    bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
-
-    # write_bunch_openpmd(
-    #     bunch_txt=job.fn("exp_4deg.txt"),
-    #     outdir=pathlib.Path.cwd(),
-    #     bunch_charge=-200.0e-12,
-    # ) TODO uncomment
+    shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
 
 
 if __name__ == "__main__":
