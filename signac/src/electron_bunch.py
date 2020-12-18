@@ -43,7 +43,7 @@ def bunch_density(radius, workdir):
 
     density = (electron_count / volume).to(u.cm ** (-3))
 
-    return density
+    return density, sphere
 
 
 def plot_bunch_energy_histogram(opmd_dir, export_dir):
@@ -280,20 +280,19 @@ def main():
     shade_bunch(df, "y_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
 
     bunch_rho = partial(bunch_density, workdir=pathlib.Path(job.ws))
+    sph = bunch_rho(10.0)
+    print(f"Sphere centered at ({sph.x, sph.y, sph.z}) with radius {sph.r} um.")
 
-    # n_bunch = bunch_density(workdir=pathlib.Path(job.ws), radius=10.)  # micrometer
-    radii = np.linspace(1., 200., 200)
-    densities = [bunch_rho(r) for r in radii]
-    print(densities)
+    radii = np.linspace(1.0, 300.0, 300)
+    densities = [bunch_rho(r)[0] for r in radii]
 
     fig, ax = pyplot.subplots()
+
     ax.set_xlabel(r"%s $\;(\mu m)$" % "Sphere radius")
     ax.set_ylabel(r"%s $\;(\mathrm{cm}^{-3})$" % "n_bunch")
 
     ax.plot(radii, densities)
     fig.savefig("bunch/radii.png")
-    # for r, rho in densities:
-        # print(f"r = {r}, rho = {rho/1e+10:.1f}")
 
 
 if __name__ == "__main__":
