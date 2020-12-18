@@ -280,10 +280,11 @@ def main():
     shade_bunch(df, "y_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
 
     bunch_rho = partial(bunch_density, workdir=pathlib.Path(job.ws))
-    sph = bunch_rho(10.0)
-    print(f"Sphere centered at ({sph.x, sph.y, sph.z}) with radius {sph.r} um.")
+    rho, sph = bunch_rho(4)
+    print(f"Sphere centered at (x = {sph.x:.2f} um, y = {sph.y:.2f} um, z = {sph.z:.2f} um), with radius {sph.r} um.")
+    print(f"Corresponding density is {rho:.2e}.")
 
-    radii = np.linspace(1.0, 300.0, 300)
+    radii = np.linspace(1, 10, 10)
     densities = [bunch_rho(r)[0] for r in radii]
 
     fig, ax = pyplot.subplots()
@@ -291,7 +292,7 @@ def main():
     ax.set_xlabel(r"%s $\;(\mu m)$" % "Sphere radius")
     ax.set_ylabel(r"%s $\;(\mathrm{cm}^{-3})$" % "n_bunch")
 
-    ax.plot(radii, densities)
+    ax.plot(radii, densities, "-o")
     fig.savefig("bunch/radii.png")
 
 
