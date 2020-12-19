@@ -27,8 +27,7 @@ class Sphere:
         return 4 / 3 * np.pi * self.r ** 3
 
 
-def bunch_density(workdir):
-    df = bunch_openpmd_to_dataframe(workdir=workdir)
+def bunch_density(df):
     weight = df.w.mean() * u.dimensionless
 
     pos_x = df.x_um.to_numpy(dtype=np.float64) * u.micrometer
@@ -285,7 +284,7 @@ def main():
     df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
     shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
 
-    rho, sph = bunch_density(workdir=pathlib.Path(job.ws))
+    rho, sph = bunch_density(df)
     print(
         f"Sphere centered at (x = {sph.x:.2f}, y = {sph.y:.2f}, z = {sph.z:.2f}), with radius {sph.r:.2f}."
     )

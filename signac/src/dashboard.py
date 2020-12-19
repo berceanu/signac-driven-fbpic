@@ -13,8 +13,9 @@ class MyDashboard(Dashboard):
         return job.sp.n_e
 
     def job_title(self, job):
-        n_e = (job.sp.n_e / u.meter ** 3).to(1 / u.centimeter ** 3)
-        return f"n_e = {n_e:.1e}"
+        ratio = job.sp.n_e / job.doc.n_bunch
+        # n_e = (job.sp.n_e / u.meter ** 3).to(1 / u.centimeter ** 3)
+        return f"n_e / n_bunch = {ratio:.2f}"
 
     # def job_subtitle(self, job):
     #     pass
@@ -26,6 +27,7 @@ if __name__ == "__main__":
         DocumentList(enabled=False),
         ImageViewer(enabled=False),
         ImageViewer(name="Bunch Plots", enabled=False, img_globs=["bunch/*.png"]),
-        VideoViewer(enabled=True),
+        VideoViewer(name="rho", enabled=False, video_globs=["rho.mp4"]),
+        VideoViewer(name="centroid", enabled=False, video_globs=["centroid.mp4"]),
     ]
     MyDashboard(modules=modules).main()

@@ -188,7 +188,8 @@ def plot_initial_bunch(job):
 @Project.pre.after(bunch_txt_to_opmd)
 @Project.post.true("n_bunch")
 def estimate_bunch_density(job):
-    n_bunch, sphere = bunch_density(workdir=pathlib.Path(job.ws))
+    df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
+    n_bunch, sphere = bunch_density(df)
     job.doc["n_bunch"] = float("{:.2e}".format(n_bunch.to_value(u.meter ** (-3))))
 
 
@@ -343,6 +344,7 @@ def save_pngs(job):
         rho_field_name="rho_electrons",
         save_path=rho_path,
         n_e=job.sp.n_e,
+        n_bunch=job.doc.n_bunch,
     )
     it_centroid_plot = partial(
         centroid_plot, tseries=time_series, save_path=centroid_path

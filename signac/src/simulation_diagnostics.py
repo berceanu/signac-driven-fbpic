@@ -43,6 +43,7 @@ def density_plot(
     rho_field_name="rho_electrons",
     save_path=pathlib.Path.cwd(),
     n_e=1e21,  # 1/m^3
+    n_bunch=3.6e+20,  # 1/m^3
 ):
     """
     Plot the electron density.
@@ -60,7 +61,7 @@ def density_plot(
     fig, ax = pyplot.subplots(figsize=(10, 3))
 
     im_rho = ax.imshow(
-        rho / (u.elementary_charge.to_value("C") * n_e),
+        rho / (u.elementary_charge.to_value("C") * n_bunch),
         extent=rho_info.imshow_extent * 1e6,  # conversion to microns
         origin="lower",
         norm=colors.SymLogNorm(linthresh=1e-4, linscale=0.15, base=10),
