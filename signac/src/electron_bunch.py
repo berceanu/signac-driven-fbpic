@@ -11,37 +11,48 @@ from openpmd_viewer.addons import LpaDiagnostics
 from simulation_diagnostics import particle_energy_histogram
 from collections import namedtuple
 from functools import partial
+from dataclasses import dataclass
+from unyt.array import unyt_quantity
 
 SCALAR = Mesh_Record_Component.SCALAR
 mc = u.electron_mass.to_value("kg") * u.clight.to_value("m/s")
 
-Sphere = namedtuple("Sphere", "x y z r")
+
+@dataclass
+class Sphere:
+    x: unyt_quantity
+    y: unyt_quantity
+    z: unyt_quantity
+    r: unyt_quantity
+
+    def volume(self) -> unyt_quantity:
+        return 4 / 3 * np.pi * self.r ** 3
 
 
-def bunch_density(radius, workdir):
+def bunch_density(workdir):
     df = bunch_openpmd_to_dataframe(workdir=workdir)
+    weight = df.w.mean() * u.dimensionless
 
-    pos_x = df.x_um.to_numpy(dtype=np.float64)
-    pos_y = df.y_um.to_numpy(dtype=np.float64)
-    pos_z = df.z_um.to_numpy(dtype=np.float64)
+    pos_x = df.x_um.to_numpy(dtype=np.float64) * u.micrometer
+    pos_y = df.y_um.to_numpy(dtype=np.float64) * u.micrometer
+    pos_z = df.z_um.to_numpy(dtype=np.float64) * u.micrometer
 
-    sphere = Sphere(
-        np.mean(pos_x), np.mean(pos_y), np.mean(pos_z), radius
-    )  # radius in um
+    sigmas = [np.std(pos) for pos in (pos_x, pos_y, pos_z)]
+    radius = min(sigmas)  # sphere radius
+
+    sphere = Sphere(np.mean(pos_x), np.mean(pos_y), np.mean(pos_z), radius)
 
     sph_x = np.full_like(pos_x, sphere.x)
     sph_y = np.full_like(pos_y, sphere.y)
     sph_z = np.full_like(pos_z, sphere.z)
     sph_r = np.full_like(pos_x, sphere.r)
 
-    mask = (pos_x - sph_x) ** 2 + (pos_y - sph_y) ** 2 + (
+    inside_sphere = (pos_x - sph_x) ** 2 + (pos_y - sph_y) ** 2 + (
         pos_z - sph_z
     ) ** 2 < sph_r ** 2
 
-    electron_count = np.count_nonzero(mask)
-    volume = 4 / 3 * np.pi * (sphere.r * u.micrometer) ** 3
-
-    density = (electron_count / volume).to(u.cm ** (-3))
+    electron_count = np.count_nonzero(inside_sphere) * weight
+    density = electron_count / sphere.volume()
 
     return density, sphere
 
@@ -243,7 +254,6 @@ def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
     cvs = ds.Canvas(
         plot_width=4200, plot_height=700, x_range=(-1800, 1800), y_range=(-300, 300)
     )
-    # TODO export images to job.ws / "bunch"
     agg = cvs.points(df, coord1, coord2)
     img = ds.tf.shade(agg, cmap=fire, how="linear")
     export_image(
@@ -276,24 +286,12 @@ def main():
     )
     df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
     shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
-    shade_bunch(df, "z_um", "y_um", export_path=pathlib.Path.cwd() / "bunch")
-    shade_bunch(df, "y_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
 
-    bunch_rho = partial(bunch_density, workdir=pathlib.Path(job.ws))
-    rho, sph = bunch_rho(4)
-    print(f"Sphere centered at (x = {sph.x:.2f} um, y = {sph.y:.2f} um, z = {sph.z:.2f} um), with radius {sph.r} um.")
-    print(f"Corresponding density is {rho:.2e}.")
-
-    radii = np.linspace(1, 10, 10)
-    densities = [bunch_rho(r)[0] for r in radii]
-
-    fig, ax = pyplot.subplots()
-
-    ax.set_xlabel(r"%s $\;(\mu m)$" % "Sphere radius")
-    ax.set_ylabel(r"%s $\;(\mathrm{cm}^{-3})$" % "n_bunch")
-
-    ax.plot(radii, densities, "-o")
-    fig.savefig("bunch/radii.png")
+    rho, sph = bunch_density(workdir=pathlib.Path(job.ws))
+    print(
+        f"Sphere centered at (x = {sph.x:.2f}, y = {sph.y:.2f}, z = {sph.z:.2f}), with radius {sph.r:.2f}."
+    )
+    print(f"Corresponding density is {rho.to(u.cm**(-3)):.2e}.")
 
 
 if __name__ == "__main__":
