@@ -187,7 +187,7 @@ def plot_initial_bunch(job):
 @Project.operation
 @Project.pre.after(bunch_txt_to_opmd)
 @Project.post.true("n_bunch")
-def foo(job):
+def estimate_bunch_density(job):
     n_bunch, sphere = bunch_density(workdir=pathlib.Path(job.ws))
     job.doc["n_bunch"] = float("{:.2e}".format(n_bunch.to_value(u.meter ** (-3))))
 
