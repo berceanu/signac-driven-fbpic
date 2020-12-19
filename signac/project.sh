@@ -4,5 +4,5 @@
 # Usage: ./project.sh N
 
 # parallel on N GPUs FIXME remove pretend
-python src/project.py submit -o ex --bundle=$1 --parallel --pretend
+python src/project.py submit -o ex --bundle=$1 --parallel
 
