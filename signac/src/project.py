@@ -30,6 +30,7 @@ from electron_bunch import (
     write_bunch_openpmd,
     plot_bunch_energy_histogram,
     bunch_openpmd_to_dataframe,
+    bunch_density,
 )
 
 
@@ -175,11 +176,20 @@ def bunch_histogram(job):
 
 @ex
 @Project.operation
-@Project.pre.isfile("exp_4deg.txt")
+@Project.pre.after(bunch_txt_to_opmd)
 @Project.post.isfile("bunch/bunch_z_um_x_um.png")
 def plot_initial_bunch(job):
     df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
     shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path(job.ws) / "bunch")
+
+
+@ex
+@Project.operation
+@Project.pre.after(bunch_txt_to_opmd)
+@Project.post.true("n_bunch")
+def foo(job):
+    n_bunch, sphere = bunch_density(workdir=pathlib.Path(job.ws))
+    job.doc["n_bunch"] = float("{:.2e}".format(n_bunch.to_value(u.meter ** (-3))))
 
 
 @ex
