@@ -25,6 +25,7 @@ if __name__ == "__main__":
         StatepointList(name="Parameters", enabled=False),
         DocumentList(enabled=False),
         ImageViewer(enabled=False),
+        ImageViewer(name="Bunch Plots", enabled=False, img_globs=["bunch/*.png"]),
         VideoViewer(enabled=True),
     ]
     MyDashboard(modules=modules).main()
