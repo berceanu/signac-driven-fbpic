@@ -9,8 +9,6 @@ import unyt as u
 from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, Unit_Dimension
 from openpmd_viewer.addons import LpaDiagnostics
 from simulation_diagnostics import particle_energy_histogram
-from collections import namedtuple
-from functools import partial
 from dataclasses import dataclass
 from unyt.array import unyt_quantity
 
