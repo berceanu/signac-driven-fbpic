@@ -23,7 +23,7 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
 
-    for ne in np.linspace(10, 10e2, 16) * 1e14 * 1e6:
+    for ne in np.linspace(0.1, 10, 16) * 3.6e20:
         sp = dict(
             # The simulation box
             Nz=2048,  # Number of gridpoints along z
