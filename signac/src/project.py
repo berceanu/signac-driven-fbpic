@@ -31,6 +31,7 @@ from electron_bunch import (
     plot_bunch_energy_histogram,
     bunch_openpmd_to_dataframe,
     bunch_density,
+    bunch_centroid_plot,
 )
 
 
@@ -195,6 +196,14 @@ def estimate_bunch_density(job):
 
 @ex
 @Project.operation
+@Project.pre.after(bunch_txt_to_opmd)
+@Project.post.isfile("bunch/centroid000000.png")
+def plot_bunch_centroid(job):
+    bunch_centroid_plot(pathlib.Path(job.ws) / "bunch")
+
+
+@ex
+@Project.operation
 @Project.pre.isfile("density_1_inlet_spacers.txt")
 @Project.post.isfile("initial_density_profile.png")
 def plot_initial_density_profile(job):
@@ -264,7 +273,6 @@ def run_fbpic(job):
         q=u.electron_charge.to_value("C"),
         m=u.electron_mass.to_value("kg"),
         ts_path=pathlib.Path(job.ws) / "bunch",
-        z_off=-1900e-6,
         species="bunch",
         iteration=0,
     )

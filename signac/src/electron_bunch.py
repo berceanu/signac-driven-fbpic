@@ -8,7 +8,7 @@ from colorcet import fire
 import unyt as u
 from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, Unit_Dimension
 from openpmd_viewer.addons import LpaDiagnostics
-from simulation_diagnostics import particle_energy_histogram
+from simulation_diagnostics import particle_energy_histogram, centroid_plot
 from dataclasses import dataclass
 from unyt.array import unyt_quantity
 
@@ -27,6 +27,21 @@ class Sphere:
         return 4 / 3 * np.pi * self.r ** 3
 
 
+def bunch_centroid_plot(workdir=pathlib.Path.cwd() / "bunch"):
+    time_series = LpaDiagnostics(workdir, check_all_files=True)
+    centroid_plot(iteration=0, tseries=time_series, save_path=workdir)
+
+
+def bunch_std(df):
+    pos_x = df.x_um.to_numpy(dtype=np.float64) * u.micrometer
+    pos_y = df.y_um.to_numpy(dtype=np.float64) * u.micrometer
+    pos_z = df.z_um.to_numpy(dtype=np.float64) * u.micrometer
+
+    sigma_x, sigma_y, sigma_z = [np.std(pos) for pos in (pos_x, pos_y, pos_z)]
+
+    return sigma_x, sigma_y, sigma_z
+
+
 def bunch_density(df):
     weight = df.w.mean() * u.dimensionless
 
@@ -35,7 +50,6 @@ def bunch_density(df):
     pos_z = df.z_um.to_numpy(dtype=np.float64) * u.micrometer
 
     sigmas = [np.std(pos) for pos in (pos_x, pos_y, pos_z)]
-    print(sigmas)
     radius = min(sigmas)  # sphere radius
 
     sphere = Sphere(np.mean(pos_x), np.mean(pos_y), np.mean(pos_z), radius)
@@ -250,7 +264,10 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
 
 def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
     cvs = ds.Canvas(
-        plot_width=4200, plot_height=350, x_range=(-900, 900), y_range=(50, 200)
+        plot_width=4200,
+        plot_height=350,
+        x_range=(-900, 900),
+        y_range=(50, 200),  # microns
     )
     agg = cvs.points(df, coord1, coord2)
     img = ds.tf.shade(agg, cmap=fire, how="linear")
@@ -289,7 +306,11 @@ def main():
     print(
         f"Sphere centered at (x = {sph.x:.2f}, y = {sph.y:.2f}, z = {sph.z:.2f}), with radius {sph.r:.2f}."
     )
-    print(f"Corresponding density is {rho.to(u.cm**(-3)):.2e}.")
+    print(f"Correspoonding density is {rho.to(u.cm**(-3)):.2e}.")
+
+    print("4 * [sigma_x, sigma_y, sigma_z] = ", [4 * std for std in bunch_std(df)])
+
+    bunch_centroid_plot()
 
 
 if __name__ == "__main__":
