@@ -216,6 +216,7 @@ def plot_initial_density_profile(job):
 @ex.with_directives(directives=dict(ngpu=1))
 @directives(ngpu=1)
 @Project.operation
+@Project.pre.after(bunch_txt_to_opmd)
 @Project.post(fbpic_ran)
 def run_fbpic(job):
     """
