@@ -79,7 +79,7 @@ def density_plot(
     cbar_rho = fig.colorbar(
         mappable=im_rho, orientation="vertical", ticklocation="right", cax=cbaxes_rho
     )
-    cbar_rho.set_label(r"$n / n_\mathrm{e}$")
+    cbar_rho.set_label(r"$n / n_\mathrm{bunch}$")
 
     ax.set_ylabel(r"${} \;(\mu m)$".format(rho_info.axes[0]))
     ax.set_xlabel(r"${} \;(\mu m)$".format(rho_info.axes[1]))
