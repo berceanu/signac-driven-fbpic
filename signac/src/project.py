@@ -238,7 +238,7 @@ def run_fbpic(job):
         zmin=job.sp.zmin,
         boundaries={
             "z": "open",
-            "r": "open",
+            "r": "reflective",
         },  # 'r': 'open' can also be used (more expensive)
         n_order=-1,
         use_cuda=True,
@@ -257,19 +257,6 @@ def run_fbpic(job):
         p_nr=job.sp.p_nr,
         p_nt=job.sp.p_nt,
     )
-    plasma_ions = sim.add_new_species(
-        q=u.proton_charge.to_value("C"),
-        m=u.proton_mass.to_value("kg"),
-        n=job.sp.n_e,
-        dens_func=make_experimental_dens_func(job),
-        p_zmin=job.sp.p_zmin,
-        p_zmax=job.sp.p_zmax,
-        p_rmax=job.sp.p_rmax,
-        p_nz=job.sp.p_nz,
-        p_nr=job.sp.p_nr,
-        p_nt=job.sp.p_nt,
-    )
-
     # The electron bunch
     # particles beam from txt file
     bunch = add_particle_bunch_openPMD(
@@ -280,7 +267,6 @@ def run_fbpic(job):
         z_off=-1900e-6,
         species="bunch",
         iteration=0,
-        z_injection_plane=job.sp.p_zmin,
     )
 
     # Configure the moving window
