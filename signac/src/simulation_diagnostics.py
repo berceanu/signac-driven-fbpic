@@ -16,7 +16,7 @@ def centroid_plot(
     """
     fig, ax = pyplot.subplots(figsize=(7, 5))
     z, x = tseries.get_particle(
-        ["z", "x"], species="bunch", iteration=iteration, plot=True
+        ["z", "x"], species="bunch", iteration=iteration, plot=True, use_field_mesh=False,
     )
 
     img = ax.get_images()[0]
@@ -160,7 +160,7 @@ def main():
     it = random.choice(time_series.iterations.tolist())
     print(f"job {job.id}, iteration {it}")
 
-    # _, _, _ = particle_energy_histogram(tseries=time_series, iteration=it)
+    _, _, _ = particle_energy_histogram(tseries=time_series, iteration=it, species="electrons")
 
     centroid_plot(iteration=it, tseries=time_series)
     density_plot(iteration=it, tseries=time_series)

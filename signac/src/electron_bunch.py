@@ -309,6 +309,8 @@ def main():
     print(f"Correspoonding density is {rho.to(u.cm**(-3)):.2e}.")
 
     print("4 * [sigma_x, sigma_y, sigma_z] = ", [4 * std for std in bunch_std(df)])
+    # TODO https://github.com/openPMD/openPMD-viewer/blob/b92a872fe07030005d16cbc56b9399ce35d1e1e9/openpmd_viewer/addons/pic/lpa_diagnostics.py#L1001
+    # use w_std for standard deviation 
 
     bunch_centroid_plot()
 
