@@ -35,6 +35,7 @@ def bunch_density(df):
     pos_z = df.z_um.to_numpy(dtype=np.float64) * u.micrometer
 
     sigmas = [np.std(pos) for pos in (pos_x, pos_y, pos_z)]
+    print(sigmas)
     radius = min(sigmas)  # sphere radius
 
     sphere = Sphere(np.mean(pos_x), np.mean(pos_y), np.mean(pos_z), radius)
@@ -249,7 +250,7 @@ def write_bunch_openpmd(bunch_txt, bunch_charge, outdir=pathlib.Path.cwd()):
 
 def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
     cvs = ds.Canvas(
-        plot_width=4200, plot_height=700, x_range=(-1800, 1800), y_range=(-300, 300)
+        plot_width=4200, plot_height=350, x_range=(-900, 900), y_range=(50, 200)
     )
     agg = cvs.points(df, coord1, coord2)
     img = ds.tf.shade(agg, cmap=fire, how="linear")
