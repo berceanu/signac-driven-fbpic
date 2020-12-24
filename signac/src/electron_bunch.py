@@ -279,7 +279,7 @@ def main():
     print(f"job {job.id}")
 
     df = read_bunch(job.fn("exp_4deg.txt"))
-    print(df.describe())
+    # print(df.describe())
     del df
 
     write_bunch_openpmd(
@@ -296,6 +296,7 @@ def main():
     bunch_centroid_plot(workdir=pathlib.Path.cwd() / "bunch")
 
     rho, sph, stdxyz = bunch_density(df)
+    print()
     print(
         f"Sphere centered at (x = {sph.x:.2f}, y = {sph.y:.2f}, z = {sph.z:.2f}), with radius {sph.r:.2f}."
     )
@@ -305,12 +306,15 @@ def main():
     time_series = LpaDiagnostics(pathlib.Path.cwd() / "bunch", check_all_files=True)
 
     mean_gamma, gamma_std = time_series.get_mean_gamma(iteration=0, species="bunch")
+    print()
     print(f"<𝛾> = {mean_gamma:.0f}; σ_<𝛾> = {gamma_std:.1f}")
 
     charge = time_series.get_charge(iteration=0, species="bunch") * u.Coulomb
+    print()
     print("Q = {0:.1f}".format(charge.to("pC")))
 
     div_x, div_y = time_series.get_divergence(iteration=0, species="bunch") * u.radian
+    print()
     print(
         "x-plane divergence {0:.1f}, y-plane divergence {1:.1f}".format(
             div_x.to("mrad"), div_y.to("mrad")
@@ -320,19 +324,17 @@ def main():
     ε_n_rms = (
         time_series.get_emittance(iteration=0, species="bunch") * u.meter * u.radian
     )  # π*m*rad
+    print()
     print(
         "Normalized beam emittance in the x plane is {0:.3f} and in the y plane {1:.3f}.".format(
             ε_n_rms[0].to(u.mm * u.mrad) / np.pi, ε_n_rms[1].to(u.mm * u.mrad) / np.pi
         )
     )
 
-    # If description='projected' or 'slice-averaged':
-    #     - beam emittance in the x plane (pi m rad)
-    #     - beam emittance in the y plane (pi m rad)
-
-    # TODO https://github.com/openPMD/openPMD-viewer/blob/b92a872fe07030005d16cbc56b9399ce35d1e1e9/openpmd_viewer/addons/pic/lpa_diagnostics.py#L1001
-    # use w_std for standard deviation
     # https://github.com/fbpic/fbpic/issues/385
+    # TODO: use Gaussian density profile with 2 ramps, close to experiment
+    # TODO: use Gaussian bunch, with parameters close to the experimental one
+    # TODO: find computable quantity in Remi's paper
 
 
 if __name__ == "__main__":
