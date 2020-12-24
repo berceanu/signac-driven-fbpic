@@ -7,7 +7,7 @@ from matplotlib.gridspec import GridSpec
 from scipy import interpolate
 
 
-def read_density(txt_file, every_nth=20, offset=True):
+def read_density(txt_file, every_nth=20, offset=0.):
     df = pd.read_csv(
         txt_file,
         delim_whitespace=True,
@@ -18,8 +18,7 @@ def read_density(txt_file, every_nth=20, offset=True):
     df["position_m"] = df.position_mm * 1e-3
 
     # substract offset
-    if offset:
-        df.position_m = df.position_m - df.position_m.iloc[0]
+    df.position_m = df.position_m + offset 
 
     # normalize density
     df["norm_density"] = df.density_cm_3 / df.density_cm_3.max()
@@ -35,7 +34,8 @@ def read_density(txt_file, every_nth=20, offset=True):
 
 
 def make_experimental_dens_func(job):
-    position_m, norm_density = read_density(job.fn("density_1_inlet_spacers.txt"))
+    total_offset = 36.84e-3+1100.0e-6
+    position_m, norm_density = read_density(job.fn("density_1_inlet_spacers.txt"), offset=total_offset)
 
     interp_z_min = position_m.min()
     interp_z_max = position_m.max()

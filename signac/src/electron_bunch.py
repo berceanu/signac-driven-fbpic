@@ -8,6 +8,7 @@ from colorcet import fire
 import unyt as u
 from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, Unit_Dimension
 from openpmd_viewer.addons import LpaDiagnostics
+from util import w_std, w_ave
 from simulation_diagnostics import particle_energy_histogram, centroid_plot
 from dataclasses import dataclass
 from unyt.array import unyt_quantity
@@ -32,28 +33,18 @@ def bunch_centroid_plot(workdir=pathlib.Path.cwd() / "bunch"):
     centroid_plot(iteration=0, tseries=time_series, save_path=workdir)
 
 
-def bunch_std(df):
-    pos_x = df.x_um.to_numpy(dtype=np.float64) * u.micrometer
-    pos_y = df.y_um.to_numpy(dtype=np.float64) * u.micrometer
-    pos_z = df.z_um.to_numpy(dtype=np.float64) * u.micrometer
-
-    # FIXME include weights
-    sigma_x, sigma_y, sigma_z = [np.std(pos) for pos in (pos_x, pos_y, pos_z)]
-
-    return sigma_x, sigma_y, sigma_z
-
-
 def bunch_density(df):
-    weight = df.w.mean() * u.dimensionless
+    weights = df.w.to_numpy(dtype=np.float64) * u.dimensionless
 
     pos_x = df.x_um.to_numpy(dtype=np.float64) * u.micrometer
     pos_y = df.y_um.to_numpy(dtype=np.float64) * u.micrometer
     pos_z = df.z_um.to_numpy(dtype=np.float64) * u.micrometer
 
-    sigmas = [np.std(pos) for pos in (pos_x, pos_y, pos_z)]
+    sigmas = [w_std(pos, weights) for pos in (pos_x, pos_y, pos_z)]
     radius = min(sigmas)  # sphere radius
-    # FIXME include weights
-    sphere = Sphere(np.mean(pos_x), np.mean(pos_y), np.mean(pos_z), radius)
+    sphere = Sphere(
+        w_ave(pos_x, weights), w_ave(pos_y, weights), w_ave(pos_z, weights), radius
+    )
 
     sph_x = np.full_like(pos_x, sphere.x)
     sph_y = np.full_like(pos_y, sphere.y)
@@ -64,10 +55,10 @@ def bunch_density(df):
         pos_z - sph_z
     ) ** 2 < sph_r ** 2
 
-    electron_count = np.count_nonzero(inside_sphere) * weight
+    electron_count = np.count_nonzero(inside_sphere) * np.mean(weights)
     density = electron_count / sphere.volume()
 
-    return density, sphere
+    return density, sphere, sigmas
 
 
 def plot_bunch_energy_histogram(opmd_dir, export_dir):
@@ -302,19 +293,46 @@ def main():
     )
     df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
     shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
+    bunch_centroid_plot(workdir=pathlib.Path.cwd() / "bunch")
 
-    rho, sph = bunch_density(df)
+    rho, sph, stdxyz = bunch_density(df)
     print(
         f"Sphere centered at (x = {sph.x:.2f}, y = {sph.y:.2f}, z = {sph.z:.2f}), with radius {sph.r:.2f}."
     )
-    print(f"Correspoonding density is {rho.to(u.cm**(-3)):.2e}.")
+    print(f"Corresponding density is {rho.to(u.cm**(-3)):.2e}.")
+    print(f"σ_x = {stdxyz[0]:.0f}; σ_y = {stdxyz[1]:.0f}; σ_z = {stdxyz[2]:.0f}")
 
-    print("4 * [sigma_x, sigma_y, sigma_z] = ", [4 * std for std in bunch_std(df)])
+    time_series = LpaDiagnostics(pathlib.Path.cwd() / "bunch", check_all_files=True)
+
+    mean_gamma, gamma_std = time_series.get_mean_gamma(iteration=0, species="bunch")
+    print(f"<𝛾> = {mean_gamma:.0f}; σ_<𝛾> = {gamma_std:.1f}")
+
+    charge = time_series.get_charge(iteration=0, species="bunch") * u.Coulomb
+    print("Q = {0:.1f}".format(charge.to("pC")))
+
+    div_x, div_y = time_series.get_divergence(iteration=0, species="bunch") * u.radian
+    print(
+        "x-plane divergence {0:.1f}, y-plane divergence {1:.1f}".format(
+            div_x.to("mrad"), div_y.to("mrad")
+        )
+    )
+
+    ε_n_rms = (
+        time_series.get_emittance(iteration=0, species="bunch") * u.meter * u.radian
+    )  # π*m*rad
+    print(
+        "Normalized beam emittance in the x plane is {0:.3f} and in the y plane {1:.3f}.".format(
+            ε_n_rms[0].to(u.mm * u.mrad) / np.pi, ε_n_rms[1].to(u.mm * u.mrad) / np.pi
+        )
+    )
+
+    # If description='projected' or 'slice-averaged':
+    #     - beam emittance in the x plane (pi m rad)
+    #     - beam emittance in the y plane (pi m rad)
+
     # TODO https://github.com/openPMD/openPMD-viewer/blob/b92a872fe07030005d16cbc56b9399ce35d1e1e9/openpmd_viewer/addons/pic/lpa_diagnostics.py#L1001
-    # use w_std for standard deviation 
+    # use w_std for standard deviation
     # https://github.com/fbpic/fbpic/issues/385
-
-    bunch_centroid_plot()
 
 
 if __name__ == "__main__":
