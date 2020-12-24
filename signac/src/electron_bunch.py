@@ -301,6 +301,7 @@ def main():
         f"Sphere centered at (x = {sph.x:.2f}, y = {sph.y:.2f}, z = {sph.z:.2f}), with radius {sph.r:.2f}."
     )
     print(f"Corresponding density is {rho.to(u.cm**(-3)):.2e}.")
+    print()
     print(f"σ_x = {stdxyz[0]:.0f}; σ_y = {stdxyz[1]:.0f}; σ_z = {stdxyz[2]:.0f}")
 
     time_series = LpaDiagnostics(pathlib.Path.cwd() / "bunch", check_all_files=True)
@@ -316,8 +317,8 @@ def main():
     div_x, div_y = time_series.get_divergence(iteration=0, species="bunch") * u.radian
     print()
     print(
-        "x-plane divergence {0:.1f}, y-plane divergence {1:.1f}".format(
-            div_x.to("mrad"), div_y.to("mrad")
+        "x/y-plane divergence {0:.3f}/{1:.3f}".format(
+            div_x.to(u.mrad), div_y.to(u.mrad)
         )
     )
 
@@ -326,7 +327,7 @@ def main():
     )  # π*m*rad
     print()
     print(
-        "Normalized beam emittance in the x plane is {0:.3f} and in the y plane {1:.3f}.".format(
+        "x/y-plane normalized emittance {0:.3f}/{1:.3f}".format(
             ε_n_rms[0].to(u.mm * u.mrad) / np.pi, ε_n_rms[1].to(u.mm * u.mrad) / np.pi
         )
     )
