@@ -37,6 +37,7 @@ def bunch_std(df):
     pos_y = df.y_um.to_numpy(dtype=np.float64) * u.micrometer
     pos_z = df.z_um.to_numpy(dtype=np.float64) * u.micrometer
 
+    # FIXME include weights
     sigma_x, sigma_y, sigma_z = [np.std(pos) for pos in (pos_x, pos_y, pos_z)]
 
     return sigma_x, sigma_y, sigma_z
@@ -51,7 +52,7 @@ def bunch_density(df):
 
     sigmas = [np.std(pos) for pos in (pos_x, pos_y, pos_z)]
     radius = min(sigmas)  # sphere radius
-
+    # FIXME include weights
     sphere = Sphere(np.mean(pos_x), np.mean(pos_y), np.mean(pos_z), radius)
 
     sph_x = np.full_like(pos_x, sphere.x)
@@ -311,6 +312,7 @@ def main():
     print("4 * [sigma_x, sigma_y, sigma_z] = ", [4 * std for std in bunch_std(df)])
     # TODO https://github.com/openPMD/openPMD-viewer/blob/b92a872fe07030005d16cbc56b9399ce35d1e1e9/openpmd_viewer/addons/pic/lpa_diagnostics.py#L1001
     # use w_std for standard deviation 
+    # https://github.com/fbpic/fbpic/issues/385
 
     bunch_centroid_plot()
 

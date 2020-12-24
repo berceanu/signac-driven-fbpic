@@ -27,14 +27,14 @@ def main():
         sp = dict(
             # The simulation box
             Nz=2048,  # Number of gridpoints along z
-            zmin=-2000.0e-6,  # Left end of the simulation box (meters)
-            zmax=-200.0e-6,  # Right end of the simulation box (meters)
+            zmin=-900.0e-6,  # Left end of the simulation box (meters) // + 1100
+            zmax=900.0e-6,  # Right end of the simulation box (meters) // + 1100
             Nr=256,  # Number of gridpoints along r
             rmax=200.0e-6,  # Length of the box along r (meters)
             Nm=4,  # Number of modes
             # The particles
             # Position of the beginning of the plasma (meters)
-            p_zmin=-100.0e-6,
+            p_zmin=1000.0e-6, #// +1100
             # Maximal radial position of the plasma (meters)
             p_rmax=200.0e-6,
             n_e=ne,  # Density (electrons.meters^-3)
@@ -42,9 +42,9 @@ def main():
             p_nr=2,  # Number of particles per cell along r
             p_nt=16,  # Number of particles per cell along theta, should be 4*Nm
             # do not change below this line ##############
-            p_zmax=68400.0e-6,  # Position of the end of the plasma (meters)
+            p_zmax=69500.0e-6,  # Position of the end of the plasma (meters)  // +1100
             # The density profile
-            ramp_start=-100.0e-6,
+            ramp_start=1000.0e-6, # // + 1100
             ramp_length=100.0e-6,  # increase (up to `p_zmax`) !
             # The injected electron bunch
             bunch_charge=-200.0e-12,  # Charge in Coulomb
