@@ -37,11 +37,12 @@ def read_density(txt_file, every_nth=20, offset=0.0):
 def make_experimental_dens_func(job):
     total_offset = 36.84e-3 + 1100.0e-6
     position_m, norm_density = read_density(
-        job.fn("density_1_inlet_spacers.txt"), offset=total_offset
+        job.fn("density_1_inlet_spacers.txt"),
+        offset=math.ceil(total_offset * 1e6) / 1e6,
     )
 
-    interp_z_min = math.floor(position_m.min())
-    interp_z_max = math.ceil(position_m.max())
+    interp_z_min = math.ceil(position_m.min() * 1e6) / 1e6
+    interp_z_max = math.ceil(position_m.max() * 1e6) / 1e6
 
     rho = interpolate.interp1d(
         position_m, norm_density, bounds_error=False, fill_value=(0.0, 0.0)
