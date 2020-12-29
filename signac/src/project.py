@@ -190,7 +190,7 @@ def plot_initial_bunch(job):
 @Project.post.true("n_bunch")
 def estimate_bunch_density(job):
     df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
-    n_bunch, sphere = bunch_density(df)
+    n_bunch, sphere, _ = bunch_density(df)
     job.doc["n_bunch"] = float("{:.2e}".format(n_bunch.to_value(u.meter ** (-3))))
 
 
