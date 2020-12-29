@@ -9,6 +9,7 @@ import math
 import numpy as np
 
 import unyt as u
+from prepic import Plasma
 import signac
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
@@ -77,6 +78,9 @@ def main():
 
         job.doc.setdefault("Δz", f"{Δz:.1f}")
         job.doc.setdefault("Δr", f"{Δr:.1f}")
+
+        plasma = Plasma(n_pe=job.sp.n_e / u.meter**3)
+        job.doc.setdefault("λp", f"{plasma.λp:.1f}")
 
         for txt_file in ("density_1_inlet_spacers.txt", "exp_4deg.txt"):
             src = pathlib.Path(txt_file)
