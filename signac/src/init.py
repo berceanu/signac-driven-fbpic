@@ -72,6 +72,9 @@ def main():
         project.open_job(sp).init()
 
     for job in project:
+        job.doc.setdefault("Δz", (job.sp.zmax - job.sp.zmin) / job.sp.Nz)
+        job.doc.setdefault("Δr", job.sp.rmax / job.sp.Nr)
+
         for txt_file in ("density_1_inlet_spacers.txt", "exp_4deg.txt"):
             src = pathlib.Path(txt_file)
             dest = pathlib.Path(job.fn(txt_file))
