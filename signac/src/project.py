@@ -22,6 +22,7 @@ from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
 from openpmd_viewer.addons import LpaDiagnostics
 import unyt as u
+from prepic import Plasma
 from util import ffmpeg_command, shell_run
 from simulation_diagnostics import density_plot, centroid_plot
 from density_functions import plot_density_profile, make_experimental_dens_func
@@ -188,10 +189,15 @@ def plot_initial_bunch(job):
 @Project.operation
 @Project.pre.after(bunch_txt_to_opmd)
 @Project.post.true("n_bunch")
+@Project.post.true("λ_bunch")
 def estimate_bunch_density(job):
     df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
     n_bunch, sphere, _ = bunch_density(df)
-    job.doc["n_bunch"] = float("{:.2e}".format(n_bunch.to_value(u.meter ** (-3))))
+    job.doc.setdefault("n_bunch", float("{:.2e}".format(n_bunch.to_value(u.meter ** (-3)))))
+    
+    plasma = Plasma(n_pe=job.doc.n_bunch * u.meter**(-3))
+    job.doc.setdefault("λ_bunch", f"{plasma.λp:.1f}")
+
 
 
 @ex

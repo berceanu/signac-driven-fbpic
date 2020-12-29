@@ -27,10 +27,10 @@ def main():
     for ne in (1.63 * 3.6e20,):  # np.linspace(0.1, 10, 12) 
         sp = dict(
             # The simulation box
-            Nz=2048,  # Number of gridpoints along z
+            Nz=1024,  # Number of gridpoints along z
             zmin=-900.0e-6,  # Left end of the simulation box (meters)
             zmax=900.0e-6,  # Right end of the simulation box (meters)
-            Nr=256,  # Number of gridpoints along r
+            Nr=128,  # Number of gridpoints along r
             rmax=200.0e-6,  # Length of the box along r (meters)
             Nm=4,  # Number of modes
             # The particles
@@ -79,7 +79,7 @@ def main():
         job.doc.setdefault("Δz", f"{Δz:.1f}")
         job.doc.setdefault("Δr", f"{Δr:.1f}")
 
-        plasma = Plasma(n_pe=job.sp.n_e / u.meter**3)
+        plasma = Plasma(n_pe=job.sp.n_e * u.meter**(-3))
         job.doc.setdefault("λp", f"{plasma.λp:.1f}")
 
         for txt_file in ("density_1_inlet_spacers.txt", "exp_4deg.txt"):
