@@ -343,7 +343,7 @@ def save_pngs(job):
     it_density_plot = partial(
         density_plot,
         tseries=time_series,
-        rho_field_name="rho_electrons",
+        rho_field_name="rho_bunch",
         save_path=rho_path,
         n_e=job.sp.n_e,
         n_bunch=job.doc.n_bunch,

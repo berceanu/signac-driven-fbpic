@@ -65,11 +65,12 @@ def density_plot(
     fig, ax = pyplot.subplots(figsize=(10, 3))
 
     im_rho = ax.imshow(
-        rho / (u.elementary_charge.to_value("C") * n_e),  # n_bunch
+        rho / (u.electron_charge.to_value("C") * n_bunch),
         extent=rho_info.imshow_extent * 1e6,  # conversion to microns
         origin="lower",
-        norm=colors.Normalize(vmin=-1, vmax=0),
+        norm=colors.Normalize(vmin=-1.0, vmax=5.0),
         # norm=colors.SymLogNorm(linthresh=1e-4, linscale=0.15, base=10),
+        # norm=colors.LogNorm(vmin=1e-6, vmax=10),
         cmap=cm.get_cmap("cividis"),
     )
     cbaxes_rho = inset_axes(
