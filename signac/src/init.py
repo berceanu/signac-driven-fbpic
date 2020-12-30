@@ -24,7 +24,7 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
 
-    for ne in (1.63 * 3.6e20,):  # np.linspace(0.1, 10, 12) 
+    for ne in (1.63 * 3.6e20,):  # np.linspace(0.1, 10, 12)
         sp = dict(
             # The simulation box
             Nz=1024,  # Number of gridpoints along z
@@ -79,14 +79,14 @@ def main():
         job.doc.setdefault("Δz", f"{Δz:.1f}")
         job.doc.setdefault("Δr", f"{Δr:.1f}")
 
-        plasma = Plasma(n_pe=job.sp.n_e * u.meter**(-3))
+        plasma = Plasma(n_pe=job.sp.n_e * u.meter ** (-3))
         job.doc.setdefault("λp", f"{plasma.λp:.1f}")
 
         for txt_file in ("density_1_inlet_spacers.txt", "exp_4deg.txt"):
             src = pathlib.Path(txt_file)
             dest = pathlib.Path(job.fn(txt_file))
             dest.write_text(src.read_text())
-                  
+
         p = pathlib.Path(job.ws)
         for folder in ("rhos", "centroids"):
             pathlib.Path(p / folder).mkdir(parents=True, exist_ok=True)

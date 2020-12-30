@@ -16,7 +16,11 @@ def centroid_plot(
     """
     fig, ax = pyplot.subplots(figsize=(7, 5))
     z, x = tseries.get_particle(
-        ["z", "x"], species="bunch", iteration=iteration, plot=True, use_field_mesh=False,
+        ["z", "x"],
+        species="bunch",
+        iteration=iteration,
+        plot=True,
+        use_field_mesh=False,
     )
 
     img = ax.get_images()[0]
@@ -43,7 +47,7 @@ def density_plot(
     rho_field_name="rho_electrons",
     save_path=pathlib.Path.cwd(),
     n_e=1e21,  # 1/m^3
-    n_bunch=3.6e+20,  # 1/m^3
+    n_bunch=3.6e20,  # 1/m^3
 ):
     """
     Plot the electron density.
@@ -61,10 +65,11 @@ def density_plot(
     fig, ax = pyplot.subplots(figsize=(10, 3))
 
     im_rho = ax.imshow(
-        rho / (u.elementary_charge.to_value("C") * n_bunch),
+        rho / (u.elementary_charge.to_value("C") * n_e),  # n_bunch
         extent=rho_info.imshow_extent * 1e6,  # conversion to microns
         origin="lower",
-        norm=colors.SymLogNorm(linthresh=1e-4, linscale=0.15, base=10),
+        norm=colors.Normalize(vmin=-1, vmax=0),
+        # norm=colors.SymLogNorm(linthresh=1e-4, linscale=0.15, base=10),
         cmap=cm.get_cmap("cividis"),
     )
     cbaxes_rho = inset_axes(
@@ -117,7 +122,9 @@ def particle_energy_histogram(
     nbins = (energy_max - energy_min) // delta_energy
     energy_bins = np.linspace(start=energy_min, stop=energy_max, num=nbins + 1)
 
-    ux, uy, uz, w = tseries.get_particle(["ux", "uy", "uz", "w"], iteration=iteration, species=species)
+    ux, uy, uz, w = tseries.get_particle(
+        ["ux", "uy", "uz", "w"], iteration=iteration, species=species
+    )
 
     if (np.ndim(w) == 1) and (w.size == 1):
         fill_value = w.item(0)
@@ -160,7 +167,9 @@ def main():
     it = random.choice(time_series.iterations.tolist())
     print(f"job {job.id}, iteration {it}")
 
-    _, _, _ = particle_energy_histogram(tseries=time_series, iteration=it, species="electrons")
+    _, _, _ = particle_energy_histogram(
+        tseries=time_series, iteration=it, species="electrons"
+    )
 
     centroid_plot(iteration=it, tseries=time_series)
     density_plot(iteration=it, tseries=time_series)

@@ -23,11 +23,11 @@ class MyDashboard(Dashboard):
 
 if __name__ == "__main__":
     modules = [
-        StatepointList(name="Parameters", enabled=False),
-        DocumentList(enabled=False),
+        StatepointList(name="Parameters", enabled=True),
+        DocumentList(enabled=True),
         ImageViewer(enabled=False),
         ImageViewer(name="Bunch Plots", enabled=False, img_globs=["bunch/*.png"]),
-        VideoViewer(name="rho", enabled=False, video_globs=["rho.mp4"]),
-        VideoViewer(name="centroid", enabled=False, video_globs=["centroid.mp4"]),
+        VideoViewer(name="rho", enabled=True, video_globs=["rho.mp4"]),
+        VideoViewer(name="centroid", enabled=True, video_globs=["centroid.mp4"]),
     ]
     MyDashboard(modules=modules).main()

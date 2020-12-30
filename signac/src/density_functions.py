@@ -151,7 +151,7 @@ def plot_density_profile(profile_maker, fig_fname, job):
         )
         return ax
 
-    num = int((job.sp.L_interact - job.sp.zmin) / 100e-6 + 1)
+    num = int((job.sp.L_interact - job.sp.zmin) * 1e6 / 100 + 1)
     all_z = np.linspace(job.sp.zmin, job.sp.L_interact, num)
     dens = profile_maker(job)(all_z, 0.0)
 
@@ -161,7 +161,7 @@ def plot_density_profile(profile_maker, fig_fname, job):
     ax_bottom = fig.add_subplot(G[1, :])
 
     for ax in (ax_top, ax_bottom):
-        ax.plot(all_z * 1e6, dens, "o", markersize=5, alpha=0.2)
+        ax.plot(all_z * 1e6, dens, marker="o", linestyle="", markersize=5, alpha=0.2)
         ax.fill_between(all_z * 1e6, dens, alpha=0.3)
         ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
         ax.set_ylim(0.0, 1.2)
