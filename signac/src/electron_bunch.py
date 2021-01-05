@@ -97,17 +97,18 @@ def read_bunch(txt_file):
 
 
 def write_bunch(df, txt_file):
-    df.insert(loc=0, column='z_m', value=df["z_um"] * 1e-6)
-    df.insert(loc=0, column='y_m', value=df["y_um"] * 1e-6)
-    df.insert(loc=0, column='x_m', value=df["x_um"] * 1e-6)
+    df.insert(loc=0, column="z_m", value=df["z_um"] * 1e-6)
+    df.insert(loc=0, column="y_m", value=df["y_um"] * 1e-6)
+    df.insert(loc=0, column="x_m", value=df["x_um"] * 1e-6)
+
+    df.drop(columns=["x_um", "y_um", "z_um"], inplace=True)
+
+    df.to_csv(txt_file, sep="\t", float_format="%.6e", index=False, encoding="utf-8")
 
 
-    df.drop(columns=['x_um', 'y_um', 'z_um'], inplace=True)
-
-    df.to_csv(txt_file, sep='\t', float_format="%.6e", index=False, encoding="utf-8")
-
-
-def bunch_openpmd_to_dataframe(series_path=pathlib.Path.cwd() / "bunch" / "data_%05T.h5", iteration=0):
+def bunch_openpmd_to_dataframe(
+    series_path=pathlib.Path.cwd() / "bunch" / "data_%05T.h5", iteration=0
+):
     f = Series(str(series_path), Access.read_only)
 
     cur_it = f.iterations[iteration]
@@ -302,14 +303,18 @@ def main():
         opmd_dir=pathlib.Path.cwd() / "bunch",
         export_dir=pathlib.Path.cwd() / "bunch",
     )
-    df = bunch_openpmd_to_dataframe(series_path=pathlib.Path(job.ws) / "bunch" / "data_%05T.h5")
+    df = bunch_openpmd_to_dataframe(
+        series_path=pathlib.Path(job.ws) / "bunch" / "data_%05T.h5"
+    )
     shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
     bunch_centroid_plot(workdir=pathlib.Path.cwd() / "bunch")
 
-    fbpic_df = bunch_openpmd_to_dataframe(series_path=pathlib.Path.cwd() / "diags" / "hdf5" / "data%08T.h5", iteration=20196)
+    fbpic_df = bunch_openpmd_to_dataframe(
+        series_path=pathlib.Path.cwd() / "diags" / "hdf5" / "data%08T.h5",
+        iteration=20196,
+    )
     print(fbpic_df.describe())
-    write_bunch(fbpic_df, pathlib.Path.cwd() / "bunch" / "out_bunch.txt" )
-
+    write_bunch(fbpic_df, pathlib.Path.cwd() / "bunch" / "out_bunch.txt")
 
     rho, sph, stdxyz = bunch_density(df)
     print()

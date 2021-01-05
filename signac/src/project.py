@@ -29,6 +29,7 @@ from density_functions import plot_density_profile, make_experimental_dens_func
 from electron_bunch import (
     shade_bunch,
     write_bunch_openpmd,
+    write_bunch,
     plot_bunch_energy_histogram,
     bunch_openpmd_to_dataframe,
     bunch_density,
@@ -181,7 +182,9 @@ def bunch_histogram(job):
 @Project.pre.after(bunch_txt_to_opmd)
 @Project.post.isfile("bunch/bunch_z_um_x_um.png")
 def plot_initial_bunch(job):
-    df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
+    df = bunch_openpmd_to_dataframe(
+        series_path=pathlib.Path(job.ws) / "bunch" / "data_%05T.h5"
+    )
     shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path(job.ws) / "bunch")
 
 
@@ -191,7 +194,9 @@ def plot_initial_bunch(job):
 @Project.post.true("n_bunch")
 @Project.post.true("λ_bunch")
 def estimate_bunch_density(job):
-    df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
+    df = bunch_openpmd_to_dataframe(
+        series_path=pathlib.Path(job.ws) / "bunch" / "data_%05T.h5"
+    )
     n_bunch, sphere, _ = bunch_density(df)
     job.doc.setdefault(
         "n_bunch", float("{:.2e}".format(n_bunch.to_value(u.meter ** (-3))))
@@ -320,6 +325,20 @@ def run_fbpic(job):
     # redirect stdout back and close "stdout.txt"
     sys.stdout = orig_stdout
     f.close()
+
+
+@ex
+@Project.operation
+@Project.pre.after(run_fbpic)
+@Project.post.isfile("bunch/final_bunch.txt")
+def save_final_bunch(job):
+    # estimate iteration array based on input parameters
+    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+    df = bunch_openpmd_to_dataframe(
+        series_path=pathlib.Path(job.ws) / "diags" / "hdf5" / "data%08T.h5",
+        iteration=estimated_iterations[-1],
+    )
+    write_bunch(df, pathlib.Path(job.ws) / "bunch" / "final_bunch.txt")
 
 
 @ex.with_directives(directives=dict(np=3))
