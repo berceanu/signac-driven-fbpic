@@ -24,13 +24,13 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
 
-    for ne in (1.63 * 3.6e20,):  # np.linspace(0.1, 10, 12)
+    for ne in np.linspace(0.1, 10, 12) * 3.6e20:
         sp = dict(
             # The simulation box
-            Nz=1024,  # Number of gridpoints along z
+            Nz=512,  # Number of gridpoints along z
             zmin=-900.0e-6,  # Left end of the simulation box (meters)
             zmax=900.0e-6,  # Right end of the simulation box (meters)
-            Nr=128,  # Number of gridpoints along r
+            Nr=64,  # Number of gridpoints along r
             rmax=200.0e-6,  # Length of the box along r (meters)
             Nm=3,  # Number of modes
             # The particles
