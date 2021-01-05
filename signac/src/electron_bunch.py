@@ -96,10 +96,20 @@ def read_bunch(txt_file):
     return df
 
 
-def bunch_openpmd_to_dataframe(workdir=pathlib.Path.cwd()):
-    f = Series(str(workdir / "bunch" / "data_%05T.h5"), Access.read_only)
+def write_bunch(df, txt_file):
+    df["x_m"] = df["x_um"] * 1e-6
+    df["y_m"] = df["y_um"] * 1e-6
+    df["z_m"] = df["z_um"] * 1e-6
 
-    cur_it = f.iterations[0]
+    df.drop(columns=['x_um', 'y_um', 'z_um'])
+
+    df.to_csv(txt_file, float_format="%.6e", encoding="utf-8")
+
+
+def bunch_openpmd_to_dataframe(series_path=pathlib.Path.cwd() / "bunch" / "data_%05T.h5", iteration=0):
+    f = Series(str(series_path), Access.read_only)
+
+    cur_it = f.iterations[iteration]
     electrons = cur_it.particles["bunch"]
 
     # charge = electrons["charge"][SCALAR]
@@ -291,9 +301,13 @@ def main():
         opmd_dir=pathlib.Path.cwd() / "bunch",
         export_dir=pathlib.Path.cwd() / "bunch",
     )
-    df = bunch_openpmd_to_dataframe(workdir=pathlib.Path(job.ws))
+    df = bunch_openpmd_to_dataframe(series_path=pathlib.Path(job.ws) / "bunch" / "data_%05T.h5")
     shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
     bunch_centroid_plot(workdir=pathlib.Path.cwd() / "bunch")
+
+    fbpic_df = bunch_openpmd_to_dataframe(series_path=pathlib.Path.cwd() / "diags" / "hdf5" / "data%08T.h5", iteration=20196)
+    print(fbpic_df.describe())
+
 
     rho, sph, stdxyz = bunch_density(df)
     print()
