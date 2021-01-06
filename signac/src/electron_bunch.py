@@ -309,12 +309,14 @@ def main():
     shade_bunch(df, "z_um", "x_um", export_path=pathlib.Path.cwd() / "bunch")
     bunch_centroid_plot(workdir=pathlib.Path.cwd() / "bunch")
 
+    # estimate iteration array based on input parameters
+    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+    print(estimated_iterations[-2])
     fbpic_df = bunch_openpmd_to_dataframe(
-        series_path=pathlib.Path.cwd() / "diags" / "hdf5" / "data%08T.h5",
-        iteration=20196,
+        series_path=pathlib.Path(job.ws) / "bunch" / "data%08T.h5",
+        iteration=estimated_iterations[-1],
     )
-    print(fbpic_df.describe())
-    write_bunch(fbpic_df, pathlib.Path.cwd() / "bunch" / "out_bunch.txt")
+    write_bunch(fbpic_df, pathlib.Path.cwd() / "bunch" / "final_bunch.txt")
 
     rho, sph, stdxyz = bunch_density(df)
     print()

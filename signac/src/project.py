@@ -334,9 +334,15 @@ def run_fbpic(job):
 def save_final_bunch(job):
     # estimate iteration array based on input parameters
     estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+    it = estimated_iterations[-1]
+
+    src = pathlib.Path(pathlib.Path(job.ws) / "diags" / "hdf5" / f"data{it:08}.h5")
+    dest = pathlib.Path(pathlib.Path(job.ws) / "bunch" / f"data{it:08}.h5")
+    dest.write_bytes(src.read_bytes())
+
     df = bunch_openpmd_to_dataframe(
-        series_path=pathlib.Path(job.ws) / "diags" / "hdf5" / "data%08T.h5",
-        iteration=estimated_iterations[-1],
+        series_path=pathlib.Path(job.ws) / "bunch" / "data%08T.h5",
+        iteration=it,
     )
     write_bunch(df, pathlib.Path(job.ws) / "bunch" / "final_bunch.txt")
 
