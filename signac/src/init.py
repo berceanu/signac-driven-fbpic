@@ -24,7 +24,13 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
 
-    for ne in np.linspace(1e16, 5e16, 5) * 1e6:  # np.linspace(5e15, 1e16, 6) ⊗ np.linspace(1e16, 5e16, 5)
+    a = np.linspace(5e14, 1e15, 6)
+    b = np.linspace(2e15, 4e15, 3)
+    c = np.linspace(5e15, 1e16, 6)
+    d = np.linspace(2e16, 5e16, 4)
+    abcd = np.concatenate((a, b, c, d), axis=0)  # 19 elements
+
+    for ne in abcd * 1e6:
         sp = dict(
             # The simulation box
             Nz=512,  # Number of gridpoints along z
@@ -71,6 +77,8 @@ def main():
         sp["diag_period"] = math.ceil(sp["N_step"] / NUMBER_OF_H5)
 
         project.open_job(sp).init()
+
+    project.write_statepoints()
 
     for job in project:
         Δz = ((job.sp.zmax - job.sp.zmin) / job.sp.Nz * u.meter).to(u.micrometer)
