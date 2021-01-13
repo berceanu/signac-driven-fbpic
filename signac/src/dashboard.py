@@ -13,8 +13,8 @@ class MyDashboard(Dashboard):
         return job.sp.zfoc
 
     def job_title(self, job):
-        zfoc = (job.sp.zfoc * u.meter).to_value("micrometer")
-        return f"zfoc = {zfoc:.1f} um"
+        zfoc = (job.sp.zfoc * u.meter).to(u.micrometer)
+        return f"zfoc = {zfoc:.1f}"
 
     # def job_subtitle(self, job):
     #     pass
