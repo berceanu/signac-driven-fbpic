@@ -29,12 +29,12 @@ def main():
     for focus in np.linspace(-50, 500, 12) * 1e-6:
         sp = dict(
             # The simulation box
-            Nz=2048,  # Number of gridpoints along z
+            Nz=512,  # Number of gridpoints along z
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
-            Nr=256,  # Number of gridpoints along r
+            Nr=64,  # Number of gridpoints along r
             rmax=25.0e-6,  # Length of the box along r (meters)
-            Nm=3,  # Number of modes used
+            Nm=2,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
@@ -43,7 +43,7 @@ def main():
             n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
-            p_nt=12,  # Number of particles per cell along theta, should be 4*Nm
+            p_nt=8,  # Number of particles per cell along theta, should be 4*Nm
             # The laser
             a0=2.4,  # Laser amplitude
             w0=22.0e-6

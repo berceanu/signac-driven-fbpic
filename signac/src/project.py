@@ -186,7 +186,7 @@ def run_fbpic(job):
         zmin=job.sp.zmin,
         boundaries={
             "z": "open",
-            "r": "open",
+            "r": "reflective",
         },  # 'r': 'open' can also be used (more expensive)
         n_order=-1,
         use_cuda=True,
