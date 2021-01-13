@@ -6,7 +6,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def w_ave( a, weights ):
+def w_ave(a, weights):
     """
     Calculate the weighted average of array `a`
     Parameters
@@ -27,10 +27,10 @@ def w_ave( a, weights ):
     else:
         # Calculate the weighted average
         average = np.average(a, weights=weights)
-        return( average )
+        return average
 
 
-def w_std( a, weights ):
+def w_std(a, weights):
     """
     Calculate the weighted standard deviation.
     Parameters
@@ -52,7 +52,7 @@ def w_std( a, weights ):
         # Calculate the weighted standard deviation
         average = np.average(a, weights=weights)
         variance = np.average((a - average) ** 2, weights=weights)
-        return( np.sqrt(variance) )
+        return np.sqrt(variance)
 
 
 def ffmpeg_command(
