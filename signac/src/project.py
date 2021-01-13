@@ -211,7 +211,7 @@ def run_fbpic(job):
         w0=job.sp.w0,
         tau=job.sp.tau,
         z0=job.sp.z0,
-        N=6,
+        N=100,
         zf=job.sp.zfoc,
         lambda0=job.sp.lambda0,
     )
