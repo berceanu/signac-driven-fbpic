@@ -40,6 +40,7 @@ def centroid_plot(
     fig.savefig(filename)
     pyplot.close(fig)
 
+
 def laser_density_plot(
     iteration,
     tseries,
