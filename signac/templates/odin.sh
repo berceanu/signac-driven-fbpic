@@ -29,7 +29,7 @@
 {% set nn_cpu = cpu_tasks|calc_num_nodes(16) %}
 {% set nn_gpu = gpu_tasks|calc_num_nodes(16) %}
 {% set nn = nn|default((nn_cpu, nn_gpu)|max, true) %}
-#SBATCH --nodes=1
+#SBATCH --mem-per-cpu=32125
 #SBATCH --ntasks-per-node={{ (gpu_tasks, cpu_tasks)|max }}
 #SBATCH --gres=gpu:{{ (gpu_tasks, 16)|min }}
 {% endblock %}
