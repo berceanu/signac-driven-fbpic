@@ -10,6 +10,7 @@ import numpy as np
 
 import unyt as u
 import prepic.lwfa as lwfa
+from prepic import Plasma
 import signac
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
@@ -94,7 +95,18 @@ def main():
 
         project.open_job(sp).init()
 
+    project.write_statepoints()
+
     for job in project:
+        Δz = ((job.sp.zmax - job.sp.zmin) / job.sp.Nz * u.meter).to(u.micrometer)
+        Δr = (job.sp.rmax / job.sp.Nr * u.meter).to(u.micrometer)
+
+        job.doc.setdefault("Δz", f"{Δz:.1f}")
+        job.doc.setdefault("Δr", f"{Δr:.1f}")
+
+        plasma = Plasma(n_pe=job.sp.n_e * u.meter ** (-3))
+        job.doc.setdefault("λp", f"{plasma.λp:.1f}")
+
         p = pathlib.Path(job.ws)
         pathlib.Path(p / "rhos").mkdir(parents=True, exist_ok=True)
 
