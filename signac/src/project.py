@@ -30,7 +30,7 @@ from peak_detection import (
     peak_position,
 )
 from util import ffmpeg_command, shell_run
-from simulation_diagnostics import particle_energy_histogram, laser_density_plot
+from simulation_diagnostics import particle_energy_histogram, laser_density_plot, plot_laser_intensity
 from density_functions import plot_density_profile, make_gaussian_dens_func
 
 
@@ -211,7 +211,7 @@ def run_fbpic(job):
         w0=job.sp.w0,
         tau=job.sp.tau,
         z0=job.sp.z0,
-        N=100,
+        N=job.sp.profile_flatness,
         zf=job.sp.zfoc,
         lambda0=job.sp.lambda0,
     )
