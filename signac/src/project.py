@@ -155,7 +155,7 @@ def plot_initial_density_profile(job):
 @ex
 @Project.operation
 @Project.post.isfile("laser_intensity.png")
-def plot_laser_intensity(job):
+def plot_laser(job):
     """Plot the laser intensity at focus and far from focus, in linear and log scale."""
     plot_laser_intensity(
         profile=make_flat_laser_profile(job),

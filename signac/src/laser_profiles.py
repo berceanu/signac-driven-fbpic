@@ -38,7 +38,7 @@ def plot_laser_intensity(
     # vacuum impedance
     wave_impedance = 377 * u.ohm
 
-    z = {"near": zfoc * u.meter, "far": 4 * zR * u.meter}
+    z = {"near": zfoc * u.meter, "far": (zfoc + 4 * zR) * u.meter}
 
     # Initially (at t = 0), the laser is at z = z0.
     #  After time t + T, it will be at zfoc, having run the distance zfoc - z0 in time T.
