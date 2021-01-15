@@ -30,9 +30,9 @@ from peak_detection import (
     peak_position,
 )
 from util import ffmpeg_command, shell_run
-from simulation_diagnostics import particle_energy_histogram, laser_density_plot, plot_laser_intensity
+from simulation_diagnostics import particle_energy_histogram, laser_density_plot
 from density_functions import plot_density_profile, make_gaussian_dens_func
-
+from laser_profiles import make_flat_laser_profile, plot_laser_intensity
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -152,6 +152,24 @@ def plot_initial_density_profile(job):
     )
 
 
+@ex
+@Project.operation
+@Project.post.isfile("laser_intensity.png")
+def plot_laser_intensity(job):
+    """Plot the laser intensity at focus and far from focus, in linear and log scale."""
+    plot_laser_intensity(
+        profile=make_flat_laser_profile(job),
+        rmax=job.sp.rmax,
+        Nr=job.sp.Nr,
+        zfoc=job.sp.zfoc,
+        z0=job.sp.z0,
+        zR=job.sp.zR,
+        lambda0=job.sp.lambda0,
+        w0=job.sp.w0,
+        fn=job.fn("laser_intensity.png"),
+    )
+
+
 @ex.with_directives(directives=dict(ngpu=1))
 @directives(ngpu=1)
 @Project.operation
@@ -205,22 +223,11 @@ def run_fbpic(job):
         p_nr=job.sp.p_nr,
         p_nt=job.sp.p_nt,
     )
-    # Create a Gaussian laser profile
-    laser_profile = FlattenedGaussianLaser(
-        a0=job.sp.a0,
-        w0=job.sp.w0,
-        tau=job.sp.tau,
-        z0=job.sp.z0,
-        N=job.sp.profile_flatness,
-        zf=job.sp.zfoc,
-        lambda0=job.sp.lambda0,
-    )
-    # Add it to the simulation
+
     add_laser_pulse(
         sim=sim,
-        laser_profile=laser_profile,
+        laser_profile=make_flat_laser_profile(job),
     )
-    # Configure the moving window
     sim.set_moving_window(v=u.clight.to_value("m/s"))
 
     # Add diagnostics

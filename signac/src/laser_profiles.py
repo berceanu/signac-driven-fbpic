@@ -33,6 +33,7 @@ def plot_laser_intensity(
     lambda0=0.8e-6,
     w0=22.0e-6,
     vert_bars=False,
+    fn="laser_intensity.png",
 ):
     # vacuum impedance
     wave_impedance = 377 * u.ohm
@@ -174,7 +175,7 @@ def plot_laser_intensity(
                 ax.clabel(contours, fmt="%1.1f")
 
     fig.savefig(
-        "LG.png",
+        fn,
         dpi=600,
         transparent=False,
         bbox_inches="tight",
