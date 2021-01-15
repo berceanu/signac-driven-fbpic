@@ -9,8 +9,7 @@ import math
 import numpy as np
 
 import unyt as u
-import prepic.lwfa as lwfa
-from prepic import Plasma
+from prepic import Plasma, lwfa
 import signac
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
@@ -53,6 +52,7 @@ def main():
             z0=-10.0e-6,  # Laser centroid
             zfoc=focus,  # Focal position
             lambda0=0.8e-6,  # Laser wavelength
+            profile_flatness=100,  # Flatness of laser profile far from focus (larger means flatter)
             # The density profile
             flat_top_dist=1000.0e-6,  # plasma flat top distance
             sigma_right=500.0e-6,
@@ -82,6 +82,7 @@ def main():
         )
         sp["n_c"] = laser.ncrit.to_value("1/m**3")
         sp["E0"] = (laser.E0 / sp["a0"]).to_value("volt/m")
+        sp["zR"] = laser.beam.zR.to_value("m")
 
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
         sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
