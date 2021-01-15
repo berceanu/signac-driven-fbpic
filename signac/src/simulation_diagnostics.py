@@ -1,79 +1,9 @@
 """Module containing various simulation diagnostic tools."""
 import pathlib
-import math
 import numpy as np
 from matplotlib import pyplot, colors, cm
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import unyt as u
-from fbpic.lpa_utils.laser import FlattenedGaussianLaser
-
-
-def plot_laser_at_focus(profile):
-    x = np.linspace(-25.0e-6, 25.0e-6, 64) * u.meter
-    y = np.linspace(-25.0e-6, 25.0e-6, 64) * u.meter
-    extent = np.array([x[0], x[-1], y[0], y[-1]]) * x.units
-    
-    X, Y = np.meshgrid(x,y)
-
-    # electric_field_y will be 0 due to polarization along x
-    electric_field_x, _ = profile.E_field(x=X.to_value("meter"),y=Y.to_value("meter"),z=0.0,t=0.0)
-    electric_field_x *= u.volt / u.meter
-    wave_impedance = 377 * u.ohm  # vacuum impedance
-
-    intensity = (np.abs(electric_field_x)**2 / (2 * wave_impedance)).to("exawatt/cm**2")
-
-    fig, ax = pyplot.subplots()
-
-    im_envelope = ax.imshow(
-        intensity,
-        extent=extent.to(u.micrometer),
-        origin="lower",
-        cmap='Reds')
-    cbaxes_env = inset_axes(
-        ax,
-        width="3%",  # width = 5% of parent_bbox width
-        height="100%",  # height : 50%
-        loc=3,
-        bbox_to_anchor=(1.01, 0.0, 1, 1),
-        bbox_transform=ax.transAxes,
-        borderpad=0,
-    )
-    cbar_env = fig.colorbar(
-        mappable=im_envelope, orientation="vertical", ticklocation="right", cax=cbaxes_env
-    )
-    cbar_env.set_label("$I$ ($10^{18}$ W/cm${}^{2}$)")
-    cbar_env.ax.minorticks_on()
-
-    # https://github.com/StevE-Ong/Laguerre-Gaussian/blob/8fceeea3143d05416fb5fe258bb6d2ac55d81fef/Laguerre_Gaussian.py#L40
-    # ax.plot(x, intensity[32,:],color="b")
-
-    ax.plot(x.to(u.micrometer), intensity[32,:],color="b")
-    ax.axhline(0.0, color="b", ls="-.")
-
-    ax.axvline(-11, color="g", ls="-.")
-    ax.axvline(11, color="g", ls="-.")
-
-    img2 = ax.contour(
-        x.to(u.micrometer),
-        y.to(u.micrometer),
-        intensity,
-        levels=[1/np.e**2*np.max(intensity),1/2*np.max(intensity)],
-        colors="black",
-    )
-    ax.clabel(img2, inline=1)
-
-    # Add the name of the axes
-    ax.set_ylabel("$y \;(\mu \mathrm{m} )$")
-    ax.set_xlabel("$x \;(\mu \mathrm{m} )$")
-    ax.minorticks_on()
-
-    fig.savefig(
-        "LG.png",
-        dpi=600,
-        transparent=False,
-        bbox_inches="tight",
-    )
-    pyplot.close()
 
 
 def centroid_plot(
@@ -345,30 +275,6 @@ def main():
     centroid_plot(iteration=it, tseries=time_series)
     density_plot(iteration=it, tseries=time_series)
 
-    # TODO uncomment
-    # laser_profile = FlattenedGaussianLaser(
-    #     a0=job.sp.a0,
-    #     w0=job.sp.w0,
-    #     tau=job.sp.tau,
-    #     z0=job.sp.z0,
-    #     N=100,
-    #     zf=job.sp.zfoc,
-    #     lambda0=job.sp.lambda0,
-    # )
-    # TODO delete below
-    SQRT_FACTOR = math.sqrt(2 * math.log(2))
-    laser_profile = FlattenedGaussianLaser(
-        a0=2.4,
-        w0=13.5e-6,
-        tau=25.0e-15 / SQRT_FACTOR,
-        z0=0.0,
-        N=100,
-        zf=0.0,
-        lambda0=0.8e-6,
-    )
-
-    plot_laser_at_focus(profile=laser_profile)
-    
 
 if __name__ == "__main__":
     main()
