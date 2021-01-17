@@ -169,11 +169,10 @@ def plot_density_profile(profile_maker, fig_fname, job):
         ax.set_ylabel("Density profile $n$")
 
     ax_top.set_xlim(right=job.sp.L_interact * 1e6 + 20)
-    ax_bottom.set_xlim(right=(job.sp.ramp_start + job.sp.ramp_length) * 1e6)
+    ax_bottom.set_xlim(right=job.sp.center_left * 1e6)
 
     params_to_annotate = (
         "zmin",
-        "ramp_start",
         "zmax",
         "p_zmin",
         "p_zmax",
@@ -212,7 +211,7 @@ def main():
     job = proj.open_job(id=random.choice(ids))
 
     plot_density_profile(
-        make_experimental_dens_func, "initial_density_profile.png", job
+        make_gaussian_dens_func, "initial_density_profile.png", job
     )
 
 
