@@ -158,7 +158,7 @@ def plot_initial_density_profile(job):
 def plot_laser(job):
     """Plot the laser intensity at focus and far from focus, in linear and log scale."""
     plot_laser_intensity(
-        profile=make_flat_laser_profile(job),
+        make_flat_laser_profile(job),
         rmax=job.sp.rmax,
         Nr=job.sp.Nr,
         zfoc=job.sp.zfoc,
@@ -167,6 +167,7 @@ def plot_laser(job):
         lambda0=job.sp.lambda0,
         w0=job.sp.w0,
         fn=job.fn("laser_intensity.png"),
+        vert_bars=True,
     )
 
 

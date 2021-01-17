@@ -10,11 +10,11 @@ import unyt as u
 
 class MyDashboard(Dashboard):
     def job_sorter(self, job):
-        return job.sp.zfoc
+        return job.sp.w0
 
     def job_title(self, job):
-        zfoc = (job.sp.zfoc * u.meter).to(u.micrometer)
-        return f"zfoc = {zfoc:.1f}"
+        w0 = (job.sp.w0 * u.meter).to(u.micrometer)
+        return f"w0 = {w0:.1f}"
 
     # def job_subtitle(self, job):
     #     pass
@@ -24,9 +24,9 @@ if __name__ == "__main__":
     modules = [
         StatepointList(name="Parameters", enabled=False),
         DocumentList(enabled=False),
-        ImageViewer(enabled=False),
-        ImageViewer(name="2D Histogram", img_globs=["hist2d.png"]),
-        ImageViewer(name="Electron Spectrum", img_globs=["final_histogram.png"]),
+        ImageViewer(enabled=True),
+        ImageViewer(name="2D Histogram", enabled=False, img_globs=["hist2d.png"]),
+        ImageViewer(name="Electron Spectrum", enabled=False, img_globs=["final_histogram.png"]),
         VideoViewer(enabled=False),
     ]
     MyDashboard(modules=modules).main()

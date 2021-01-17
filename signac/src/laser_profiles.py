@@ -6,7 +6,7 @@ import unyt as u
 import colorcet as cc
 
 
-def flattened_waist_far_from_focus(z, lambda0, w0, zfoc):
+def flattened_waist_far_from_focus(z, /, *, lambda0, w0, zfoc):
     return lambda0 / (np.pi * w0) * np.abs(z - zfoc)
 
 
@@ -24,7 +24,7 @@ def make_flat_laser_profile(job):
 
 
 def plot_laser_intensity(
-    profile,
+    profile, / , *,
     rmax=25.0e-6,
     Nr=64,
     zfoc=0.0e-6,
@@ -44,26 +44,26 @@ def plot_laser_intensity(
     #  After time t + T, it will be at zfoc, having run the distance zfoc - z0 in time T.
     t = {field: (z[field] - z0 * u.meter) / u.clight for field in ("near", "far")}
     col_label = {
-        "near": f"z = {z['near'].to(u.micrometer):.1f}, t = {t['near'].to(u.fs):.1f}",
-        "far": f"z = {z['far'].to(u.mm):.1f}, t = {t['far'].to(u.ps):.1f}",
+        "near": f"z={z['near'].to(u.micrometer):.1f}, t={t['near'].to(u.fs):.1f}",
+        "far": f"z={z['far'].to(u.mm):.1f}, t={t['far'].to(u.ps):.1f}",
     }
 
     far_waist = flattened_waist_far_from_focus(
-        z=z["far"],
+        z["far"],
         lambda0=lambda0 * u.meter,
         w0=w0 * u.meter,
         zfoc=zfoc * u.meter,
     )
 
+    grid_near = np.linspace(-rmax, rmax, Nr) * u.meter
+    grid_far = np.linspace(-far_waist.to_value("m"), far_waist.to_value("m"), Nr) * u.meter
     x = {
-        "near": np.linspace(-rmax, rmax, Nr) * u.meter,
-        "far": np.linspace(-far_waist.to_value("m"), far_waist.to_value("m"), Nr)
-        * u.meter,
+        "near": grid_near,
+        "far":  grid_far,
     }
     y = {
-        "near": np.linspace(-rmax, rmax, Nr) * u.meter,
-        "far": np.linspace(-far_waist.to_value("m"), far_waist.to_value("m"), Nr)
-        * u.meter,
+        "near": grid_near,
+        "far": grid_far,
     }
 
     extent = {}
@@ -92,6 +92,7 @@ def plot_laser_intensity(
         intensity[field] = (
             np.abs(electric_field_x) ** 2 / (2 * wave_impedance)
         ).to_value("exawatt/cm**2")
+
     intensity = {
         "near": {"linear": intensity["near"], "log": np.log(intensity["near"])},
         "far": {"linear": intensity["far"], "log": np.log(intensity["far"])},
@@ -140,13 +141,13 @@ def plot_laser_intensity(
                 cax=cax,
             )
             if field == "far" and scale == "linear":
-                cbar.set_label("$I$ ($10^{18}$ W/cm${}^{2}$)")
+                cbar.set_label(r"$I$ ($10^{18}$ W/cm${}^{2}$)")
 
             # Add the name of the axes
             if field == "near":
-                ax.set_ylabel("$y \;(\mu \mathrm{m} )$")
+                ax.set_ylabel(r"$y \;(\mu \mathrm{m} )$")
             if scale == "log":
-                ax.set_xlabel("$x \;(\mu \mathrm{m} )$")
+                ax.set_xlabel(r"$x \;(\mu \mathrm{m} )$")
 
             ax.minorticks_on()
 

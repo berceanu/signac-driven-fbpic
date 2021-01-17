@@ -25,7 +25,7 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
 
-    for focus in np.linspace(-50, 500, 12) * 1e-6:
+    for waist in np.linspace(13, 14, 16) * 1e-6:
         sp = dict(
             # The simulation box
             Nz=512,  # Number of gridpoints along z
@@ -45,14 +45,13 @@ def main():
             p_nt=8,  # Number of particles per cell along theta, should be 4*Nm
             # The laser
             a0=2.4,  # Laser amplitude
-            w0=22.0e-6
-            / SQRT_FACTOR,  # Laser waist, converted from experimental FWHM@intensity
+            w0=waist,  # Laser waist, converted from experimental FWHM@intensity
             tau=25.0e-15
             / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
             z0=-10.0e-6,  # Laser centroid
-            zfoc=focus,  # Focal position
+            zfoc=150.0e-6,  # Focal position
             lambda0=0.8e-6,  # Laser wavelength
-            profile_flatness=100,  # Flatness of laser profile far from focus (larger means flatter)
+            profile_flatness=300,  # Flatness of laser profile far from focus (larger means flatter)
             # The density profile
             flat_top_dist=1000.0e-6,  # plasma flat top distance
             sigma_right=500.0e-6,
