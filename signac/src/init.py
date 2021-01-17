@@ -45,7 +45,7 @@ def main():
             p_nt=8,  # Number of particles per cell along theta, should be 4*Nm
             # The laser
             a0=2.4,  # Laser amplitude
-            w0=waist,  # Laser waist, converted from experimental FWHM@intensity
+            w0=13.6e-6,  # Laser waist, converted from experimental FWHM@intensity
             tau=25.0e-15
             / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
             z0=-10.0e-6,  # Laser centroid

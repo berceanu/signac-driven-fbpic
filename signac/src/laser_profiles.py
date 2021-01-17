@@ -172,6 +172,7 @@ def plot_laser_intensity(
                         1 / 2 * np.max(intensity[field]["linear"]),
                     ],
                     colors="0.75",
+                    linewidths=1,
                 )
                 ax.clabel(contours, fmt="%1.1f")
 

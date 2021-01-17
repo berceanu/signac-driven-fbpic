@@ -14,7 +14,7 @@ class MyDashboard(Dashboard):
 
     def job_title(self, job):
         w0 = (job.sp.w0 * u.meter).to(u.micrometer)
-        return f"w0 = {w0:.1f}"
+        return f"w0 = {w0:.2f}"
 
     # def job_subtitle(self, job):
     #     pass
