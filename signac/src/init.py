@@ -25,15 +25,15 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
 
-    for waist in np.linspace(13, 14, 16) * 1e-6:
+    for focus in np.linspace(-50, 500, 12) * 1e-6:
         sp = dict(
             # The simulation box
-            Nz=512,  # Number of gridpoints along z
+            Nz=2048,  # Number of gridpoints along z
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
-            Nr=64,  # Number of gridpoints along r
+            Nr=256,  # Number of gridpoints along r
             rmax=25.0e-6,  # Length of the box along r (meters)
-            Nm=2,  # Number of modes used
+            Nm=3,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
@@ -42,16 +42,16 @@ def main():
             n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
-            p_nt=8,  # Number of particles per cell along theta, should be 4*Nm
+            p_nt=None,  # Number of particles per cell along theta, should be 4*Nm
             # The laser
             a0=2.4,  # Laser amplitude
-            w0=13.6e-6,  # Laser waist, converted from experimental FWHM@intensity
+            w0=22.0e-6 / SQRT_FACTOR,  # Laser waist, converted from experimental FWHM@intensity
             tau=25.0e-15
             / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
             z0=-10.0e-6,  # Laser centroid
-            zfoc=150.0e-6,  # Focal position
+            zfoc=focus,  # Focal position
             lambda0=0.8e-6,  # Laser wavelength
-            profile_flatness=300,  # Flatness of laser profile far from focus (larger means flatter)
+            profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter)
             # The density profile
             flat_top_dist=1000.0e-6,  # plasma flat top distance
             sigma_right=500.0e-6,
@@ -82,6 +82,7 @@ def main():
         sp["n_c"] = laser.ncrit.to_value("1/m**3")
         sp["E0"] = (laser.E0 / sp["a0"]).to_value("volt/m")
         sp["zR"] = laser.beam.zR.to_value("m")
+        sp["p_nt"] = 4 * sp["Nm"]
 
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
         sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
