@@ -103,11 +103,11 @@ def main():
         Δz = ((job.sp.zmax - job.sp.zmin) / job.sp.Nz * u.meter).to(u.micrometer)
         Δr = (job.sp.rmax / job.sp.Nr * u.meter).to(u.micrometer)
 
-        job.doc.setdefault("Δz", f"{Δz:.1f}")
-        job.doc.setdefault("Δr", f"{Δr:.1f}")
+        job.doc.setdefault("Δz", f"{Δz:.3f}")
+        job.doc.setdefault("Δr", f"{Δr:.3f}")
 
         plasma = Plasma(n_pe=job.sp.n_e * u.meter ** (-3))
-        job.doc.setdefault("λp", f"{plasma.λp:.1f}")
+        job.doc.setdefault("λp", f"{plasma.λp:.3f}")
 
         p = pathlib.Path(job.ws)
         pathlib.Path(p / "rhos").mkdir(parents=True, exist_ok=True)
