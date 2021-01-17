@@ -1,9 +1,11 @@
 """Module containing various simulation diagnostic tools."""
 import pathlib
+from copy import copy
 import numpy as np
 from matplotlib import pyplot, colors, cm
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import unyt as u
+import colorcet as cc
 
 
 def centroid_plot(
@@ -272,8 +274,7 @@ def main():
         tseries=time_series, iteration=it, species="electrons"
     )
 
-    centroid_plot(iteration=it, tseries=time_series)
-    density_plot(iteration=it, tseries=time_series)
+    laser_density_plot(iteration=it, tseries=time_series)
 
 
 if __name__ == "__main__":

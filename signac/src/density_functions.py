@@ -210,9 +210,7 @@ def main():
     ids = [job.id for job in proj]
     job = proj.open_job(id=random.choice(ids))
 
-    plot_density_profile(
-        make_gaussian_dens_func, "initial_density_profile.png", job
-    )
+    plot_density_profile(make_gaussian_dens_func, "initial_density_profile.png", job)
 
 
 if __name__ == "__main__":

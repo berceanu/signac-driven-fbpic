@@ -24,7 +24,9 @@ def make_flat_laser_profile(job):
 
 
 def plot_laser_intensity(
-    profile, / , *,
+    profile,
+    /,
+    *,
     rmax=25.0e-6,
     Nr=64,
     zfoc=0.0e-6,
@@ -56,10 +58,12 @@ def plot_laser_intensity(
     )
 
     grid_near = np.linspace(-rmax, rmax, Nr) * u.meter
-    grid_far = np.linspace(-far_waist.to_value("m"), far_waist.to_value("m"), Nr) * u.meter
+    grid_far = (
+        np.linspace(-far_waist.to_value("m"), far_waist.to_value("m"), Nr) * u.meter
+    )
     x = {
         "near": grid_near,
-        "far":  grid_far,
+        "far": grid_far,
     }
     y = {
         "near": grid_near,
@@ -198,7 +202,7 @@ def main():
     profile = make_flat_laser_profile(job)
 
     plot_laser_intensity(
-        profile=profile,
+        profile,
         rmax=job.sp.rmax,
         Nr=job.sp.Nr,
         zfoc=job.sp.zfoc,
@@ -209,10 +213,7 @@ def main():
     )
 
     print(
-        (job.sp.zfoc * u.meter).to(u.micrometer),
-        job.sp.profile_flatness,
-        (job.sp.z0 * u.meter).to(u.micrometer),
-        (job.sp.w0 * u.meter).to(u.micrometer),
+        f"zfoc={(job.sp.zfoc * u.meter).to(u.micrometer):.1f}, N={job.sp.profile_flatness:.1f}, z0={(job.sp.z0 * u.meter).to(u.micrometer):.1f}, w0={(job.sp.w0 * u.meter).to(u.micrometer):.1f}"
     )
 
 
