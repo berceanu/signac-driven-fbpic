@@ -42,7 +42,7 @@ def plot_laser_intensity(
 
     # Initially (at t = 0), the laser is at z = z0.
     #  After time t + T, it will be at zfoc, having run the distance zfoc - z0 in time T.
-    t = {field: (z[field] - z0 * u.meter) / u.clight for field in ("near", "far")}
+    t = {field: np.abs(z[field] - z0 * u.meter) / u.clight for field in ("near", "far")}
     col_label = {
         "near": f"z={z['near'].to(u.micrometer):.1f}, t={t['near'].to(u.fs):.1f}",
         "far": f"z={z['far'].to(u.mm):.1f}, t={t['far'].to(u.ps):.1f}",
