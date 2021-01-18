@@ -6,6 +6,14 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
+def nozzle_center_offset(their_distance):
+    """
+    Given the (experimental) distance from the center of the gas nozzle, compute the fbpic distance.
+    """
+    our_distance = np.subtract(1500.0e-6, their_distance)
+    return our_distance
+
+
 def w_ave(a, weights):
     """
     Calculate the weighted average of array `a`
@@ -97,6 +105,9 @@ def shell_run(*cmd, **kwargs):
 
 def main():
     print(ffmpeg_command())
+
+    d = np.array([500, 750, 1000, 1250, 1500]) * 1e-6
+    print(nozzle_center_offset(d))
 
 
 if __name__ == "__main__":

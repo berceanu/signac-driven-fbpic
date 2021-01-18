@@ -11,6 +11,7 @@ import numpy as np
 import unyt as u
 from prepic import Plasma, lwfa
 import signac
+from util import nozzle_center_offset
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
@@ -25,7 +26,9 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
     )
 
-    for focus in np.linspace(-50, 500, 12) * 1e-6:
+    x_from_center = np.array([500, 750, 1000, 1250, 1500]) * 1e-6
+
+    for focus in nozzle_center_offset(x_from_center):
         sp = dict(
             # The simulation box
             Nz=2048,  # Number of gridpoints along z
@@ -45,14 +48,13 @@ def main():
             p_nt=None,  # Number of particles per cell along theta, should be 4*Nm
             # The laser
             a0=2.4,  # Laser amplitude
-            w0=22.0e-6
-            / SQRT_FACTOR,  # Laser waist, converted from experimental FWHM@intensity
+            w0=13.6e-6,  # Laser waist, converted from experimental FWHM@intensity
             tau=25.0e-15
             / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
             z0=-10.0e-6,  # Laser centroid
             zfoc=focus,  # Focal position
             lambda0=0.8e-6,  # Laser wavelength
-            profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter)
+            profile_flatness=300,  # Flatness of laser profile far from focus (larger means flatter)
             # The density profile
             flat_top_dist=1000.0e-6,  # plasma flat top distance
             sigma_right=500.0e-6,
