@@ -49,11 +49,11 @@ def main():
             # The laser
             a0=2.4,  # Laser amplitude
             w0=13.6e-6,  # Laser waist, converted from experimental FWHM@intensity
-            tau=25.0e-15
+            tau=27.8e-15
             / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
             z0=-10.0e-6,  # Laser centroid
             zfoc=focus,  # Focal position
-            lambda0=0.8e-6,  # Laser wavelength
+            lambda0=0.815e-6,  # Laser wavelength
             profile_flatness=300,  # Flatness of laser profile far from focus (larger means flatter)
             # The density profile
             flat_top_dist=1000.0e-6,  # plasma flat top distance
