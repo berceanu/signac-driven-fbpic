@@ -112,7 +112,8 @@ def main():
         job.doc.setdefault("λp", f"{plasma.λp:.3f}")
 
         p = pathlib.Path(job.ws)
-        pathlib.Path(p / "rhos").mkdir(parents=True, exist_ok=True)
+        for folder in ("rhos", "phasespace"):
+            pathlib.Path(p / folder).mkdir(parents=True, exist_ok=True)
 
 
 if __name__ == "__main__":
