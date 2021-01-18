@@ -30,7 +30,11 @@ from peak_detection import (
     peak_position,
 )
 from util import ffmpeg_command, shell_run
-from simulation_diagnostics import particle_energy_histogram, laser_density_plot
+from simulation_diagnostics import (
+    particle_energy_histogram,
+    laser_density_plot,
+    phasespace_plot,
+)
 from density_functions import plot_density_profile, make_gaussian_dens_func
 from laser_profiles import make_flat_laser_profile, plot_laser_intensity
 
@@ -124,22 +128,30 @@ def fbpic_ran(job):
     return did_it_run
 
 
-def are_rho_pngs(job):
+def are_pngs(job, stem):
     """
-    Check if all the {job_dir}/rhos/rho{it:06d}.png files are present.
+    Check if all the {job_dir}/`stem`s/`stem`{it:06d}.png files are present.
 
     :param job: the job instance is a handle to the data of a unique statepoint
     :return: True if .png files are there, False otherwise
     """
-    p = pathlib.Path(job.ws) / "rhos"
+    p = pathlib.Path(job.ws) / f"{stem}s"
     files = [fn.name for fn in p.glob("*.png")]
 
     # estimate iteration array based on input parameters
     iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
 
-    pngs = (f"rho{it:06d}.png" for it in iterations)
+    pngs = (f"{stem}{it:06d}.png" for it in iterations)
 
     return set(files) == set(pngs)
+
+
+def are_rho_pngs(job):
+    return are_pngs(job, "rho")
+
+
+def are_phasespace_pngs(job):
+    return are_pngs(job, "phasespace")
 
 
 @ex
@@ -272,7 +284,8 @@ def run_fbpic(job):
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
-def save_rho_pngs(job):
+@Project.post(are_phasespace_pngs)
+def save_pngs(job):
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
     * save a snapshot of the plasma density field ``rho`` to {job_dir}/rhos/rho{it:06d}.png
@@ -281,6 +294,7 @@ def save_rho_pngs(job):
     """
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     rho_path = pathlib.Path(job.ws) / "rhos"
+    phasespace_path = pathlib.Path(job.ws) / "phasespaces"
     time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
 
     it_laser_density_plot = partial(
@@ -291,26 +305,41 @@ def save_rho_pngs(job):
         n_c=job.sp.n_c,
         E0=job.sp.E0,
     )
+    it_phasespace_plot = partial(
+        phasespace_plot, tseries=time_series, save_path=phasespace_path
+    )
 
     with Pool(3) as pool:
+        pool.map(it_phasespace_plot, time_series.iterations.tolist())
         pool.map(it_laser_density_plot, time_series.iterations.tolist())
+
+
+def generate_movie(job, stem):
+    """
+    Generate a movie from all the .png files in {job_dir}/`stem`s/
+    :param job: the job instance is a handle to the data of a unique statepoint
+    """
+    command = ffmpeg_command(
+        input_files=pathlib.Path(job.ws) / f"{stem}s" / f"{stem}*.png",
+        output_file=job.fn(f"{stem}.mp4"),
+    )
+    shell_run(command, shell=True)
 
 
 @ex
 @Project.operation
-@Project.pre.after(save_rho_pngs)
+@Project.pre.after(save_pngs)
 @Project.post.isfile("rho.mp4")
 def generate_rho_movie(job):
-    """
-    Generate a movie from all the .png files in {job_dir}/rhos/
+    generate_movie(job, stem="rho")
 
-    :param job: the job instance is a handle to the data of a unique statepoint
-    """
-    command = ffmpeg_command(
-        input_files=pathlib.Path(job.ws) / "rhos" / "rho*.png",
-        output_file=job.fn("rho.mp4"),
-    )
-    shell_run(command, shell=True)
+
+@ex
+@Project.operation
+@Project.pre.after(save_pngs)
+@Project.post.isfile("phasespace.mp4")
+def generate_centroid_movie(job):
+    generate_movie(job, stem="phasespace")
 
 
 @ex

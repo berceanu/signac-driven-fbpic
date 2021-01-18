@@ -26,9 +26,7 @@ if __name__ == "__main__":
         DocumentList(enabled=False),
         ImageViewer(enabled=False),
         ImageViewer(name="2D Histogram", img_globs=["hist2d.png"]),
-        ImageViewer(
-            name="Electron Spectrum", img_globs=["final_histogram.png"]
-        ),
+        ImageViewer(name="Electron Spectrum", img_globs=["final_histogram.png"]),
         VideoViewer(enabled=False),
     ]
     MyDashboard(modules=modules).main()
