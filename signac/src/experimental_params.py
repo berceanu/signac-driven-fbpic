@@ -8,10 +8,12 @@ SQRT_FACTOR = math.sqrt(2 * math.log(2))
 def main():
     laser = lwfa.Laser.from_a0(
         a0=2.4 * u.dimensionless,
-        τL=25.0e-15 / SQRT_FACTOR * u.second,
-        beam=lwfa.GaussianBeam(w0=22.0e-6 / SQRT_FACTOR * u.meter, λL=0.8e-6 * u.meter),
+        τL=27.8 / SQRT_FACTOR * u.femtosecond,
+        beam=lwfa.GaussianBeam(
+            w0=22.0 / SQRT_FACTOR * u.micrometer, λL=815 * u.nanometer
+        ),
     )
-    plasma = Plasma(n_pe=8.0e18 * 1.0e6 * u.meter ** (-3))
+    plasma = Plasma(n_pe=8.0e18 * u.cm ** (-3))
 
     print(laser)
     print(plasma)
