@@ -8,6 +8,29 @@ import unyt as u
 import colorcet as cc
 
 
+def phasespace_plot(
+    iteration,
+    tseries,
+    save_path=pathlib.Path.cwd(),
+):
+    """
+    Plot the longitudinal (uz v z) electron phase space.
+    """
+
+    fig, ax = pyplot.subplots(figsize=(7, 5))
+    z, uz = tseries.get_particle(
+        var_list=["z", "uz"],
+        species="electrons",
+        iteration=iteration,
+        plot=True,
+        use_field_mesh=False,
+        # vmax=3e12,
+    )
+    filename = pathlib.Path(save_path) / f"phasespace{iteration:06d}.png"
+    fig.savefig(filename)
+    pyplot.close(fig)
+
+
 def centroid_plot(
     iteration,
     tseries,
@@ -275,6 +298,7 @@ def main():
     )
 
     laser_density_plot(iteration=it, tseries=time_series)
+    phasespace_plot(iteration=it, tseries=time_series)
 
 
 if __name__ == "__main__":
