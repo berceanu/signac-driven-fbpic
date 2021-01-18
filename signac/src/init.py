@@ -23,7 +23,7 @@ def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
     project = signac.init_project(
         "fbpic-project",
-        workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
+        workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
     x_from_center = np.array([500, 750, 1000, 1250, 1500]) * 1e-6

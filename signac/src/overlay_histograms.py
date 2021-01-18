@@ -43,7 +43,7 @@ def main():
         energy = npzfile["edges"][1:]
         charge = npzfile["counts"]
 
-        mask = (energy > 100) & (energy < 200)  # MeV
+        mask = (energy > 150) & (energy < 300)  # MeV
         energy = energy[mask]
         charge = np.clip(charge, 0, 60)[mask]
 
@@ -57,7 +57,7 @@ def main():
         )
 
     ax.legend(frameon=False)
-    ax.axvline(x=160, linewidth=0.75, linestyle="dashed", color="0.75")
+    ax.axvline(x=250, linewidth=0.75, linestyle="dashed", color="0.75")
 
     fig.savefig("histograms.png", dpi=192)
 
@@ -67,7 +67,7 @@ def main():
     ax2 = ax1.twinx()
 
     ax1.hlines(
-        y=160,
+        y=250,
         xmin=zfoc[0],
         xmax=zfoc[-1],
         linewidth=0.75,
