@@ -56,7 +56,7 @@ def laser_density_plot(
     Plot on the same figure the laser pulse envelope and the electron density.
     """
 
-    laser_cmap = copy(cc.m_fire)
+    laser_cmap = copy(cc.m_kr)
     laser_cmap.set_under("black", alpha=0)
 
     rho, rho_info = tseries.get_field(
