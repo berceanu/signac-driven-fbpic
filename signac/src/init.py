@@ -21,7 +21,7 @@ def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
     project = signac.init_project(
         "fbpic-project",
-        workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace/",
+        workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_pwfa/",
     )
 
     a = np.linspace(5e14, 1e15, 6)
