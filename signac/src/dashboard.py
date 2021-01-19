@@ -10,10 +10,10 @@ import unyt as u
 
 class MyDashboard(Dashboard):
     def job_sorter(self, job):
-        return job.sp.x
+        return job.doc.x
 
     def job_title(self, job):
-        x = (job.sp.x * u.meter).to(u.micrometer)
+        x = (job.doc.x * u.meter).to(u.micrometer)
         return f"x={x:.1f}"
 
     # def job_subtitle(self, job):

@@ -25,6 +25,7 @@ def phasespace_plot(
         select={"uz": [40, 1.5e3]},
         plot=True,
         vmax=1e8,
+        cmap='nipy_spectral',
     )
     filename = pathlib.Path(save_path) / f"phasespace{iteration:06d}.png"
     fig.savefig(filename)

@@ -8,9 +8,9 @@ import unyt as u
 import signac
 
 
-line_colors = ["C1", "C2", "C3"]
-line_styles = ["-", "--", ":", "-."]
-cyl = cycler(color=line_colors) * cycler(linestyle=line_styles)
+line_colors = ["C1", "C2", "C3", "C4", "C5"]
+line_styles = ["-", "--", ":", "-.", "-"]
+cyl = cycler(color=line_colors) + cycler(linestyle=line_styles)
 loop_cy_iter = cyl()
 STYLE = defaultdict(lambda: next(loop_cy_iter))
 
@@ -25,15 +25,15 @@ def main():
     ax.set_xlabel("E (MeV)")
     ax.set_ylabel("dQ/dE (pC/MeV)")
 
-    for _, jobs in proj.groupby(key="zfoc"):
+    for _, jobs in proj.groupbydoc(key="x"):
         job = next(jobs)  # assuming single job per group
 
-        zfoc = (job.sp.zfoc * u.meter).to(u.micrometer)
-        label = f"$z_f$ = {zfoc:.0f}"
+        x = (job.doc.x * u.meter).to(u.micrometer)
+        label = f"$x$ = {x:.0f}"
 
         peak_position_charge.append(
             (
-                float(f"{zfoc.to_value():.0f}"),
+                float(f"{x.to_value():.0f}"),
                 job.doc.peak_position,
                 job.doc.peak_charge,
             )
@@ -45,7 +45,7 @@ def main():
 
         mask = (energy > 150) & (energy < 300)  # MeV
         energy = energy[mask]
-        charge = np.clip(charge, 0, 60)[mask]
+        charge = np.clip(charge, 0, 60)[mask]  # FIXME
 
         ax.step(
             energy,
@@ -61,23 +61,23 @@ def main():
 
     fig.savefig("histograms.png", dpi=192)
 
-    zfoc, peak_position, peak_charge = zip(*peak_position_charge)
+    x, peak_position, peak_charge = zip(*peak_position_charge)
 
     fig, ax1 = pyplot.subplots(figsize=(golden * 8, 8))
     ax2 = ax1.twinx()
 
     ax1.hlines(
         y=250,
-        xmin=zfoc[0],
-        xmax=zfoc[-1],
+        xmin=x[0],
+        xmax=x[-1],
         linewidth=0.75,
         linestyle="dashed",
         color="0.75",
     )
-    ax1.plot(zfoc, peak_position, "o--", color="C1")
-    ax2.plot(zfoc, peak_charge, "o--", color="C0")
+    ax1.plot(x, peak_position, "o--", color="C1")
+    ax2.plot(x, peak_charge, "o--", color="C0")
 
-    ax1.set_xlabel(r"$z_f$ ($\mathrm{\mu m}$)")
+    ax1.set_xlabel(r"$x$ ($\mathrm{\mu m}$)")
     ax1.set_ylabel("E (MeV)", color="C1")
     ax2.set_ylabel("Q (pC)", color="C0")
 
@@ -92,7 +92,7 @@ def main():
     ax1.tick_params(axis="y", colors="C1")
     ax2.tick_params(axis="y", colors="C0")
 
-    ax1.xaxis.set_major_locator(MultipleLocator(50))
+    ax1.xaxis.set_major_locator(MultipleLocator(200))
     ax1.tick_params(labelbottom=True, labeltop=True)
 
     ax1.grid(which="major", axis="x", linewidth=0.75, linestyle="dashed", color="0.75")

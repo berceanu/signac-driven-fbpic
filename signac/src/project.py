@@ -381,10 +381,10 @@ def plot_final_histogram(job):
 @Project.post(lambda job: bool(job.doc.get("peak_position", False)))
 def get_peak_charge_and_position(job):
     int_charge = integrated_charge(
-        job.fn("final_histogram.npz"), from_energy=100, to_energy=200
+        job.fn("final_histogram.npz"), from_energy=200, to_energy=300
     )
     peak_pos = peak_position(
-        job.fn("final_histogram.npz"), from_energy=100, to_energy=200
+        job.fn("final_histogram.npz"), from_energy=200, to_energy=300
     )
 
     job.doc["peak_position"] = float("{:.1f}".format(peak_pos))  # MeV
