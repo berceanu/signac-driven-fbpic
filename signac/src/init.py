@@ -111,6 +111,8 @@ def main():
         plasma = Plasma(n_pe=job.sp.n_e * u.meter ** (-3))
         job.doc.setdefault("λp", f"{plasma.λp:.3f}")
 
+        job.doc.setdefault("x", nozzle_center_offset(job.sp.zfoc))
+        
         p = pathlib.Path(job.ws)
         for folder in ("rhos", "phasespaces"):
             pathlib.Path(p / folder).mkdir(parents=True, exist_ok=True)
