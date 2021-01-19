@@ -1,0 +1,3 @@
+project = fbpic-project
+workspace_dir = /scratch/berceanu/runs/signac-driven-fbpic/workspace_pwfa/
+schema_version = 1
