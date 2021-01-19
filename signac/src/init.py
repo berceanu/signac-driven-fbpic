@@ -26,7 +26,7 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    x_from_center = np.array([500, 750, 1000, 1250, 1500]) * 1e-6
+    x_from_center = np.array([200, 600, 1000, 1400, 1800]) * 1e-6
 
     for focus in nozzle_center_offset(x_from_center):
         sp = dict(
