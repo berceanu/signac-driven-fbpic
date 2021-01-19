@@ -28,7 +28,11 @@ def main():
     b = np.linspace(2e15, 4e15, 3)
     c = np.linspace(5e15, 1e16, 6)
     d = np.linspace(2e16, 5e16, 4)
-    abcd = np.concatenate((a, b, c, d), axis=0)  # 19 elements
+    e = np.linspace(6e16, 1e17, 5)
+    f = np.linspace(2e17, 5e17, 4)
+
+    abcd = np.concatenate((a, b, c, d, e, f), axis=0)
+    print(np.shape(abcd), abcd)
 
     for ne in abcd * 1e6:
         sp = dict(
