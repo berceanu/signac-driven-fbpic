@@ -22,9 +22,9 @@ def phasespace_plot(
         var_list=["z", "uz"],
         species="electrons",
         iteration=iteration,
+        select={"uz": [40, 1.5e3]},
         plot=True,
-        use_field_mesh=False,
-        # vmax=3e12,
+        vmax=1e8,
     )
     filename = pathlib.Path(save_path) / f"phasespace{iteration:06d}.png"
     fig.savefig(filename)
