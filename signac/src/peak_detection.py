@@ -175,10 +175,13 @@ def main():
 
     plot_electron_energy_spectrum(job.fn("final_histogram.npz"), "final_histogram.png")
 
-    Q = integrated_charge(job.fn("final_histogram.npz"), from_energy=200, to_energy=300)
-    pos = peak_position(job.fn("final_histogram.npz"), from_energy=200, to_energy=300)
+    energy_low = 100
+    energy_high = 300
 
-    print(f"{Q:.1f} pc between 200 and 300 MeV, peak at {pos:.1f} MeV")
+    Q = integrated_charge(job.fn("final_histogram.npz"), from_energy=energy_low, to_energy=energy_high)
+    pos = peak_position(job.fn("final_histogram.npz"), from_energy=energy_low, to_energy=energy_high)
+
+    print(f"{Q:.1f} pc between {energy_low} and {energy_high} MeV, peak at {pos:.1f} MeV")
 
 
 if __name__ == "__main__":

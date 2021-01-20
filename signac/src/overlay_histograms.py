@@ -43,7 +43,7 @@ def main():
         energy = npzfile["edges"][1:]
         charge = npzfile["counts"]
 
-        mask = (energy > 150) & (energy < 300)  # MeV
+        mask = (energy > 100) & (energy < 300)  # MeV
         energy = energy[mask]
         charge = np.clip(charge, 0, 60)[mask]  # FIXME
 
