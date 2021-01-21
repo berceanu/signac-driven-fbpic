@@ -4,6 +4,9 @@ import numpy as np
 from matplotlib import pyplot, colors, cm
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import unyt as u
+from scipy import integrate
+from scipy import interpolate
+from matplotlib.gridspec import GridSpec
 
 
 def centroid_plot(
@@ -21,6 +24,7 @@ def centroid_plot(
         iteration=iteration,
         plot=True,
         use_field_mesh=False,
+        nbins=2 ** 8 + 1,
     )
 
     img = ax.get_images()[0]
@@ -36,9 +40,23 @@ def centroid_plot(
 
     ax.plot(z_coords, centroid)
 
+    ##
+    # knots = z_coords[40:-40:10].copy()
+    # print(knots.shape)
+    # cs = interpolate.LSQUnivariateSpline(z_coords, centroid, knots)
+
+    cs = interpolate.UnivariateSpline(z_coords, centroid)
+    cs.set_smoothing_factor(5e-7)
+
+    ax.plot(z_coords, cs(z_coords), label="cubic spline fit")
+    ax.legend()
+    ##
+
     filename = pathlib.Path(save_path) / f"centroid{iteration:06d}.png"
     fig.savefig(filename)
     pyplot.close(fig)
+
+    return z_coords, centroid, cs
 
 
 def density_plot(
@@ -172,8 +190,48 @@ def main():
         tseries=time_series, iteration=it, species="electrons"
     )
 
-    centroid_plot(iteration=it, tseries=time_series)
     density_plot(iteration=it, tseries=time_series)
+    x, y, spline = centroid_plot(iteration=it, tseries=time_series)
+
+    y2 = spline.derivative(2)(x)
+    bending_energy = 1 / 2 * integrate.romb(y2 ** 2) * 1e-6  # conversion to um^-1
+
+    fig = pyplot.figure()
+    G = GridSpec(4, 1, figure=fig)
+    ax_top = fig.add_subplot(G[0, :])
+    ax_middle = fig.add_subplot(G[1, :])
+    ax_middle_low = fig.add_subplot(G[2, :])
+    ax_bottom = fig.add_subplot(G[3, :])
+
+    ax_top.plot(x, spline(x), color="C1")
+    # ax_middle.plot(x[:-1], np.diff(y)/np.diff(x), color="red")
+
+    ax_middle.plot(x, spline.derivative(1)(x), color="C2")
+    ax_middle_low.plot(x, spline.derivative(2)(x), color="C3")
+    ax_bottom.plot(x, spline.derivative(2)(x) ** 2, color="C3")
+    ax_bottom.fill_between(x, spline.derivative(2)(x) ** 2)
+
+    fig.suptitle(
+        r"$W = \frac{1}{2} \int{\left(\frac{\mathrm{d}^2 x}{\mathrm{d}z^2}\right)^2} \mathrm{d}z$ = %.3e $\mu$m${}^{-1}$"
+        % bending_energy
+    )
+    ax_bottom.set_xlabel(r"$z$ (m)")
+
+    ax_top.set_ylabel(r"$x$ (m)")
+    ax_middle.set_ylabel(r"$\frac{\mathrm{d}x}{\mathrm{d}z}$")
+    ax_middle_low.set_ylabel(r"$\frac{\mathrm{d}^2 x}{\mathrm{d}z^2}$ (m${}^{-1}$)")
+    ax_bottom.set_ylabel(
+        r"$\left(\frac{\mathrm{d}^2 x}{\mathrm{d}z^2}\right)^2$ (m${}^{-2}$)"
+    )
+
+    for ax in ax_top, ax_middle, ax_middle_low:
+        ax.set_xticklabels([])
+
+    for ax in ax_top, ax_middle, ax_middle_low, ax_bottom:
+        ax.grid()
+
+    fig.savefig(f"derivatives{it:06d}.png", bbox_inches="tight")
+    pyplot.close(fig)
 
 
 if __name__ == "__main__":
