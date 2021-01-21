@@ -9,7 +9,7 @@ from scipy import interpolate
 from matplotlib.gridspec import GridSpec
 
 
-def get_cubic_spline(x, y, smoothing_factor=5e-7):
+def get_cubic_spline(x, y, smoothing_factor=1e-7):
     cs = interpolate.UnivariateSpline(x, y)
     cs.set_smoothing_factor(smoothing_factor)
 
@@ -73,9 +73,9 @@ def compute_bending_energy(iteration, tseries):
     spline = get_cubic_spline(x, y)
     y2 = spline.derivative(2)(x)
 
-    bending_energy = 1 / 2 * integrate.romb(y2 ** 2) * 1e-6  # conversion to um^-1
+    bending_energy = 1 / 2 * integrate.romb(y2 ** 2)
 
-    return bending_energy
+    return bending_energy  # m^-1
 
 
 def plot_spline_derivatives(iteration, tseries):
@@ -99,7 +99,7 @@ def plot_spline_derivatives(iteration, tseries):
     ax_bottom.fill_between(x, spline.derivative(2)(x) ** 2)
 
     fig.suptitle(
-        r"$W = \frac{1}{2} \int{\left(\frac{\mathrm{d}^2 x}{\mathrm{d}z^2}\right)^2} \mathrm{d}z$ = %.3e $\mu$m${}^{-1}$"
+        r"$W = \frac{1}{2} \int{\left(\frac{\mathrm{d}^2 x}{\mathrm{d}z^2}\right)^2} \mathrm{d}z$ = %.3e m${}^{-1}$"
         % bending_energy
     )
 
