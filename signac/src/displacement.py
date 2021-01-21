@@ -25,7 +25,7 @@ def plot_vs_density(x, y, ylabel="", fn="out.png", up_to=None):
     ax.set_xlabel(r"$n_e$ (cm${}^{-3}$)")
     ax.set_ylabel(ylabel)
 
-    ax.grid()
+    ax.grid(which="both")
 
     fig.savefig(fn, bbox_inches="tight")
     pyplot.close(fig)
@@ -62,20 +62,22 @@ def main():
 
         counter += 1
 
-    plot_vs_density(
-        job_densities,
-        job_centroid_positions,
-        up_to=19,
-        ylabel=r"$\langle x \rangle$ ($\mu$m)",
-        fn="average_centroids.png",
-    )
-    plot_vs_density(
-        job_densities,
-        job_bending_energies,
-        up_to=19,
-        ylabel=r"$W$ ($\mu$m${}^{-1}$)",
-        fn="bending_energies.png",
-    )
+
+    for UP_TO in 19, None:
+        plot_vs_density(
+            job_densities,
+            job_centroid_positions,
+            up_to=UP_TO,
+            ylabel=r"$\langle x \rangle$ ($\mu$m)",
+            fn=f"average_centroids_{UP_TO}.png",
+        )
+        plot_vs_density(
+            job_densities,
+            job_bending_energies,
+            up_to=UP_TO,
+            ylabel=r"$W$ ($\mu$m${}^{-1}$)",
+            fn=f"bending_energies_{UP_TO}.png",
+        )
 
 
 if __name__ == "__main__":

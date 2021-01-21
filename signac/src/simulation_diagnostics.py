@@ -20,6 +20,7 @@ def centroid_plot(
     iteration,
     tseries,
     save_path=pathlib.Path.cwd(),
+    smoothing_factor=1e-7,
 ):
     """
     Plot a line through the centroids of each z-slice in the particle positions phase space.
@@ -48,7 +49,7 @@ def centroid_plot(
 
     ax.plot(z_coords, centroid)
 
-    cs = get_cubic_spline(z_coords, centroid)
+    cs = get_cubic_spline(z_coords, centroid, smoothing_factor=smoothing_factor)
     ax.plot(z_coords, cs(z_coords), label="spline")
 
     ax.legend()
@@ -67,10 +68,10 @@ def centroid_plot(
     return z_coords, centroid, x_avg
 
 
-def compute_bending_energy(iteration, tseries):
+def compute_bending_energy(iteration, tseries, smoothing_factor=1e-7):
     x, y, _ = centroid_plot(iteration=iteration, tseries=tseries)
 
-    spline = get_cubic_spline(x, y)
+    spline = get_cubic_spline(x, y, smoothing_factor=smoothing_factor)
     y2 = spline.derivative(2)(x)
 
     bending_energy = 1 / 2 * integrate.romb(y2 ** 2)
@@ -78,10 +79,10 @@ def compute_bending_energy(iteration, tseries):
     return bending_energy  # m^-1
 
 
-def plot_spline_derivatives(iteration, tseries):
+def plot_spline_derivatives(iteration, tseries, smoothing_factor=1e-7):
     x, y, _ = centroid_plot(iteration=iteration, tseries=tseries)
 
-    spline = get_cubic_spline(x, y)
+    spline = get_cubic_spline(x, y, smoothing_factor=smoothing_factor)
 
     bending_energy = compute_bending_energy(iteration=iteration, tseries=tseries)
 
@@ -253,10 +254,12 @@ def main():
     )
 
     density_plot(iteration=it, tseries=time_series)
-    _, _, x_avg = centroid_plot(iteration=it, tseries=time_series)
-    plot_spline_derivatives(iteration=it, tseries=time_series)
+    _, _, x_avg = centroid_plot(iteration=it, tseries=time_series, smoothing_factor=1e-8)
+    plot_spline_derivatives(iteration=it, tseries=time_series, smoothing_factor=1e-8)
+    bending_energy = compute_bending_energy(iteration=it, tseries=time_series, smoothing_factor=1e-8)
 
     print(f"<x> = {x_avg:.3e} m")
+    print(f"W = {bending_energy:.3e} / m")
 
 
 if __name__ == "__main__":
