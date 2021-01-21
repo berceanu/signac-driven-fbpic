@@ -59,8 +59,6 @@ def main():
         )
         job_centroid_positions[counter] = x_avg.to(u.micrometer)
 
-        # plot_spline_derivatives(iteration=it, tseries=time_series)
-
         W = (
             compute_bending_energy(
                 iteration=it, tseries=time_series, smoothing_factor=1e-8
