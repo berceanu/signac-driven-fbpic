@@ -69,7 +69,7 @@ def main():
 
         counter += 1
 
-    for UP_TO in 19, None:
+    for UP_TO in None, None:  # 19, None
         plot_vs_density(
             job_densities,
             job_centroid_positions,
