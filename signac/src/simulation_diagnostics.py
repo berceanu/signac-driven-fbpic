@@ -44,6 +44,7 @@ def centroid_plot(
     z_m, x_m = np.meshgrid(z_coords, x_coords)
 
     centroid = np.ma.average(x_m, weights=hist_data, axis=0)
+    x_avg = np.mean(centroid)
 
     ax.plot(z_coords, centroid)
 
@@ -51,16 +52,23 @@ def centroid_plot(
     ax.plot(z_coords, cs(z_coords), label="spline")
 
     ax.legend()
+    ax.hlines(
+        y=x_avg,
+        xmin=z_coords[0],
+        xmax=z_coords[-1],
+        linestyle="dashed",
+        color="0.75",
+    )
 
     filename = pathlib.Path(save_path) / f"centroid{iteration:06d}.png"
     fig.savefig(filename)
     pyplot.close(fig)
 
-    return z_coords, centroid
+    return z_coords, centroid, x_avg
 
 
 def compute_bending_energy(iteration, tseries):
-    x, y = centroid_plot(iteration=iteration, tseries=tseries)
+    x, y, _ = centroid_plot(iteration=iteration, tseries=tseries)
 
     spline = get_cubic_spline(x, y)
     y2 = spline.derivative(2)(x)
@@ -71,7 +79,8 @@ def compute_bending_energy(iteration, tseries):
 
 
 def plot_spline_derivatives(iteration, tseries):
-    x, y = centroid_plot(iteration=iteration, tseries=tseries)
+    x, y, _ = centroid_plot(iteration=iteration, tseries=tseries)
+
     spline = get_cubic_spline(x, y)
 
     bending_energy = compute_bending_energy(iteration=iteration, tseries=tseries)
@@ -244,8 +253,10 @@ def main():
     )
 
     density_plot(iteration=it, tseries=time_series)
-    centroid_plot(iteration=it, tseries=time_series)
+    _, _, x_avg = centroid_plot(iteration=it, tseries=time_series)
     plot_spline_derivatives(iteration=it, tseries=time_series)
+
+    print(f"<x> = {x_avg:.3e} m")
 
 
 if __name__ == "__main__":
