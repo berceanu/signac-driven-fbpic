@@ -5,7 +5,6 @@ from scipy.constants import golden
 import unyt as u
 from openpmd_viewer.addons import LpaDiagnostics
 from simulation_diagnostics import (
-    plot_spline_derivatives,
     centroid_plot,
     compute_bending_energy,
 )
@@ -52,16 +51,13 @@ def main():
         time_series = LpaDiagnostics(h5_path, check_all_files=True)
         it = time_series.iterations[-1]
 
-        x_avg = centroid_plot(iteration=it, tseries=time_series)[2] * u.meter
+        x_avg = centroid_plot(iteration=it, tseries=time_series, save_fig=False, smoothing_factor=1e-8)[2] * u.meter
         job_centroid_positions[counter] = x_avg.to(u.micrometer)
 
         # plot_spline_derivatives(iteration=it, tseries=time_series)
 
-        W = compute_bending_energy(iteration=it, tseries=time_series) / u.meter
+        W = compute_bending_energy(iteration=it, tseries=time_series, smoothing_factor=1e-8) / u.meter
         job_bending_energies[counter] = W.to(u.micrometer ** (-1))
-
-        print(job.id)
-        print(it)
 
         counter += 1
 
