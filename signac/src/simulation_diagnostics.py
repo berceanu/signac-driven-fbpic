@@ -21,6 +21,7 @@ def centroid_plot(
     tseries,
     save_path=pathlib.Path.cwd(),
     smoothing_factor=1e-7,
+    save_fig=True,
 ):
     """
     Plot a line through the centroids of each z-slice in the particle positions phase space.
@@ -47,29 +48,30 @@ def centroid_plot(
     centroid = np.ma.average(x_m, weights=hist_data, axis=0)
     x_avg = np.mean(centroid)
 
-    ax.plot(z_coords, centroid)
+    if save_fig:
+        ax.plot(z_coords, centroid)
 
-    cs = get_cubic_spline(z_coords, centroid, smoothing_factor=smoothing_factor)
-    ax.plot(z_coords, cs(z_coords), label="spline")
+        cs = get_cubic_spline(z_coords, centroid, smoothing_factor=smoothing_factor)
+        ax.plot(z_coords, cs(z_coords), label="spline")
 
-    ax.legend()
-    ax.hlines(
-        y=x_avg,
-        xmin=z_coords[0],
-        xmax=z_coords[-1],
-        linestyle="dashed",
-        color="0.75",
-    )
+        ax.legend()
+        ax.hlines(
+            y=x_avg,
+            xmin=z_coords[0],
+            xmax=z_coords[-1],
+            linestyle="dashed",
+            color="0.75",
+        )
+        filename = pathlib.Path(save_path) / f"centroid{iteration:06d}.png"
+        fig.savefig(filename)
 
-    filename = pathlib.Path(save_path) / f"centroid{iteration:06d}.png"
-    fig.savefig(filename)
     pyplot.close(fig)
 
     return z_coords, centroid, x_avg
 
 
 def compute_bending_energy(iteration, tseries, smoothing_factor=1e-7):
-    x, y, _ = centroid_plot(iteration=iteration, tseries=tseries)
+    x, y, _ = centroid_plot(iteration=iteration, tseries=tseries, save_fig=False)
 
     spline = get_cubic_spline(x, y, smoothing_factor=smoothing_factor)
     y2 = spline.derivative(2)(x)
@@ -80,11 +82,18 @@ def compute_bending_energy(iteration, tseries, smoothing_factor=1e-7):
 
 
 def plot_spline_derivatives(iteration, tseries, smoothing_factor=1e-7):
-    x, y, _ = centroid_plot(iteration=iteration, tseries=tseries)
+    x, y, _ = centroid_plot(
+        iteration=iteration,
+        tseries=tseries,
+        smoothing_factor=smoothing_factor,
+        save_fig=False,
+    )
 
     spline = get_cubic_spline(x, y, smoothing_factor=smoothing_factor)
 
-    bending_energy = compute_bending_energy(iteration=iteration, tseries=tseries)
+    bending_energy = compute_bending_energy(
+        iteration=iteration, tseries=tseries, smoothing_factor=smoothing_factor
+    )
 
     fig = pyplot.figure()
     G = GridSpec(4, 1, figure=fig)
@@ -233,30 +242,25 @@ def particle_energy_histogram(
 
 
 def main():
-    import random
     from openpmd_viewer.addons import LpaDiagnostics
     import signac
 
-    random.seed(42)
-
     proj = signac.get_project(search=False)
-    ids = [job.id for job in proj]
-    job = proj.open_job(id=random.choice(ids))
+    job = proj.open_job(id="2ecf4ec87c9f1388ab56b4bee9428859")
 
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     time_series = LpaDiagnostics(h5_path, check_all_files=True)
 
-    it = random.choice(time_series.iterations.tolist())
+    it = 20196
     print(f"job {job.id}, iteration {it}")
 
-    _, _, _ = particle_energy_histogram(
-        tseries=time_series, iteration=it, species="electrons"
+    _, _, x_avg = centroid_plot(
+        iteration=it, tseries=time_series, smoothing_factor=1e-8
     )
-
-    density_plot(iteration=it, tseries=time_series)
-    _, _, x_avg = centroid_plot(iteration=it, tseries=time_series, smoothing_factor=1e-8)
     plot_spline_derivatives(iteration=it, tseries=time_series, smoothing_factor=1e-8)
-    bending_energy = compute_bending_energy(iteration=it, tseries=time_series, smoothing_factor=1e-8)
+    bending_energy = compute_bending_energy(
+        iteration=it, tseries=time_series, smoothing_factor=1e-8
+    )
 
     print(f"<x> = {x_avg:.3e} m")
     print(f"W = {bending_energy:.3e} / m")

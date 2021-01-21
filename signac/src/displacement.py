@@ -60,6 +60,9 @@ def main():
         W = compute_bending_energy(iteration=it, tseries=time_series) / u.meter
         job_bending_energies[counter] = W.to(u.micrometer ** (-1))
 
+        print(job.id)
+        print(it)
+
         counter += 1
 
 
