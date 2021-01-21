@@ -10,11 +10,6 @@ from matplotlib.gridspec import GridSpec
 
 
 def get_cubic_spline(x, y, smoothing_factor=5e-7):
-    #
-    # knots = x[40:-40:10].copy()
-    # print(knots.shape)
-    # cs = interpolate.LSQUnivariateSpline(x, y, knots)
-
     cs = interpolate.UnivariateSpline(x, y)
     cs.set_smoothing_factor(smoothing_factor)
 
