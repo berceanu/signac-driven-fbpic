@@ -290,12 +290,12 @@ def main():
     job = random.choice(list(proj))
     print(f"job {job.id}")
 
-    df = read_bunch(job.fn("exp_4deg.txt"))
+    df = read_bunch(job.fn("exp_0deg.txt"))
     # print(df.describe())
     del df
 
     write_bunch_openpmd(
-        bunch_txt=job.fn("exp_4deg.txt"),
+        bunch_txt=job.fn("exp_0deg.txt"),
         outdir=pathlib.Path.cwd(),
         bunch_charge=-200.0e-12,  # Coulomb
     )

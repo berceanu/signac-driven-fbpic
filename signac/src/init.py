@@ -84,7 +84,7 @@ def main():
         plasma = Plasma(n_pe=job.sp.n_e * u.meter ** (-3))
         job.doc.setdefault("λp", f"{plasma.λp:.1f}")
 
-        for txt_file in ("density_1_inlet_spacers.txt", "exp_4deg.txt"):
+        for txt_file in ("density_1_inlet_spacers.txt", "exp_0deg.txt"):
             src = pathlib.Path(txt_file)
             dest = pathlib.Path(job.fn(txt_file))
             dest.write_text(src.read_text())
