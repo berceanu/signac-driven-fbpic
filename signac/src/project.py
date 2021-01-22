@@ -368,13 +368,19 @@ def save_pngs(job):
     it_density_plot = partial(
         density_plot,
         tseries=time_series,
-        rho_field_name="rho_bunch",
         save_path=rho_path,
+        rho_field_name="rho_bunch",
         n_e=job.sp.n_e,
         n_bunch=job.doc.n_bunch,
     )
     it_centroid_plot = partial(
-        centroid_plot, tseries=time_series, save_path=centroid_path
+        centroid_plot,
+        tseries=time_series,
+        save_path=centroid_path,
+        smoothing_factor=1e-8,
+        vmax=5e5,
+        plot_range=[[None, None], [-600e-6, 400e-6]],
+        annotation=f"ne = {(job.sp.n_e * u.meter ** (-3)).to(u.cm ** (-3)):.2e}",
     )
 
     with Pool(3) as pool:
