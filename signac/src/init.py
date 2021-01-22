@@ -24,17 +24,7 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_pwfa/",
     )
 
-    a = np.linspace(5e14, 1e15, 6)
-    b = np.linspace(2e15, 4e15, 3)
-    c = np.linspace(5e15, 1e16, 6)
-    d = np.linspace(2e16, 5e16, 4)
-    e = np.linspace(6e16, 1e17, 5)
-    f = np.linspace(2e17, 5e17, 4)
-
-    abcd = np.concatenate((a, b, c, d, e, f), axis=0)
-    print(np.shape(abcd), abcd)
-
-    for ne in abcd * 1e6:
+    for ne in np.logspace(14, 17, 16) * 1e6:
         sp = dict(
             # The simulation box
             Nz=512,  # Number of gridpoints along z
