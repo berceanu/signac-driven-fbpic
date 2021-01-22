@@ -377,8 +377,8 @@ def plot_final_histogram(job):
 @ex
 @Project.operation
 @Project.pre.after(save_final_histogram)
-@Project.post(lambda job: bool(job.doc.get("peak_charge", False)))
-@Project.post(lambda job: bool(job.doc.get("peak_position", False)))
+@Project.post.true("peak_charge")
+@Project.post.true("peak_position")
 def get_peak_charge_and_position(job):
     energy_low = 100
     energy_high = 300
