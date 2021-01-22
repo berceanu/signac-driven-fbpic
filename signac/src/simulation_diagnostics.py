@@ -22,7 +22,7 @@ def centroid_plot(
     save_path=pathlib.Path.cwd(),
     smoothing_factor=1e-7,
     save_fig=True,
-    job_id=None,
+    fn_postfix=None,
 ):
     """
     Plot a line through the centroids of each z-slice in the particle positions phase space.
@@ -63,9 +63,9 @@ def centroid_plot(
             linestyle="dashed",
             color="0.75",
         )
-        if job_id is not None:
+        if fn_postfix is not None:
             filename = (
-                pathlib.Path(save_path) / f"centroid_{job_id:.6}_{iteration:06d}.png"
+                pathlib.Path(save_path) / f"centroid{fn_postfix}.png"
             )
         else:
             filename = pathlib.Path(save_path) / f"centroid{iteration:06d}.png"
@@ -265,7 +265,6 @@ def main():
         iteration=it,
         tseries=time_series,
         smoothing_factor=1e-8,
-        # job_id=job.id,
     )
     plot_spline_derivatives(iteration=it, tseries=time_series, smoothing_factor=1e-8)
     bending_energy = compute_bending_energy(

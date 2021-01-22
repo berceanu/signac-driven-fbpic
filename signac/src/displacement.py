@@ -38,26 +38,16 @@ def main():
     job_centroid_positions = np.empty(N) * u.micrometer
     job_bending_energies = np.empty(N) / u.micrometer
 
-    counter = 0
-
-    for _, jobs in proj.groupby(key="n_e"):
+    for count, (_, jobs) in enumerate(proj.groupby(key="n_e")):
         job = next(jobs)  # assuming single job per group
 
         ne = job.sp.n_e / u.meter ** 3
-        job_densities[counter] = ne.to(1 / u.cm ** 3)
+        job_densities[count] = ne.to(1 / u.cm ** 3)
 
         # get final iteration
         h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
         time_series = LpaDiagnostics(h5_path, check_all_files=True)
         it = time_series.iterations[-1]
-
-        x_avg = (
-            centroid_plot(
-                iteration=it, tseries=time_series, save_fig=False, smoothing_factor=1e-8
-            )[2]
-            * u.meter
-        )
-        job_centroid_positions[counter] = x_avg.to(u.micrometer)
 
         W = (
             compute_bending_energy(
@@ -65,9 +55,19 @@ def main():
             )
             / u.meter
         )
-        job_bending_energies[counter] = W.to(u.micrometer ** (-1))
+        job_bending_energies[count] = W.to(u.micrometer ** (-1))
 
-        counter += 1
+        x_avg = (
+            centroid_plot(
+                iteration=it,
+                tseries=time_series,
+                save_fig=True,
+                smoothing_factor=1e-8,
+                fn_postfix=f"{count:06d}",
+            )[2]
+            * u.meter
+        )
+        job_centroid_positions[count] = x_avg.to(u.micrometer)
 
     for UP_TO in None, None:  # 19, None
         plot_vs_density(
