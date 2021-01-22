@@ -275,33 +275,38 @@ def particle_energy_histogram(
 
 
 def main():
+    import random
     from openpmd_viewer.addons import LpaDiagnostics
     import signac
 
+    random.seed(12)
+
     proj = signac.get_project(search=False)
-    job = proj.open_job(id="2ecf4ec87c9f1388ab56b4bee9428859")
+    job = next(iter(proj))
 
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     time_series = LpaDiagnostics(h5_path, check_all_files=True)
 
-    it = 20196
+    it = random.choice(time_series.iterations.tolist())
     print(f"job {job.id}, iteration {it}")
 
-    # time_series.get_particle
+    _, _, _ = particle_energy_histogram(
+        tseries=time_series, iteration=it, species="electrons"
+    )
+    density_plot(iteration=it, tseries=time_series)
 
+    bending_energy = compute_bending_energy(
+        iteration=it, tseries=time_series, smoothing_factor=1e-8
+    )
     _, _, x_avg = centroid_plot(
         iteration=it,
         tseries=time_series,
         smoothing_factor=1e-8,
         vmax=5e5,
-        plot_range=[[0.0701, 0.0719], [-600e-6, 400e-6]],
-        # cmap='nipy_spectral',
-        annotation="hello",
+        plot_range=[[None, None], [-600e-6, 400e-6]],
+        annotation=f"ne = {(job.sp.n_e * u.meter ** (-3)).to(u.cm ** (-3)):.1e}, W = {(bending_energy * u.meter ** (-1)).to(u.micrometer ** (-1)):.1e}",
     )
     plot_spline_derivatives(iteration=it, tseries=time_series, smoothing_factor=1e-8)
-    bending_energy = compute_bending_energy(
-        iteration=it, tseries=time_series, smoothing_factor=1e-8
-    )
 
     print(f"<x> = {x_avg:.3e} m")
     print(f"W = {bending_energy:.3e} / m")
