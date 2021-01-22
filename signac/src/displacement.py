@@ -8,6 +8,7 @@ from simulation_diagnostics import (
     centroid_plot,
     compute_bending_energy,
 )
+from util import ffmpeg_command, shell_run
 import signac
 
 
@@ -64,6 +65,10 @@ def main():
                 save_fig=True,
                 smoothing_factor=1e-8,
                 fn_postfix=f"{count:06d}",
+                vmax=5e5,
+                plot_range=[[0.0701, 0.0719], [-600e-6, 400e-6]],
+                cmap="cividis",
+                annotation=f"ne = {job_densities[count]:.1e}, W = {job_bending_energies[count]:.1e}",
             )[2]
             * u.meter
         )
@@ -84,6 +89,11 @@ def main():
             ylabel=r"$W$ ($\mu$m${}^{-1}$)",
             fn=f"bending_energies_{UP_TO}.png",
         )
+
+    command = ffmpeg_command(
+        input_files=pathlib.Path.cwd() / "centroid*.png", output_file="centroid.mp4"
+    )
+    shell_run(command, shell=True)
 
 
 if __name__ == "__main__":

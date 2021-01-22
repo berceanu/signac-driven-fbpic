@@ -1,7 +1,7 @@
 """Module containing various simulation diagnostic tools."""
 import pathlib
 import numpy as np
-from matplotlib import pyplot, colors, cm
+from matplotlib import pyplot, colors, cm, transforms
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import unyt as u
 from scipy import integrate
@@ -23,6 +23,10 @@ def centroid_plot(
     smoothing_factor=1e-7,
     save_fig=True,
     fn_postfix=None,
+    vmax=None,
+    plot_range=[[None, None], [None, None]],
+    cmap="cividis",
+    annotation=None,
 ):
     """
     Plot a line through the centroids of each z-slice in the particle positions phase space.
@@ -33,6 +37,9 @@ def centroid_plot(
         species="bunch",
         iteration=iteration,
         plot=True,
+        vmax=vmax,
+        plot_range=plot_range,
+        cmap=cmap,
         use_field_mesh=False,
         nbins=2 ** 8 + 1,
     )
@@ -50,7 +57,7 @@ def centroid_plot(
     x_avg = np.mean(centroid)
 
     if save_fig:
-        ax.plot(z_coords, centroid)
+        ax.plot(z_coords, centroid, label="centroid")
 
         cs = get_cubic_spline(z_coords, centroid, smoothing_factor=smoothing_factor)
         ax.plot(z_coords, cs(z_coords), label="spline")
@@ -63,10 +70,29 @@ def centroid_plot(
             linestyle="dashed",
             color="0.75",
         )
+        trans = transforms.blended_transform_factory(
+            ax.get_yticklabels()[0].get_transform(), ax.transData
+        )
+        before_dot = x_avg / 1e-6
+        text = f"{before_dot:.0f}e-6"
+        ax.text(
+            0,
+            x_avg,
+            text,
+            color="0.75",
+            transform=trans,
+            ha="right",
+            va="center",
+        )
+        ax.annotate(
+            text=annotation,
+            xy=(0.1, 0.1),
+            xycoords="axes fraction",
+            color="C1",
+        )
+
         if fn_postfix is not None:
-            filename = (
-                pathlib.Path(save_path) / f"centroid{fn_postfix}.png"
-            )
+            filename = pathlib.Path(save_path) / f"centroid{fn_postfix}.png"
         else:
             filename = pathlib.Path(save_path) / f"centroid{iteration:06d}.png"
 
@@ -261,10 +287,16 @@ def main():
     it = 20196
     print(f"job {job.id}, iteration {it}")
 
+    # time_series.get_particle
+
     _, _, x_avg = centroid_plot(
         iteration=it,
         tseries=time_series,
         smoothing_factor=1e-8,
+        vmax=5e5,
+        plot_range=[[0.0701, 0.0719], [-600e-6, 400e-6]],
+        # cmap='nipy_spectral',
+        annotation="hello",
     )
     plot_spline_derivatives(iteration=it, tseries=time_series, smoothing_factor=1e-8)
     bending_energy = compute_bending_energy(
