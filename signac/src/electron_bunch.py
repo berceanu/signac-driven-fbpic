@@ -271,7 +271,7 @@ def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
         plot_width=4200,
         plot_height=350,
         x_range=(-900, 900),
-        y_range=(50, 200),  # microns
+        y_range=(-50, 50),  # microns
     )
     agg = cvs.points(df, coord1, coord2)
     img = ds.tf.shade(agg, cmap=fire, how="linear")
