@@ -27,12 +27,12 @@ def main():
     for ne in np.logspace(14, 17, 16) * 1e6:
         sp = dict(
             # The simulation box
-            Nz=512,  # Number of gridpoints along z
+            Nz=2048,  # Number of gridpoints along z
             zmin=-900.0e-6,  # Left end of the simulation box (meters)
             zmax=900.0e-6,  # Right end of the simulation box (meters)
-            Nr=64,  # Number of gridpoints along r
+            Nr=256,  # Number of gridpoints along r
             rmax=200.0e-6,  # Length of the box along r (meters)
-            Nm=3,  # Number of modes
+            Nm=4,  # Number of modes
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=1000.0e-6,
@@ -41,7 +41,7 @@ def main():
             n_e=ne,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
-            p_nt=12,  # Number of particles per cell along theta, should be 4*Nm
+            p_nt=None,  # Number of particles per cell along theta, should be 4*Nm
             # do not change below this line ##############
             p_zmax=69500.0e-6,  # Position of the end of the plasma (meters)
             # The density profile
@@ -78,11 +78,11 @@ def main():
         Δz = ((job.sp.zmax - job.sp.zmin) / job.sp.Nz * u.meter).to(u.micrometer)
         Δr = (job.sp.rmax / job.sp.Nr * u.meter).to(u.micrometer)
 
-        job.doc.setdefault("Δz", f"{Δz:.1f}")
-        job.doc.setdefault("Δr", f"{Δr:.1f}")
+        job.doc.setdefault("Δz", f"{Δz:.3f}")
+        job.doc.setdefault("Δr", f"{Δr:.3f}")
 
         plasma = Plasma(n_pe=job.sp.n_e * u.meter ** (-3))
-        job.doc.setdefault("λp", f"{plasma.λp:.1f}")
+        job.doc.setdefault("λp", f"{plasma.λp:.3f}")
 
         for txt_file in ("density_1_inlet_spacers.txt", "exp_0deg.txt"):
             src = pathlib.Path(txt_file)
