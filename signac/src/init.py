@@ -62,6 +62,7 @@ def main():
             # Number of iterations to perform
             N_step=None,
         )
+        sp["p_nt"] = 4 * sp["Nm"]
         sp["L_interact"] = sp["p_zmax"]
         sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value("m/s")
         sp["T_interact"] = (
