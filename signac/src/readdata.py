@@ -69,10 +69,10 @@ def plot_bunch_histogram(H, Z, X, ax=None):
 
 def compute_centroid(H, Z, X):
     centroid = np.ma.average(X[:-1, :-1], weights=H, axis=0)
-    return centroid
+    return Z[Z.shape[0] // 2, :-1], centroid
 
 
-def readbeam2(
+def readbeam(
     z_coords,
     x_coords,
     counts,
@@ -82,7 +82,6 @@ def readbeam2(
     refval = 0
 
     centroid = []
-    we = []
     centroid_z = []
 
     for i in range(0, nbz):
@@ -94,86 +93,35 @@ def readbeam2(
         if max(counts[i, :]) > 0.2 * refval and i > 20 and i < 180:
             centroid.append(np.average(x_coords, weights=counts[i, :]))
             centroid_z.append(z_coords[i])
-            we.append(sum(counts[i, :]))
 
     return centroid_z, centroid
-
-
-def readbeam(datadir):
-    """Given path to .txt data file, fit centroid."""
-    data = np.loadtxt(datadir, skiprows=1)
-
-    x = data[:, 0]
-    z = data[:, 2]
-
-    nbz = 190
-    nbx = 190
-    z_min = min(z)
-    z_max = max(z)
-    x_min = min(x)
-    x_max = max(x)
-
-    fig, ax = pyplot.subplots()
-
-    h = ax.hist2d(z, x, bins=(nbz, nbx), range=[[z_min, z_max], [x_min, x_max]])
-    counts = h[0]
-    z_coords = np.linspace(z_min, z_max, nbz)
-    x_coords = np.linspace(x_min, x_max, nbx)
-
-    refval = 0
-
-    centroid = []
-    we = []
-    centroid_z = []
-
-    for i in range(0, nbz):
-        if refval < max(counts[i, :]):
-            refval = max(counts[i, :])
-
-    for i in range(0, nbz):
-        counts[i, :][counts[i, :] < 0.15 * refval] = 0
-        if max(counts[i, :]) > 0.2 * refval and i > 20 and i < 180:
-            centroid.append(np.average(x_coords, weights=counts[i, :]))
-            centroid_z.append(z_coords[i])
-            we.append(sum(counts[i, :]))
-
-    ax.plot(centroid_z, centroid)
-    ax.set_xlabel("z (m)")
-    ax.set_ylabel("x (m)")
-
-    fig.savefig("alessio.png", bbox_inches="tight")
-    pyplot.close(fig)
-
-    m_cent = abs(np.mean(centroid))
-    m_cent_w = abs(np.average(centroid, weights=we))
-
-    return m_cent, m_cent_w
 
 
 def main():
     """Main entry point."""
     p = pathlib.Path.cwd() / "final_bunch_66dc81.txt"
 
-    m_cent, m_cent_w = readbeam(p)
-    print(m_cent, m_cent_w)
-
     H, Z, X = compute_bunch_histogram(p)
-    r, c = Z.shape
+    z_centroid, centroid = compute_centroid(H, Z, X)
 
-    centroid = compute_centroid(H, Z, X)
-    centroid_z, centroid_ale = readbeam2(
-        Z[r // 2, :-1].copy(), X[:-1, c // 2].copy(), H.T.copy()
+    centroid_z_cut, centroid_cut = readbeam(
+        Z[Z.shape[0] // 2, :-1].copy(), X[:-1, X.shape[1] // 2].copy(), H.T.copy()
     )
 
     fig, ax = pyplot.subplots()
 
     ax = plot_bunch_histogram(H, Z, X, ax)
-    ax.plot(Z[r // 2, :-1], centroid)
-    ax.plot(centroid_z, centroid_ale)
 
-    fig.savefig("not_alessio.png", bbox_inches="tight")
+    ax.plot(z_centroid, centroid, label="no cut")
+    ax.plot(centroid_z_cut, centroid_cut, label="with cut")
+
+    ax.legend()
+
+    fig.savefig("bunch_fit.png", bbox_inches="tight")
     pyplot.close(fig)
 
+
+# TODO include weights
 
 if __name__ == "__main__":
     main()
