@@ -1,12 +1,9 @@
 """Fit the centroid positions for a given electron bunch."""
 import pathlib
 import numpy as np
-from matplotlib import pyplot
+from matplotlib import pyplot, cm
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from numpy.core.defchararray import count
 import pandas as pd
-import colorcet as cc
-import numpy.ma as ma
 
 
 def read_bunch(txt_file):
@@ -50,7 +47,7 @@ def plot_bunch_histogram(H, Z, X, ax=None):
     if ax is None:
         ax = pyplot.gca()
 
-    img = ax.pcolormesh(Z, X, H, cmap=cc.m_fire)
+    img = ax.pcolormesh(Z, X, H, cmap=cm.get_cmap("magma"))
     cbaxes = inset_axes(
         ax,
         width="3%",  # width = 10% of parent_bbox width
@@ -69,11 +66,6 @@ def plot_bunch_histogram(H, Z, X, ax=None):
     ax.set_ylabel(r"$x$ ($\mathrm{\mu m}$)")
 
     return ax
-
-
-def compute_centroid(H, Z, X):
-    centroid = np.ma.average(X[:-1, :-1], weights=H, axis=0)
-    return Z[Z.shape[0] // 2, :-1], centroid
 
 
 def orig_readbeam(
@@ -103,14 +95,14 @@ def readbeam(
     counts,
 ):
     nbz, nbx = counts.shape
-    z_coords_masked = ma.masked_all((nbz,), dtype=z_coords.dtype)
-    centroid_masked = ma.masked_all((nbz,), dtype=counts.dtype)
+    z_coords_masked = np.ma.masked_all((nbz,), dtype=z_coords.dtype)
+    centroid_masked = np.ma.masked_all((nbz,), dtype=counts.dtype)
 
     i = np.arange(nbz)
     border_mask = np.logical_and(i > 20, i < 180)
 
     refval = counts.max()
-    filtered_counts = ma.array(counts, mask=counts < 0.15 * refval)
+    filtered_counts = np.ma.array(counts, mask=counts < 0.15 * refval)
     row_mask = np.logical_and(border_mask, filtered_counts.max(axis=1) > 0.2 * refval)
 
     counts_mask = filtered_counts[row_mask, :]
@@ -129,7 +121,6 @@ def main():
     p = pathlib.Path.cwd() / "final_bunch_66dc81.txt"
 
     H, Z, X = compute_bunch_histogram(p)
-    z_centroid, centroid = compute_centroid(H, Z, X)
 
     centroid_z_cut, centroid_cut = readbeam(
         Z[Z.shape[0] // 2, :-1], X[:-1, X.shape[1] // 2], H.T
@@ -142,7 +133,6 @@ def main():
 
     ax = plot_bunch_histogram(H, Z, X, ax)
 
-    # ax.plot(z_centroid, centroid, label="no cut")
     ax.plot(centroid_z_cut, centroid_cut, "o", markersize=5, label="vectorized")
     ax.plot(orig_centroid_z_cut, orig_centroid_cut, "s", markersize=2, label="original")
 
