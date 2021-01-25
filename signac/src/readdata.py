@@ -163,7 +163,7 @@ def main():
 
     H, Z, X, z_coords, x_coords = compute_bunch_histogram(p, nbx=200, nbz=200)
 
-    centroid_z_cut, centroid_cut = bunch_centroid(
+    centroid_z, centroid = bunch_centroid(
         z_coords,
         x_coords,
         H,
@@ -174,14 +174,14 @@ def main():
     )
     # must pass in a copy, as the original array is changed in-place!
     # in H.T, the beam slices are the matrix rows, not the columns as in H
-    orig_centroid_z_cut, orig_centroid_cut = readbeam(z_coords, x_coords, H.T.copy())
+    orig_centroid_z, orig_centroid = readbeam(z_coords, x_coords, H.T.copy())
 
     fig, ax = pyplot.subplots()
 
     ax = plot_bunch_histogram(H, Z, X, ax=ax)
 
-    ax.plot(centroid_z_cut, centroid_cut, "o", markersize=4, label="bunch_centroid()")
-    ax.plot(orig_centroid_z_cut, orig_centroid_cut, "s", markersize=1, label="readbeam()")
+    ax.plot(centroid_z, centroid, "o", markersize=4, label="bunch_centroid()")
+    ax.plot(orig_centroid_z, orig_centroid, "s", markersize=1, label="readbeam()")
 
     ax.legend()
 
