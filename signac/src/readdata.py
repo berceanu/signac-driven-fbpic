@@ -7,6 +7,7 @@ import pandas as pd
 
 
 def read_bunch(txt_file):
+    """Read positions, velocities and weights of bunch electrons from the text file."""
     df = pd.read_csv(
         txt_file,
         delim_whitespace=True,
@@ -17,6 +18,7 @@ def read_bunch(txt_file):
 
 
 def convert_to_human_units(bunch_df):
+    """Convert the x and y coordinates from meters to microns and z to mm."""
     bunch_df.insert(loc=0, column="z_mm", value=bunch_df["z_m"] * 1e3)
     bunch_df.insert(loc=0, column="y_um", value=bunch_df["y_m"] * 1e6)
     bunch_df.insert(loc=0, column="x_um", value=bunch_df["x_m"] * 1e6)
@@ -25,10 +27,13 @@ def convert_to_human_units(bunch_df):
 
 
 def bin_centers(bin_edges):
+    """Given the bin edges from a histogram, compute the bin centers.
+    Array size is reduced by 1 element."""
     return (bin_edges[:-1] + bin_edges[1:]) / 2
 
 
 def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200):
+    """Compute the electron bunch x vs z 2D histogram, with given number of bins."""
     df = read_bunch(txt_file)
     convert_to_human_units(df)
 
@@ -40,7 +45,7 @@ def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200):
         pos_z,
         pos_x,
         bins=(nbz, nbx),
-        weights=w,
+        weights=w,  # convert to count of real electrons
     )
     Z, X = np.meshgrid(zedges, xedges)
 
@@ -52,6 +57,7 @@ def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200):
 
 
 def plot_bunch_histogram(H, Z, X, *, ax=None):
+    """Given the histogram data H and the (2D) bin edges Z and X, plot them."""
     if ax is None:
         ax = pyplot.gca()
 
@@ -76,6 +82,7 @@ def readbeam(
     x_coords,
     counts,
 ):
+    """Original, unvectorized function for computing centroid."""
     nbz, _ = counts.shape
 
     refval = counts.max()
@@ -93,22 +100,44 @@ def readbeam(
     return centroid_z, centroid
 
 
-def vectorized_readbeam(
+def bunch_centroid(
     z_coords,
     x_coords,
     counts,
     *,
-    z_min_index=20,
-    z_max_index=180,
-    col_max_threshold=0.2,
-    lower_bound=0.15,
+    z_min_index=-1,
+    z_max_index=None,
+    col_max_threshold=-1,
+    lower_bound=-1,
 ):
+    """
+    Refactored, vectorized function for computing the electron bunch centroid.
+
+    Parameters
+    ----------
+    z_coords : ndarray
+        1D array of `float` containing z coordinates
+    x_coords : ndarray
+        1D array of `float` containing x coordinates
+    counts : ndarray
+        2D array of `float` containing histogram data (electron counts)
+
+    Returns
+    -------
+    z_coords_masked, centroid_masked
+        2 1D masked arrays of `float` representing the centroid coordinates and values
+    """
+
     _, nbz = counts.shape
+
+    if z_max_index is None:
+        z_max_index = nbz
+
     z_coords_masked = np.ma.masked_all((nbz,), dtype=z_coords.dtype)
     centroid_masked = np.ma.masked_all((nbz,), dtype=counts.dtype)
 
     z_index = np.arange(nbz)
-    border_mask = np.logical_and(z_index > z_min_index, z_index < z_max_index)
+    border_mask = np.logical_and(z_min_index < z_index, z_index < z_max_index)
 
     filtered_counts = np.ma.array(counts, mask=counts < lower_bound * counts.max())
     col_mask = np.logical_and(
@@ -128,20 +157,31 @@ def vectorized_readbeam(
 
 def main():
     """Main entry point."""
-    p = pathlib.Path.cwd() / "final_bunch_66dc81.txt"
+    current_dir = pathlib.Path.cwd()
+    txt_files = current_dir.glob("final_bunch_*.txt")
+    p = next(txt_files)
 
     H, Z, X, z_coords, x_coords = compute_bunch_histogram(p, nbx=200, nbz=200)
 
-    centroid_z_cut, centroid_cut = vectorized_readbeam(z_coords, x_coords, H)
+    centroid_z_cut, centroid_cut = bunch_centroid(
+        z_coords,
+        x_coords,
+        H,
+        z_min_index=20,
+        z_max_index=180,
+        col_max_threshold=0.2,
+        lower_bound=0.15,
+    )
     # must pass in a copy, as the original array is changed in-place!
+    # in H.T, the beam slices are the matrix rows, not the columns as in H
     orig_centroid_z_cut, orig_centroid_cut = readbeam(z_coords, x_coords, H.T.copy())
 
     fig, ax = pyplot.subplots()
 
     ax = plot_bunch_histogram(H, Z, X, ax=ax)
 
-    ax.plot(centroid_z_cut, centroid_cut, "o", markersize=4, label="vectorized")
-    ax.plot(orig_centroid_z_cut, orig_centroid_cut, "s", markersize=1, label="original")
+    ax.plot(centroid_z_cut, centroid_cut, "o", markersize=4, label="bunch_centroid()")
+    ax.plot(orig_centroid_z_cut, orig_centroid_cut, "s", markersize=1, label="readbeam()")
 
     ax.legend()
 
