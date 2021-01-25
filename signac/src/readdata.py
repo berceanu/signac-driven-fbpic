@@ -2,7 +2,7 @@
 import pathlib
 import numpy as np
 from matplotlib import pyplot, cm
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
 
 
@@ -24,7 +24,11 @@ def convert_to_human_units(bunch_df):
     bunch_df.drop(columns=["x_m", "y_m", "z_m"], inplace=True)
 
 
-def compute_bunch_histogram(txt_file):
+def bin_centers(bin_edges):
+    return (bin_edges[:-1] + bin_edges[1:]) / 2
+
+
+def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200):
     df = read_bunch(txt_file)
     convert_to_human_units(df)
 
@@ -35,30 +39,29 @@ def compute_bunch_histogram(txt_file):
     H, zedges, xedges = np.histogram2d(
         pos_z,
         pos_x,
-        bins=(190, 190),
+        bins=(nbz, nbx),
         weights=w,
     )
     Z, X = np.meshgrid(zedges, xedges)
 
-    return H.T, Z, X
+    z_centers, x_centers = map(bin_centers, (zedges, xedges))
+
+    H = H.T  # Let each row list bins with common x range.
+
+    return H, Z, X, z_centers, x_centers
 
 
-def plot_bunch_histogram(H, Z, X, ax=None):
+def plot_bunch_histogram(H, Z, X, *, ax=None):
     if ax is None:
         ax = pyplot.gca()
 
     img = ax.pcolormesh(Z, X, H, cmap=cm.get_cmap("magma"))
-    cbaxes = inset_axes(
-        ax,
-        width="3%",  # width = 10% of parent_bbox width
-        height="100%",  # height : 50%
-        loc=2,
-        bbox_to_anchor=(1.01, 0.0, 1, 1),
-        bbox_transform=ax.transAxes,
-        borderpad=0,
-    )
-    cbar = ax.get_figure().colorbar(
-        mappable=img, orientation="vertical", ticklocation="right", cax=cbaxes
+
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="4%", pad=0.02)
+    cbar = ax.figure.colorbar(
+        img,
+        cax=cax,
     )
     cbar.set_label(r"number of electrons")
 
@@ -68,12 +71,13 @@ def plot_bunch_histogram(H, Z, X, ax=None):
     return ax
 
 
-def orig_readbeam(
+def readbeam(
     z_coords,
     x_coords,
     counts,
-    nbz=190,
 ):
+    nbz, _ = counts.shape
+
     refval = counts.max()
 
     centroid = []
@@ -89,29 +93,35 @@ def orig_readbeam(
     return centroid_z, centroid
 
 
-def readbeam(
+def vectorized_readbeam(
     z_coords,
     x_coords,
     counts,
+    *,
+    z_min_index=20,
+    z_max_index=180,
+    col_max_threshold=0.2,
+    lower_bound=0.15,
 ):
-    nbz, nbx = counts.shape
+    _, nbz = counts.shape
     z_coords_masked = np.ma.masked_all((nbz,), dtype=z_coords.dtype)
     centroid_masked = np.ma.masked_all((nbz,), dtype=counts.dtype)
 
-    i = np.arange(nbz)
-    border_mask = np.logical_and(i > 20, i < 180)
+    z_index = np.arange(nbz)
+    border_mask = np.logical_and(z_index > z_min_index, z_index < z_max_index)
 
-    refval = counts.max()
-    filtered_counts = np.ma.array(counts, mask=counts < 0.15 * refval)
-    row_mask = np.logical_and(border_mask, filtered_counts.max(axis=1) > 0.2 * refval)
-
-    counts_mask = filtered_counts[row_mask, :]
-    weighted_average = (np.sum(x_coords * counts_mask, axis=1)) / np.sum(
-        counts_mask, axis=1
+    filtered_counts = np.ma.array(counts, mask=counts < lower_bound * counts.max())
+    col_mask = np.logical_and(
+        border_mask, filtered_counts.max(axis=0) > col_max_threshold * counts.max()
     )
 
-    centroid_masked[row_mask] = weighted_average
-    z_coords_masked[row_mask] = z_coords[row_mask]
+    counts_mask = filtered_counts[:, col_mask]
+    weighted_average = (np.sum(counts_mask * x_coords[:, np.newaxis], axis=0)) / np.sum(
+        counts_mask, axis=0
+    )  # axis = 0 sums the values in each column
+
+    centroid_masked[col_mask] = weighted_average
+    z_coords_masked[col_mask] = z_coords[col_mask]
 
     return z_coords_masked, centroid_masked
 
@@ -120,21 +130,18 @@ def main():
     """Main entry point."""
     p = pathlib.Path.cwd() / "final_bunch_66dc81.txt"
 
-    H, Z, X = compute_bunch_histogram(p)
+    H, Z, X, z_coords, x_coords = compute_bunch_histogram(p, nbx=200, nbz=200)
 
-    centroid_z_cut, centroid_cut = readbeam(
-        Z[Z.shape[0] // 2, :-1], X[:-1, X.shape[1] // 2], H.T
-    )
-    orig_centroid_z_cut, orig_centroid_cut = orig_readbeam(
-        Z[Z.shape[0] // 2, :-1].copy(), X[:-1, X.shape[1] // 2].copy(), H.T.copy()
-    )
+    centroid_z_cut, centroid_cut = vectorized_readbeam(z_coords, x_coords, H)
+    # must pass in a copy, as the original array is changed in-place!
+    orig_centroid_z_cut, orig_centroid_cut = readbeam(z_coords, x_coords, H.T.copy())
 
     fig, ax = pyplot.subplots()
 
-    ax = plot_bunch_histogram(H, Z, X, ax)
+    ax = plot_bunch_histogram(H, Z, X, ax=ax)
 
-    ax.plot(centroid_z_cut, centroid_cut, "o", markersize=5, label="vectorized")
-    ax.plot(orig_centroid_z_cut, orig_centroid_cut, "s", markersize=2, label="original")
+    ax.plot(centroid_z_cut, centroid_cut, "o", markersize=4, label="vectorized")
+    ax.plot(orig_centroid_z_cut, orig_centroid_cut, "s", markersize=1, label="original")
 
     ax.legend()
 
