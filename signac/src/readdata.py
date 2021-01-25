@@ -3,8 +3,10 @@ import pathlib
 import numpy as np
 from matplotlib import pyplot
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from numpy.core.defchararray import count
 import pandas as pd
 import colorcet as cc
+import numpy.ma as ma
 
 
 def read_bunch(txt_file):
@@ -31,11 +33,13 @@ def compute_bunch_histogram(txt_file):
 
     pos_x = df.x_um.to_numpy(dtype=np.float64)
     pos_z = df.z_mm.to_numpy(dtype=np.float64)
+    w = df.w.to_numpy(dtype=np.float64)
 
     H, zedges, xedges = np.histogram2d(
         pos_z,
         pos_x,
         bins=(190, 190),
+        weights=w,
     )
     Z, X = np.meshgrid(zedges, xedges)
 
@@ -72,29 +76,52 @@ def compute_centroid(H, Z, X):
     return Z[Z.shape[0] // 2, :-1], centroid
 
 
-def readbeam(
+def orig_readbeam(
     z_coords,
     x_coords,
     counts,
     nbz=190,
-    nbx=190,
 ):
-    refval = 0
+    refval = counts.max()
 
     centroid = []
     centroid_z = []
 
-    for i in range(0, nbz):
-        if refval < max(counts[i, :]):
-            refval = max(counts[i, :])
+    counts[counts < 0.15 * refval] = 0.0
 
     for i in range(0, nbz):
-        counts[i, :][counts[i, :] < 0.15 * refval] = 0
         if max(counts[i, :]) > 0.2 * refval and i > 20 and i < 180:
             centroid.append(np.average(x_coords, weights=counts[i, :]))
             centroid_z.append(z_coords[i])
 
     return centroid_z, centroid
+
+
+def readbeam(
+    z_coords,
+    x_coords,
+    counts,
+):
+    nbz, nbx = counts.shape
+    z_coords_masked = ma.masked_all((nbz,), dtype=z_coords.dtype)
+    centroid_masked = ma.masked_all((nbz,), dtype=counts.dtype)
+
+    i = np.arange(nbz)
+    border_mask = np.logical_and(i > 20, i < 180)
+
+    refval = counts.max()
+    filtered_counts = ma.array(counts, mask=counts < 0.15 * refval)
+    row_mask = np.logical_and(border_mask, filtered_counts.max(axis=1) > 0.2 * refval)
+
+    counts_mask = filtered_counts[row_mask, :]
+    weighted_average = (np.sum(x_coords * counts_mask, axis=1)) / np.sum(
+        counts_mask, axis=1
+    )
+
+    centroid_masked[row_mask] = weighted_average
+    z_coords_masked[row_mask] = z_coords[row_mask]
+
+    return z_coords_masked, centroid_masked
 
 
 def main():
@@ -105,6 +132,9 @@ def main():
     z_centroid, centroid = compute_centroid(H, Z, X)
 
     centroid_z_cut, centroid_cut = readbeam(
+        Z[Z.shape[0] // 2, :-1], X[:-1, X.shape[1] // 2], H.T
+    )
+    orig_centroid_z_cut, orig_centroid_cut = orig_readbeam(
         Z[Z.shape[0] // 2, :-1].copy(), X[:-1, X.shape[1] // 2].copy(), H.T.copy()
     )
 
@@ -112,16 +142,15 @@ def main():
 
     ax = plot_bunch_histogram(H, Z, X, ax)
 
-    ax.plot(z_centroid, centroid, label="no cut")
-    ax.plot(centroid_z_cut, centroid_cut, label="with cut")
+    # ax.plot(z_centroid, centroid, label="no cut")
+    ax.plot(centroid_z_cut, centroid_cut, "o", markersize=5, label="vectorized")
+    ax.plot(orig_centroid_z_cut, orig_centroid_cut, "s", markersize=2, label="original")
 
     ax.legend()
 
     fig.savefig("bunch_fit.png", bbox_inches="tight")
     pyplot.close(fig)
 
-
-# TODO include weights
 
 if __name__ == "__main__":
     main()
