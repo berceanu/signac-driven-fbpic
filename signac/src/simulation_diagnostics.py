@@ -7,7 +7,7 @@ import unyt as u
 from scipy import integrate
 from scipy import interpolate
 from matplotlib.gridspec import GridSpec
-
+from centroid import bunch_centroid
 
 def get_cubic_spline(x, y, smoothing_factor=1e-7):
     cs = interpolate.UnivariateSpline(x, y)
@@ -51,16 +51,23 @@ def centroid_plot(
     r, c = np.shape(hist_data)
     z_coords = np.linspace(z_min, z_max, c)
     x_coords = np.linspace(x_min, x_max, r)
-    z_m, x_m = np.meshgrid(z_coords, x_coords)
 
-    centroid = np.ma.average(x_m, weights=hist_data, axis=0)
+    centroid_z, centroid = bunch_centroid(
+        z_coords,
+        x_coords,
+        hist_data,
+        z_min_index=20,
+        z_max_index=180,
+        col_max_threshold=0.2,
+        lower_bound=0.15,
+    )
     x_avg = np.mean(centroid)
 
     if save_fig:
-        ax.plot(z_coords, centroid, label="centroid")
+        ax.plot(centroid_z, centroid, label="centroid")
 
-        cs = get_cubic_spline(z_coords, centroid, smoothing_factor=smoothing_factor)
-        ax.plot(z_coords, cs(z_coords), label="spline")
+        cs = get_cubic_spline(centroid_z, centroid, smoothing_factor=smoothing_factor)
+        ax.plot(centroid_z, cs(centroid_z), label="spline")
 
         ax.legend()
         ax.hlines(
@@ -100,7 +107,7 @@ def centroid_plot(
 
     pyplot.close(fig)
 
-    return z_coords, centroid, x_avg
+    return centroid_z, centroid, x_avg
 
 
 def compute_bending_energy(iteration, tseries, smoothing_factor=1e-7):
