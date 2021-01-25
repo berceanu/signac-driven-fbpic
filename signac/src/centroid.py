@@ -77,29 +77,6 @@ def plot_bunch_histogram(H, Z, X, *, ax=None):
     return ax
 
 
-def readbeam(
-    z_coords,
-    x_coords,
-    counts,
-):
-    """Original, unvectorized function for computing centroid."""
-    nbz, _ = counts.shape
-
-    refval = counts.max()
-
-    centroid = []
-    centroid_z = []
-
-    counts[counts < 0.15 * refval] = 0.0
-
-    for i in range(0, nbz):
-        if max(counts[i, :]) > 0.2 * refval and i > 20 and i < 180:
-            centroid.append(np.average(x_coords, weights=counts[i, :]))
-            centroid_z.append(z_coords[i])
-
-    return centroid_z, centroid
-
-
 def bunch_centroid(
     z_coords,
     x_coords,
@@ -172,18 +149,12 @@ def main():
         col_max_threshold=0.2,
         lower_bound=0.15,
     )
-    # must pass in a copy, as the original array is changed in-place!
-    # in H.T, the beam slices are the matrix rows, not the columns as in H
-    orig_centroid_z, orig_centroid = readbeam(z_coords, x_coords, H.T.copy())
 
     fig, ax = pyplot.subplots()
 
     ax = plot_bunch_histogram(H, Z, X, ax=ax)
 
-    ax.plot(centroid_z, centroid, "o", markersize=4, label="bunch_centroid()")
-    ax.plot(orig_centroid_z, orig_centroid, "s", markersize=1, label="readbeam()")
-
-    ax.legend()
+    ax.plot(centroid_z, centroid, "o", markersize=4)
 
     fig.savefig("bunch_fit.png", bbox_inches="tight")
     pyplot.close(fig)
