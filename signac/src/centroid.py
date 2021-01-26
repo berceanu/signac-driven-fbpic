@@ -148,11 +148,15 @@ def bunch_centroid(
     counts_masked[:, col_mask] = counts[:, col_mask]
     counts_masked.mask = np.ma.mask_or(np.ma.getmask(counts_masked), mask_2d)
 
-    weighted_average_masked = (np.sum(counts_masked * x_coords[:, np.newaxis], axis=0)) / np.sum(
+    weighted_average_masked = (
+        np.sum(counts_masked * x_coords[:, np.newaxis], axis=0)
+    ) / np.sum(
         counts_masked, axis=0
     )  # axis = 0 sums the values in each column
 
-    z_coords_masked = np.ma.masked_where(np.ma.getmask(weighted_average_masked), z_coords)
+    z_coords_masked = np.ma.masked_where(
+        np.ma.getmask(weighted_average_masked), z_coords
+    )
 
     return z_coords_masked, weighted_average_masked
 
