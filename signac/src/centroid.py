@@ -1,7 +1,7 @@
 """Fit the centroid positions for a given electron bunch."""
 import pathlib
 import numpy as np
-from matplotlib import pyplot, cm
+from matplotlib import pyplot, cm, transforms
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from numpy.ma.extras import mask_cols
 import pandas as pd
@@ -161,15 +161,45 @@ def main():
             threshold_col_max=0.2,
             lower_bound=0.15,
         )
+        x_avg = centroid.mean()
+
         fig, ax = pyplot.subplots()
 
         ax = plot_bunch_histogram(H, Z, X, ax=ax)
-        ax.plot(centroid_z, centroid, "o-", markersize=2, label="centroid")
+        ax.plot(centroid_z, centroid, "o", markersize=3, label="centroid")
         ax.legend()
-
+        ax.hlines(
+            y=x_avg,
+            xmin=z_coords[0],
+            xmax=z_coords[-1],
+            linestyle="dashed",
+            color="0.75",
+        )
+        trans = transforms.blended_transform_factory(
+            ax.get_yticklabels()[0].get_transform(), ax.transData
+        )
+        ax.text(
+            0,
+            x_avg,
+            f"{x_avg:.0f}",
+            color="0.75",
+            transform=trans,
+            ha="right",
+            va="center",
+        )
+        ax.annotate(
+            text=f"ne = {sorted_bunch_fn_to_density[fn.name]:.1e}",
+            xy=(0.1, 0.1),
+            xycoords="axes fraction",
+            color="C1",
+        )
         fig.savefig(f"bunch_centroid_{n_e}.png", bbox_inches="tight")
         pyplot.close(fig)
 
+
+# TODO: generate movie
+# TODO: compute centroid average
+# TODO: plot average versus density
 
 if __name__ == "__main__":
     main()
