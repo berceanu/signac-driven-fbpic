@@ -37,6 +37,10 @@ def sort_by_value(d):
     return dict(sorted(d.items(), key=lambda item: item[1]))
 
 
+def id_to_filename(d):
+    return {f"final_bunch_{k}.txt": v for k, v in d.items()}
+
+
 def main():
     """Main entry point."""
     statepoints = load_statepoints(pathlib.Path.home() / "tmp" / "runs")
@@ -45,10 +49,7 @@ def main():
     d = shorten_id(id_to_density)
     short_id_to_density_cm3 = change_density_units(d)
 
-    bunch_fn_to_density = {
-        f"final_bunch_{id}.txt": density
-        for id, density in short_id_to_density_cm3.items()
-    }
+    bunch_fn_to_density = id_to_filename(short_id_to_density_cm3)
     sorted_bunch_fn_to_density = sort_by_value(bunch_fn_to_density)
 
     # #
