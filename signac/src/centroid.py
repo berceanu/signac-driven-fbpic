@@ -1,7 +1,7 @@
 """Fit the centroid positions for a given electron bunch."""
 import pathlib
 import numpy as np
-from matplotlib import pyplot, cm, transforms
+from matplotlib import pyplot, cm, transforms, colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from numpy.ma.extras import mask_cols
 import pandas as pd
@@ -37,7 +37,7 @@ def bin_centers(bin_edges):
     return (bin_edges[:-1] + bin_edges[1:]) / 2
 
 
-def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200):
+def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200, range=None):
     """Compute the electron bunch x vs z 2D histogram, with given number of bins."""
     df = read_bunch(txt_file)
     convert_to_human_units(df)
@@ -51,6 +51,7 @@ def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200):
         pos_x,
         bins=(nbz, nbx),
         weights=w,  # convert to count of real electrons
+        range=range,
     )
     Z, X = np.meshgrid(zedges, xedges)
 
@@ -61,12 +62,18 @@ def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200):
     return H, Z, X, z_centers, x_centers
 
 
-def plot_bunch_histogram(H, Z, X, *, ax=None):
+def plot_bunch_histogram(H, Z, X, *, ax=None, vmin=0.0, vmax=None):
     """Given the histogram data H and the (2D) bin edges Z and X, plot them."""
     if ax is None:
         ax = pyplot.gca()
 
-    img = ax.pcolormesh(Z, X, H, cmap=cm.get_cmap("magma"))
+    img = ax.pcolormesh(
+        Z,
+        X,
+        H,
+        cmap=cm.get_cmap("magma"),
+        norm=colors.Normalize(vmin=vmin, vmax=vmax),
+    )
 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="4%", pad=0.02)
@@ -162,7 +169,12 @@ def main():
         n_e = sorted_bunch_fn_to_density[fn.name]
         print(f"{fn.name} -> {n_e:.1e}")
 
-        H, Z, X, z_coords, x_coords = compute_bunch_histogram(fn, nbx=200, nbz=200)
+        H, Z, X, z_coords, x_coords = compute_bunch_histogram(
+            fn,
+            nbx=200,
+            nbz=200,
+            range=[[70.0, 72.0], [-900, 600]],
+        )
 
         centroid_z, centroid = bunch_centroid(
             z_coords,
@@ -179,7 +191,7 @@ def main():
 
         fig, ax = pyplot.subplots()
 
-        ax = plot_bunch_histogram(H, Z, X, ax=ax)
+        ax = plot_bunch_histogram(H, Z, X, ax=ax, vmax=1.0e6)
         ax.plot(centroid_z, centroid, "o", markersize=3, label="centroid")
         ax.legend()
         ax.hlines(
