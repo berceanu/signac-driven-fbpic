@@ -5,6 +5,7 @@ from matplotlib import pyplot, cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from numpy.ma.extras import mask_cols
 import pandas as pd
+from statepoints_parser import parse_statepoints
 
 
 def read_bunch(txt_file):
@@ -142,6 +143,11 @@ def main():
     """Main entry point."""
     runs_dir = pathlib.Path.home() / "tmp" / "runs"
     txt_files = runs_dir.glob("final_bunch_*.txt")
+    sorted_bunch_fn_to_density = parse_statepoints(runs_dir)
+
+    for fn in txt_files:
+        print(f"{fn.name}: {sorted_bunch_fn_to_density[fn.name]:.1e}")
+
     p = next(txt_files)
 
     H, Z, X, z_coords, x_coords = compute_bunch_histogram(p, nbx=200, nbz=200)
