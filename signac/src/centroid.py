@@ -144,15 +144,21 @@ def bunch_centroid(
 
 def main():
     """Main entry point."""
+    p = pathlib.Path.cwd()
+    pathlib.Path(p / "bunch_centroid").mkdir(parents=True, exist_ok=True)
+
     runs_dir = pathlib.Path.home() / "tmp" / "runs"
     txt_files = runs_dir.glob("final_bunch_*.txt")
     sorted_bunch_fn_to_density = parse_statepoints(runs_dir)
+
+    tfs = list(txt_files)
+    ordered_tfs = sorted(tfs, key=lambda tf: sorted_bunch_fn_to_density[tf.name])
 
     number_of_jobs = len(sorted_bunch_fn_to_density)
     job_densities = np.empty(number_of_jobs) * u.cm ** (-3)
     job_centroid_positions = np.empty(number_of_jobs) * u.micrometer
 
-    for i, fn in enumerate(txt_files):
+    for i, fn in enumerate(ordered_tfs):
         n_e = sorted_bunch_fn_to_density[fn.name]
         print(f"{fn.name} -> {n_e:.1e}")
 
@@ -203,9 +209,14 @@ def main():
         )
         n_e = f"{n_e.to_value(u.cm**(-3)):.1e}"
         fig.savefig(f"bunch_centroid_{n_e}.png", bbox_inches="tight")
+        fig.savefig(
+            pathlib.Path.cwd() / "bunch_centroid" / f"bunch_centroid_{i:06d}.png",
+            bbox_inches="tight",
+        )
         pyplot.close(fig)
 
-    x, y = zip(*sorted(zip(job_densities, job_centroid_positions)))
+    # x, y = zip(*sorted(zip(job_densities, job_centroid_positions)))
+    x, y = job_densities, job_centroid_positions
 
     fig, ax = pyplot.subplots(figsize=(golden * 4, 4))
     ax.plot(x, y, "*--", linewidth=1)
@@ -220,14 +231,10 @@ def main():
     pyplot.close(fig)
 
     command = ffmpeg_command(
-        input_files=pathlib.Path.cwd() / "bunch_centroid_*.png",
+        input_files=pathlib.Path.cwd() / "bunch_centroid" / "bunch_centroid_*.png",
         output_file="bunch_centroid.mp4",
     )
     shell_run(command, shell=True)
-
-
-# TODO: loop in order
-# TODO: generate movie
 
 
 if __name__ == "__main__":
