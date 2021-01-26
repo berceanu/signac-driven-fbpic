@@ -7,6 +7,8 @@ from numpy.ma.extras import mask_cols
 import pandas as pd
 from statepoints_parser import parse_statepoints
 import unyt as u
+from scipy.constants import golden
+from util import ffmpeg_command, shell_run
 
 
 def read_bunch(txt_file):
@@ -146,9 +148,13 @@ def main():
     txt_files = runs_dir.glob("final_bunch_*.txt")
     sorted_bunch_fn_to_density = parse_statepoints(runs_dir)
 
-    for fn in txt_files:
-        n_e = f"{sorted_bunch_fn_to_density[fn.name].to_value(u.cm**(-3)):.1e}"
-        print(f"{fn.name} -> {sorted_bunch_fn_to_density[fn.name]:.1e}")
+    number_of_jobs = len(sorted_bunch_fn_to_density)
+    job_densities = np.empty(number_of_jobs) * u.cm ** (-3)
+    job_centroid_positions = np.empty(number_of_jobs) * u.micrometer
+
+    for i, fn in enumerate(txt_files):
+        n_e = sorted_bunch_fn_to_density[fn.name]
+        print(f"{fn.name} -> {n_e:.1e}")
 
         H, Z, X, z_coords, x_coords = compute_bunch_histogram(fn, nbx=200, nbz=200)
 
@@ -162,6 +168,8 @@ def main():
             lower_bound=0.15,
         )
         x_avg = centroid.mean()
+        job_centroid_positions[i] = x_avg * u.micrometer
+        job_densities[i] = n_e
 
         fig, ax = pyplot.subplots()
 
@@ -188,18 +196,39 @@ def main():
             va="center",
         )
         ax.annotate(
-            text=f"ne = {sorted_bunch_fn_to_density[fn.name]:.1e}",
+            text=f"ne = {n_e:.1e}",
             xy=(0.1, 0.1),
             xycoords="axes fraction",
             color="C1",
         )
+        n_e = f"{n_e.to_value(u.cm**(-3)):.1e}"
         fig.savefig(f"bunch_centroid_{n_e}.png", bbox_inches="tight")
         pyplot.close(fig)
 
+    x, y = zip(*sorted(zip(job_densities, job_centroid_positions)))
 
+    fig, ax = pyplot.subplots(figsize=(golden * 4, 4))
+    ax.plot(x, y, "*--", linewidth=1)
+
+    ax.set_xscale("log")
+    ax.set_xlabel(r"$n_e$ (cm${}^{-3}$)")
+    ax.set_ylabel(r"$\langle x \rangle$ ($\mathrm{\mu m}$)")
+
+    ax.grid(which="both")
+
+    fig.savefig("average_centroids.png", bbox_inches="tight")
+    pyplot.close(fig)
+
+    command = ffmpeg_command(
+        input_files=pathlib.Path.cwd() / "bunch_centroid_*.png",
+        output_file="bunch_centroid.mp4",
+    )
+    shell_run(command, shell=True)
+
+
+# TODO: loop in order
 # TODO: generate movie
-# TODO: compute centroid average
-# TODO: plot average versus density
+
 
 if __name__ == "__main__":
     main()
