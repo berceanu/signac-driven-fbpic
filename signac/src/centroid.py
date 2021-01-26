@@ -1,9 +1,14 @@
 """Fit the centroid positions for a given electron bunch."""
 import pathlib
 import numpy as np
-from matplotlib import pyplot, cm
+from matplotlib import pyplot, cm, transforms, colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from numpy.ma.extras import mask_cols
 import pandas as pd
+from statepoints_parser import parse_statepoints
+import unyt as u
+from scipy.constants import golden
+from util import ffmpeg_command, shell_run
 
 
 def read_bunch(txt_file):
@@ -32,7 +37,7 @@ def bin_centers(bin_edges):
     return (bin_edges[:-1] + bin_edges[1:]) / 2
 
 
-def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200):
+def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200, range=None):
     """Compute the electron bunch x vs z 2D histogram, with given number of bins."""
     df = read_bunch(txt_file)
     convert_to_human_units(df)
@@ -46,6 +51,7 @@ def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200):
         pos_x,
         bins=(nbz, nbx),
         weights=w,  # convert to count of real electrons
+        range=range,
     )
     Z, X = np.meshgrid(zedges, xedges)
 
@@ -56,12 +62,18 @@ def compute_bunch_histogram(txt_file, *, nbx=200, nbz=200):
     return H, Z, X, z_centers, x_centers
 
 
-def plot_bunch_histogram(H, Z, X, *, ax=None):
+def plot_bunch_histogram(H, Z, X, *, ax=None, vmin=0.0, vmax=None):
     """Given the histogram data H and the (2D) bin edges Z and X, plot them."""
     if ax is None:
         ax = pyplot.gca()
 
-    img = ax.pcolormesh(Z, X, H, cmap=cm.get_cmap("magma"))
+    img = ax.pcolormesh(
+        Z,
+        X,
+        H,
+        cmap=cm.get_cmap("magma"),
+        norm=colors.Normalize(vmin=vmin, vmax=vmax),
+    )
 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="4%", pad=0.02)
@@ -84,7 +96,7 @@ def bunch_centroid(
     *,
     z_min_index=-1,
     z_max_index=None,
-    col_max_threshold=-1,
+    threshold_col_max=-1,
     lower_bound=-1,
 ):
     """
@@ -101,63 +113,140 @@ def bunch_centroid(
 
     Returns
     -------
-    z_coords_masked, centroid_masked
+    z_coords_masked, weighted_average_masked
         2 1D masked arrays of `float` representing the centroid coordinates and values
     """
 
     _, nbz = counts.shape
+    max_count = counts.max()
 
     if z_max_index is None:
         z_max_index = nbz
 
-    z_coords_masked = np.ma.masked_all((nbz,), dtype=z_coords.dtype)
-    centroid_masked = np.ma.masked_all((nbz,), dtype=counts.dtype)
+    counts_masked = np.ma.masked_all_like(counts)
 
     z_index = np.arange(nbz)
     border_mask = np.logical_and(z_min_index < z_index, z_index < z_max_index)
 
-    filtered_counts = np.ma.array(counts, mask=counts < lower_bound * counts.max())
+    mask_2d = counts < lower_bound * max_count
     col_mask = np.logical_and(
-        border_mask, filtered_counts.max(axis=0) > col_max_threshold * counts.max()
+        border_mask, counts.max(axis=0) > threshold_col_max * max_count
     )
 
-    counts_mask = filtered_counts[:, col_mask]
-    weighted_average = (np.sum(counts_mask * x_coords[:, np.newaxis], axis=0)) / np.sum(
-        counts_mask, axis=0
+    counts_masked[:, col_mask] = counts[:, col_mask]
+    counts_masked.mask = np.ma.mask_or(np.ma.getmask(counts_masked), mask_2d)
+
+    weighted_average_masked = (
+        np.sum(counts_masked * x_coords[:, np.newaxis], axis=0)
+    ) / np.sum(
+        counts_masked, axis=0
     )  # axis = 0 sums the values in each column
 
-    centroid_masked[col_mask] = weighted_average
-    z_coords_masked[col_mask] = z_coords[col_mask]
+    z_coords_masked = np.ma.masked_where(
+        np.ma.getmask(weighted_average_masked), z_coords
+    )
 
-    return z_coords_masked, centroid_masked
+    return z_coords_masked, weighted_average_masked
 
 
 def main():
     """Main entry point."""
-    current_dir = pathlib.Path.cwd()
-    txt_files = current_dir.glob("final_bunch_*.txt")
-    p = next(txt_files)
+    p = pathlib.Path.cwd()
+    pathlib.Path(p / "bunch_centroid").mkdir(parents=True, exist_ok=True)
 
-    H, Z, X, z_coords, x_coords = compute_bunch_histogram(p, nbx=200, nbz=200)
+    runs_dir = pathlib.Path.home() / "tmp" / "runs"
+    txt_files = runs_dir.glob("final_bunch_*.txt")
+    sorted_bunch_fn_to_density = parse_statepoints(runs_dir)
 
-    centroid_z, centroid = bunch_centroid(
-        z_coords,
-        x_coords,
-        H,
-        z_min_index=20,
-        z_max_index=180,
-        col_max_threshold=0.2,
-        lower_bound=0.15,
-    )
+    tfs = list(txt_files)
+    ordered_tfs = sorted(tfs, key=lambda tf: sorted_bunch_fn_to_density[tf.name])
 
-    fig, ax = pyplot.subplots()
+    number_of_jobs = len(sorted_bunch_fn_to_density)
+    job_densities = np.empty(number_of_jobs) * u.cm ** (-3)
+    job_centroid_positions = np.empty(number_of_jobs) * u.micrometer
 
-    ax = plot_bunch_histogram(H, Z, X, ax=ax)
+    for i, fn in enumerate(ordered_tfs):
+        n_e = sorted_bunch_fn_to_density[fn.name]
+        print(f"{fn.name} -> {n_e:.1e}")
 
-    ax.plot(centroid_z, centroid, "o", markersize=4)
+        H, Z, X, z_coords, x_coords = compute_bunch_histogram(
+            fn,
+            nbx=200,
+            nbz=200,
+            range=[[70.0, 72.0], [-900, 600]],
+        )
 
-    fig.savefig("bunch_fit.png", bbox_inches="tight")
+        centroid_z, centroid = bunch_centroid(
+            z_coords,
+            x_coords,
+            H,
+            z_min_index=20,
+            z_max_index=180,
+            threshold_col_max=0.2,
+            lower_bound=0.15,
+        )
+        x_avg = centroid.mean()
+        job_centroid_positions[i] = x_avg * u.micrometer
+        job_densities[i] = n_e
+
+        fig, ax = pyplot.subplots()
+
+        ax = plot_bunch_histogram(H, Z, X, ax=ax, vmax=1.0e6)
+        ax.plot(centroid_z, centroid, "o", markersize=3, label="centroid")
+        ax.legend()
+        ax.hlines(
+            y=x_avg,
+            xmin=z_coords[0],
+            xmax=z_coords[-1],
+            linestyle="dashed",
+            color="0.75",
+        )
+        trans = transforms.blended_transform_factory(
+            ax.get_yticklabels()[0].get_transform(), ax.transData
+        )
+        ax.text(
+            0,
+            x_avg,
+            f"{x_avg:.0f}",
+            color="0.75",
+            transform=trans,
+            ha="right",
+            va="center",
+        )
+        ax.annotate(
+            text=f"ne = {n_e:.1e}",
+            xy=(0.1, 0.1),
+            xycoords="axes fraction",
+            color="C1",
+        )
+        n_e = f"{n_e.to_value(u.cm**(-3)):.1e}"
+        fig.savefig(f"bunch_centroid_{n_e}.png", bbox_inches="tight")
+        fig.savefig(
+            pathlib.Path.cwd() / "bunch_centroid" / f"bunch_centroid_{i:06d}.png",
+            bbox_inches="tight",
+        )
+        pyplot.close(fig)
+
+    # x, y = zip(*sorted(zip(job_densities, job_centroid_positions)))
+    x, y = job_densities, job_centroid_positions
+
+    fig, ax = pyplot.subplots(figsize=(golden * 4, 4))
+    ax.plot(x, y, "X--", linewidth=1)
+
+    ax.set_xscale("log")
+    ax.set_xlabel(r"$n_e$ (cm${}^{-3}$)")
+    ax.set_ylabel(r"$\langle x \rangle$ ($\mathrm{\mu m}$)")
+
+    ax.grid(which="both")
+
+    fig.savefig("average_centroids.png", bbox_inches="tight")
     pyplot.close(fig)
+
+    command = ffmpeg_command(
+        input_files=pathlib.Path.cwd() / "bunch_centroid" / "bunch_centroid_*.png",
+        output_file="bunch_centroid.mp4",
+    )
+    shell_run(command, shell=True)
 
 
 if __name__ == "__main__":
