@@ -7,19 +7,10 @@ import unyt as u
 from scipy import integrate
 from scipy import interpolate
 from matplotlib.gridspec import GridSpec
-from centroid import bunch_centroid
-
-
-def remove_mask(arr):
-    if np.ma.isMaskedArray(arr):
-        return arr[~arr.mask]
-    else:
-        return arr
 
 
 def get_cubic_spline(x, y, smoothing_factor=1e-7):
-    my_x, my_y = map(remove_mask, (x, y))
-    cs = interpolate.UnivariateSpline(my_x, my_y)
+    cs = interpolate.UnivariateSpline(x, y)
     cs.set_smoothing_factor(smoothing_factor)
 
     return cs
@@ -60,23 +51,16 @@ def centroid_plot(
     r, c = np.shape(hist_data)
     z_coords = np.linspace(z_min, z_max, c)
     x_coords = np.linspace(x_min, x_max, r)
+    z_m, x_m = np.meshgrid(z_coords, x_coords)
 
-    centroid_z, centroid = bunch_centroid(
-        z_coords,
-        x_coords,
-        hist_data,
-        z_min_index=20,
-        z_max_index=180,
-        col_max_threshold=0.2,
-        lower_bound=0.15,
-    )
+    centroid = np.ma.average(x_m, weights=hist_data, axis=0)
     x_avg = np.mean(centroid)
 
     if save_fig:
-        ax.plot(centroid_z, centroid, label="centroid")
+        ax.plot(z_coords, centroid, label="centroid")
 
-        cs = get_cubic_spline(centroid_z, centroid, smoothing_factor=smoothing_factor)
-        ax.plot(centroid_z, cs(centroid_z), label="spline")
+        cs = get_cubic_spline(z_coords, centroid, smoothing_factor=smoothing_factor)
+        ax.plot(z_coords, cs(z_coords), label="spline")
 
         ax.legend()
         ax.hlines(
@@ -116,7 +100,7 @@ def centroid_plot(
 
     pyplot.close(fig)
 
-    return centroid_z, centroid, x_avg
+    return z_coords, centroid, x_avg
 
 
 def compute_bending_energy(iteration, tseries, smoothing_factor=1e-7):
@@ -230,9 +214,7 @@ def density_plot(
     ax.set_xlabel(r"${} \;(\mu m)$".format(rho_info.axes[1]))
 
     current_time = (tseries.current_t * u.second).to("picosecond")
-    ax.set_title(
-        f"t = {current_time:.2f}, ne = {(n_e * u.meter ** (-3)).to(u.cm ** (-3)):.1e}"
-    )
+    ax.set_title(f"t = {current_time:.2f}, ne = {(n_e * u.meter ** (-3)).to(u.cm ** (-3)):.1e}")
 
     filename = save_path / f"rho{iteration:06d}.png"
 
