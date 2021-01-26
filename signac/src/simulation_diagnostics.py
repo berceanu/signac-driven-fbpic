@@ -214,7 +214,9 @@ def density_plot(
     ax.set_xlabel(r"${} \;(\mu m)$".format(rho_info.axes[1]))
 
     current_time = (tseries.current_t * u.second).to("picosecond")
-    ax.set_title(f"t = {current_time:.2f}, ne = {(n_e * u.meter ** (-3)).to(u.cm ** (-3)):.1e}")
+    ax.set_title(
+        f"t = {current_time:.2f}, ne = {(n_e * u.meter ** (-3)).to(u.cm ** (-3)):.1e}"
+    )
 
     filename = save_path / f"rho{iteration:06d}.png"
 
