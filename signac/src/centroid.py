@@ -140,7 +140,7 @@ def bunch_centroid(
 
 def main():
     """Main entry point."""
-    current_dir = pathlib.Path.cwd()
+    current_dir = pathlib.Path.home() / "tmp" / "runs"
     txt_files = current_dir.glob("final_bunch_*.txt")
     p = next(txt_files)
 
