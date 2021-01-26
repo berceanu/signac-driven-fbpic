@@ -9,8 +9,17 @@ from scipy import interpolate
 from matplotlib.gridspec import GridSpec
 from centroid import bunch_centroid
 
+
+def remove_mask(arr):
+    if np.ma.isMaskedArray(arr):
+        return arr[~arr.mask]
+    else:
+        return arr
+
+
 def get_cubic_spline(x, y, smoothing_factor=1e-7):
-    cs = interpolate.UnivariateSpline(x, y)
+    my_x, my_y = map(remove_mask, (x, y))
+    cs = interpolate.UnivariateSpline(my_x, my_y)
     cs.set_smoothing_factor(smoothing_factor)
 
     return cs
@@ -221,7 +230,9 @@ def density_plot(
     ax.set_xlabel(r"${} \;(\mu m)$".format(rho_info.axes[1]))
 
     current_time = (tseries.current_t * u.second).to("picosecond")
-    ax.set_title(f"t = {current_time:.2f}, ne = {(n_e * u.meter ** (-3)).to(u.cm ** (-3)):.1e}")
+    ax.set_title(
+        f"t = {current_time:.2f}, ne = {(n_e * u.meter ** (-3)).to(u.cm ** (-3)):.1e}"
+    )
 
     filename = save_path / f"rho{iteration:06d}.png"
 
