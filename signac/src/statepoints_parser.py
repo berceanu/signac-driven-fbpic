@@ -17,15 +17,6 @@ def main():
     statepoints_path = pathlib.Path.home() / "tmp" / "runs" / "signac_statepoints.json"
     statepoints = json.loads(statepoints_path.read_bytes())
 
-    # The end-goal is to get a dictionary of the form
-    # final_bunch_{job.id:.6}.txt -> density
-    # str -> float
-
-    # intermediate steps
-    # 2. 8a6943 -> 4e+23
-    # 3. final_bunch_8a6943.txt -> 4e+17 cm^(-3)
-    # 4. final_bunch_8a6943.txt -> 4e+17 cm^(-3)
-
     id_to_density = {}
     for signac_job_id, job_state_point in statepoints.items():
         id_to_density[signac_job_id] = job_state_point["n_e"]
@@ -39,11 +30,19 @@ def main():
         for id, density in short_id_to_density_cm3.items()
     }
 
+    sorted_bunch_fn_to_density = dict(
+        sorted(bunch_fn_to_density.items(), key=lambda item: item[1])
+    )
+
+    for fn, n_e in sorted_bunch_fn_to_density.items():
+        print(f"{n_e:.1e} -> {fn}")
+
     runs_dir = pathlib.Path.home() / "tmp" / "runs"
     txt_files = runs_dir.glob("final_bunch_*.txt")
 
+    print()
     for fn in txt_files:
-        print(f"{fn.name}: {bunch_fn_to_density[fn.name]:.1e}")
+        print(f"{fn.name}: {sorted_bunch_fn_to_density[fn.name]:.1e}")
 
 
 if __name__ == "__main__":
