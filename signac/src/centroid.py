@@ -108,7 +108,7 @@ def bunch_centroid(
     *,
     z_min_index=-1,
     z_max_index=None,
-    col_max_threshold=-1,
+    threshold_col_max=-1,
     lower_bound=-1,
 ):
     """
@@ -144,7 +144,7 @@ def bunch_centroid(
     mcounts = np.ma.masked_less(counts, lower_bound * max_count)
 
     col_mask = np.logical_and(
-        border_mask, counts.max(axis=0) > col_max_threshold * max_count
+        border_mask, counts.max(axis=0) > threshold_col_max * max_count
     )
 
     counts_mask = mcounts[:, col_mask]
@@ -173,7 +173,7 @@ def main():
         H,
         z_min_index=20,
         z_max_index=180,
-        col_max_threshold=0.2,
+        threshold_col_max=0.2,
         lower_bound=0.15,
     )
     # must pass in a copy, as the original array is changed in-place!
