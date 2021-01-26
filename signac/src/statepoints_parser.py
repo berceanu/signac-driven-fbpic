@@ -43,7 +43,10 @@ def main():
         f"final_bunch_{id}.txt": density
         for id, density in short_id_to_density_cm3.items()
     }
+    print()
     print(bunch_fn_to_density)
+
+    # 'final_bunch_e0cfcf.txt': 4e+17
 
 
 if __name__ == "__main__":
