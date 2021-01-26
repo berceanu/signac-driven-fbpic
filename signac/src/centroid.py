@@ -6,6 +6,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from numpy.ma.extras import mask_cols
 import pandas as pd
 from statepoints_parser import parse_statepoints
+import unyt as u
 
 
 def read_bunch(txt_file):
@@ -146,29 +147,28 @@ def main():
     sorted_bunch_fn_to_density = parse_statepoints(runs_dir)
 
     for fn in txt_files:
-        print(f"{fn.name}: {sorted_bunch_fn_to_density[fn.name]:.1e}")
+        n_e = f"{sorted_bunch_fn_to_density[fn.name].to_value(u.cm**(-3)):.1e}"
+        print(f"{fn.name} -> {sorted_bunch_fn_to_density[fn.name]:.1e}")
 
-    p = next(txt_files)
+        H, Z, X, z_coords, x_coords = compute_bunch_histogram(fn, nbx=200, nbz=200)
 
-    H, Z, X, z_coords, x_coords = compute_bunch_histogram(p, nbx=200, nbz=200)
+        centroid_z, centroid = bunch_centroid(
+            z_coords,
+            x_coords,
+            H,
+            z_min_index=20,
+            z_max_index=180,
+            threshold_col_max=0.2,
+            lower_bound=0.15,
+        )
+        fig, ax = pyplot.subplots()
 
-    centroid_z, centroid = bunch_centroid(
-        z_coords,
-        x_coords,
-        H,
-        z_min_index=20,
-        z_max_index=180,
-        threshold_col_max=0.2,
-        lower_bound=0.15,
-    )
-    fig, ax = pyplot.subplots()
+        ax = plot_bunch_histogram(H, Z, X, ax=ax)
+        ax.plot(centroid_z, centroid, "o-", markersize=2, label="centroid")
+        ax.legend()
 
-    ax = plot_bunch_histogram(H, Z, X, ax=ax)
-
-    ax.plot(centroid_z, centroid, "o", markersize=4, label="bunch_centroid()")
-
-    fig.savefig("bunch_fit.png", bbox_inches="tight")
-    pyplot.close(fig)
+        fig.savefig(f"bunch_centroid_{n_e}.png", bbox_inches="tight")
+        pyplot.close(fig)
 
 
 if __name__ == "__main__":
