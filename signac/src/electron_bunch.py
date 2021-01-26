@@ -271,7 +271,7 @@ def shade_bunch(df, coord1, coord2, export_path=pathlib.Path.cwd()):
         plot_width=4200,
         plot_height=350,
         x_range=(-900, 900),
-        y_range=(-50, 50),  # microns
+        y_range=(50, 200),  # microns
     )
     agg = cvs.points(df, coord1, coord2)
     img = ds.tf.shade(agg, cmap=fire, how="linear")
@@ -290,12 +290,12 @@ def main():
     job = random.choice(list(proj))
     print(f"job {job.id}")
 
-    df = read_bunch(job.fn("exp_0deg.txt"))
+    df = read_bunch(job.fn("exp_4deg.txt"))
     # print(df.describe())
     del df
 
     write_bunch_openpmd(
-        bunch_txt=job.fn("exp_0deg.txt"),
+        bunch_txt=job.fn("exp_4deg.txt"),
         outdir=pathlib.Path.cwd(),
         bunch_charge=-200.0e-12,  # Coulomb
     )
