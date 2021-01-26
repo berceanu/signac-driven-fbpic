@@ -64,7 +64,7 @@ class OdinEnvironment(DefaultSlurmEnvironment):
             "-w",
             "--walltime",
             type=float,
-            default=36,
+            default=72,
             help="The wallclock time in hours.",
         )
         parser.add_argument(
