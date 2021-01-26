@@ -140,8 +140,8 @@ def bunch_centroid(
 
 def main():
     """Main entry point."""
-    current_dir = pathlib.Path.home() / "tmp" / "runs"
-    txt_files = current_dir.glob("final_bunch_*.txt")
+    runs_dir = pathlib.Path.home() / "tmp" / "runs"
+    txt_files = runs_dir.glob("final_bunch_*.txt")
     p = next(txt_files)
 
     H, Z, X, z_coords, x_coords = compute_bunch_histogram(p, nbx=200, nbz=200)
