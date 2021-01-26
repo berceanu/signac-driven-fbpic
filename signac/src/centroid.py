@@ -125,38 +125,36 @@ def bunch_centroid(
 
     Returns
     -------
-    z_coords_masked, centroid_masked
+    z_coords_masked, weighted_average_masked
         2 1D masked arrays of `float` representing the centroid coordinates and values
     """
 
     _, nbz = counts.shape
+    max_count = counts.max()
 
     if z_max_index is None:
         z_max_index = nbz
 
-    z_coords_masked = np.ma.masked_all((nbz,), dtype=z_coords.dtype)
-    centroid_masked = np.ma.masked_all((nbz,), dtype=counts.dtype)
-    max_count = counts.max()
+    counts_masked = np.ma.masked_all_like(counts)
 
     z_index = np.arange(nbz)
     border_mask = np.logical_and(z_min_index < z_index, z_index < z_max_index)
 
-    mcounts = np.ma.masked_less(counts, lower_bound * max_count)
-
+    mask_2d = counts < lower_bound * max_count
     col_mask = np.logical_and(
         border_mask, counts.max(axis=0) > threshold_col_max * max_count
     )
 
-    counts_mask = mcounts[:, col_mask]
+    counts_masked[:, col_mask] = counts[:, col_mask]
+    counts_masked.mask = np.ma.mask_or(np.ma.getmask(counts_masked), mask_2d)
 
-    weighted_average = (np.sum(counts_mask * x_coords[:, np.newaxis], axis=0)) / np.sum(
-        counts_mask, axis=0
+    weighted_average_masked = (np.sum(counts_masked * x_coords[:, np.newaxis], axis=0)) / np.sum(
+        counts_masked, axis=0
     )  # axis = 0 sums the values in each column
 
-    centroid_masked[col_mask] = weighted_average
-    z_coords_masked[col_mask] = z_coords[col_mask]
+    z_coords_masked = np.ma.masked_where(np.ma.getmask(weighted_average_masked), z_coords)
 
-    return z_coords_masked, centroid_masked
+    return z_coords_masked, weighted_average_masked
 
 
 def main():
