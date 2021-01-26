@@ -3,6 +3,7 @@ import pathlib
 import numpy as np
 from matplotlib import pyplot, cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from numpy.ma.extras import mask_cols
 import pandas as pd
 
 
@@ -77,6 +78,29 @@ def plot_bunch_histogram(H, Z, X, *, ax=None):
     return ax
 
 
+def readbeam(
+    z_coords,
+    x_coords,
+    counts,
+):
+    """Original, unvectorized function for computing centroid."""
+    nbz, _ = counts.shape
+
+    refval = counts.max()
+
+    centroid = []
+    centroid_z = []
+
+    counts[counts < 0.15 * refval] = 0.0
+
+    for i in range(0, nbz):
+        if max(counts[i, :]) > 0.2 * refval and i > 20 and i < 180:
+            centroid.append(np.average(x_coords, weights=counts[i, :]))
+            centroid_z.append(z_coords[i])
+
+    return centroid_z, centroid
+
+
 def bunch_centroid(
     z_coords,
     x_coords,
@@ -112,16 +136,19 @@ def bunch_centroid(
 
     z_coords_masked = np.ma.masked_all((nbz,), dtype=z_coords.dtype)
     centroid_masked = np.ma.masked_all((nbz,), dtype=counts.dtype)
+    max_count = counts.max()
 
     z_index = np.arange(nbz)
     border_mask = np.logical_and(z_min_index < z_index, z_index < z_max_index)
 
-    filtered_counts = np.ma.array(counts, mask=counts < lower_bound * counts.max())
+    mcounts = np.ma.masked_less(counts, lower_bound * max_count)
+
     col_mask = np.logical_and(
-        border_mask, filtered_counts.max(axis=0) > col_max_threshold * counts.max()
+        border_mask, counts.max(axis=0) > col_max_threshold * max_count
     )
 
-    counts_mask = filtered_counts[:, col_mask]
+    counts_mask = mcounts[:, col_mask]
+
     weighted_average = (np.sum(counts_mask * x_coords[:, np.newaxis], axis=0)) / np.sum(
         counts_mask, axis=0
     )  # axis = 0 sums the values in each column
@@ -149,12 +176,16 @@ def main():
         col_max_threshold=0.2,
         lower_bound=0.15,
     )
+    # must pass in a copy, as the original array is changed in-place!
+    # in H.T, the beam slices are the matrix rows, not the columns as in H
+    orig_centroid_z, orig_centroid = readbeam(z_coords, x_coords, H.T.copy())
 
     fig, ax = pyplot.subplots()
 
     ax = plot_bunch_histogram(H, Z, X, ax=ax)
 
-    ax.plot(centroid_z, centroid, "o", markersize=4)
+    ax.plot(centroid_z, centroid, "o", markersize=4, label="bunch_centroid()")
+    ax.plot(orig_centroid_z, orig_centroid, "s", markersize=1, label="readbeam()")
 
     fig.savefig("bunch_fit.png", bbox_inches="tight")
     pyplot.close(fig)
