@@ -228,6 +228,7 @@ def main():
         pyplot.close(fig)
 
     x, y = job_densities, job_centroid_positions
+    np.savetxt('average_centroids.txt', np.c_[x,y])
 
     fig, ax = pyplot.subplots(figsize=(golden * 4, 4))
     ax.plot(x, y, "C1o:", mec="1.0",)
