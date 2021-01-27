@@ -154,7 +154,7 @@ def main():
     p = pathlib.Path.cwd()
     pathlib.Path(p / "bunch_centroid").mkdir(parents=True, exist_ok=True)
 
-    runs_dir = pathlib.Path.home() / "tmp" / "runs"
+    runs_dir = pathlib.Path.cwd() / "runs"
     txt_files = runs_dir.glob("final_bunch_*.txt")
     sorted_bunch_fn_to_density = parse_statepoints(runs_dir)
 
