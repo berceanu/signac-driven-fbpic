@@ -15,7 +15,7 @@ def copy_with_hash(path_to_fname, dst_dir, signac_job):
 if __name__ == "__main__":
     for job in sorted(project.find_jobs(), key=lambda job: job.sp.n_e):
         ne = job.sp.n_e / 1e6
-        print(f"{ne:.1e} -> {job.id:.6}")
+        print(f"{ne:.3e} -> {job.id:.6}")
 
     out_path = pathlib.Path.cwd() / "runs"
     out_path.mkdir(parents=True, exist_ok=True)

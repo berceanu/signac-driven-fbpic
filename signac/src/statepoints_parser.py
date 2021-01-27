@@ -61,7 +61,7 @@ def main():
 
     # #
     for fn, n_e in sorted_bunch_fn_to_density.items():
-        print(f"{n_e:.1e} -> {fn}")
+        print(f"{n_e:.3e} -> {fn}")
 
 
 if __name__ == "__main__":

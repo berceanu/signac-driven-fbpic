@@ -67,7 +67,7 @@ def main():
                 vmax=5e5,
                 plot_range=[[None, None], [-600e-6, 400e-6]],
                 cmap="cividis",
-                annotation=f"ne = {job_densities[count]:.1e}, W = {job_bending_energies[count]:.1e}",
+                annotation=f"ne = {job_densities[count]:.3e}, W = {job_bending_energies[count]:.3e}",
             )[2]
             * u.meter
         )

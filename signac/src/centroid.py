@@ -167,7 +167,7 @@ def main():
 
     for i, fn in enumerate(ordered_tfs):
         n_e = sorted_bunch_fn_to_density[fn.name]
-        print(f"{fn.name} -> {n_e:.1e}")
+        print(f"{fn.name} -> {n_e:.3e}")
 
         H, Z, X, z_coords, x_coords = compute_bunch_histogram(
             fn,
@@ -214,12 +214,12 @@ def main():
             va="center",
         )
         ax.annotate(
-            text=f"ne = {n_e:.1e}",
+            text=f"ne = {n_e:.3e}",
             xy=(0.1, 0.1),
             xycoords="axes fraction",
             color="C1",
         )
-        n_e = f"{n_e.to_value(u.cm**(-3)):.1e}"
+        n_e = f"{n_e.to_value(u.cm**(-3)):.3e}"
         fig.savefig(f"bunch_centroid_{n_e}.png", bbox_inches="tight")
         fig.savefig(
             pathlib.Path.cwd() / "bunch_centroid" / f"bunch_centroid_{i:06d}.png",
