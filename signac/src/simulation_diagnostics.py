@@ -215,7 +215,7 @@ def density_plot(
 
     current_time = (tseries.current_t * u.second).to("picosecond")
     ax.set_title(
-        f"t = {current_time:.2f}, ne = {(n_e * u.meter ** (-3)).to(u.cm ** (-3)):.1e}"
+        f"t = {current_time:.2f}, ne = {(n_e * u.meter ** (-3)).to(u.cm ** (-3)):.3e}"
     )
 
     filename = save_path / f"rho{iteration:06d}.png"
@@ -306,7 +306,7 @@ def main():
         smoothing_factor=1e-8,
         vmax=5e5,
         plot_range=[[None, None], [-600e-6, 400e-6]],
-        annotation=f"ne = {(job.sp.n_e * u.meter ** (-3)).to(u.cm ** (-3)):.1e}, W = {(bending_energy * u.meter ** (-1)).to(u.micrometer ** (-1)):.1e}",
+        annotation=f"ne = {(job.sp.n_e * u.meter ** (-3)).to(u.cm ** (-3)):.3e}, W = {(bending_energy * u.meter ** (-1)).to(u.micrometer ** (-1)):.3e}",
     )
     plot_spline_derivatives(iteration=it, tseries=time_series, smoothing_factor=1e-8)
 
