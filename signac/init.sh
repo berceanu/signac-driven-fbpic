@@ -5,6 +5,7 @@
 
 rm -rf .bundles/
 rm -f fbpic-project.log
+rm -f slurm*
 rm -f signac.rc
 rm -f .signac_sp_cache.json.gz
 rm -f signac_project_document.json
