@@ -227,7 +227,6 @@ def main():
         )
         pyplot.close(fig)
 
-    # x, y = zip(*sorted(zip(job_densities, job_centroid_positions)))
     x, y = job_densities, job_centroid_positions
 
     fig, ax = pyplot.subplots(figsize=(golden * 4, 4))
