@@ -230,7 +230,12 @@ def main():
     x, y = job_densities, job_centroid_positions
 
     fig, ax = pyplot.subplots(figsize=(golden * 4, 4))
-    ax.plot(x, y, "C1o:", mec="1.0",)
+    ax.plot(
+        x,
+        y,
+        "C1o:",
+        mec="1.0",
+    )
 
     ax.set_xscale("log")
     ax.set_xlabel(r"$n_e$ (cm${}^{-3}$)")
@@ -239,7 +244,7 @@ def main():
     ax.grid(which="both")
 
     for x_c, y_c in zip(x, y):
-        ax.annotate(f"{x_c.value:.3e}", xy=(x_c, y_c), textcoords='data', fontsize=6)
+        ax.annotate(f"{x_c.value:.3e}", xy=(x_c, y_c), textcoords="data", fontsize=6)
 
     fig.savefig("average_centroids.png", bbox_inches="tight")
     pyplot.close(fig)

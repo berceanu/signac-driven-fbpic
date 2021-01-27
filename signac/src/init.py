@@ -24,7 +24,7 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_pwfa/",
     )
 
-    for ne in np.geomspace(2e+15, 6e+16, 16) * 1e6:
+    for ne in np.geomspace(2e15, 6e16, 16) * 1e6:
         sp = dict(
             # The simulation box
             Nz=4096,  # Number of gridpoints along z

@@ -19,7 +19,12 @@ def plot_vs_density(x, y, ylabel="", fn="out.png", up_to=None):
 
     fig, ax = pyplot.subplots(figsize=(golden * 4, 4))
 
-    ax.plot(x, y, "*--", linewidth=1)
+    ax.plot(
+        x,
+        y,
+        "C1o:",
+        mec="1.0",
+    )
 
     ax.set_xscale("log")
     ax.set_xlabel(r"$n_e$ (cm${}^{-3}$)")
