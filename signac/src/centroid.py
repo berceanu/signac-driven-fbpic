@@ -239,6 +239,10 @@ def main():
 
     ax.grid(which="both")
 
+    for x_c, y_c in zip(x, y):
+        ax.annotate(f"{x_c.value:.3e}", xy=(x_c, y_c), textcoords='data', fontsize=6)
+
+
     fig.savefig("average_centroids.png", bbox_inches="tight")
     pyplot.close(fig)
 
