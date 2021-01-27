@@ -154,7 +154,7 @@ def main():
     p = pathlib.Path.cwd()
     pathlib.Path(p / "bunch_centroid").mkdir(parents=True, exist_ok=True)
 
-    runs_dir = pathlib.Path.home() / "tmp" / "runs"
+    runs_dir = pathlib.Path.cwd() / "runs"
     txt_files = runs_dir.glob("final_bunch_*.txt")
     sorted_bunch_fn_to_density = parse_statepoints(runs_dir)
 
@@ -227,7 +227,6 @@ def main():
         )
         pyplot.close(fig)
 
-    # x, y = zip(*sorted(zip(job_densities, job_centroid_positions)))
     x, y = job_densities, job_centroid_positions
 
     fig, ax = pyplot.subplots(figsize=(golden * 4, 4))
@@ -240,7 +239,7 @@ def main():
     ax.grid(which="both")
 
     for x_c, y_c in zip(x, y):
-        ax.annotate(f"{x_c.value:.1e}", xy=(x_c, y_c), textcoords='data', fontsize=6)
+        ax.annotate(f"{x_c.value:.3e}", xy=(x_c, y_c), textcoords='data', fontsize=6)
 
     fig.savefig("average_centroids.png", bbox_inches="tight")
     pyplot.close(fig)
