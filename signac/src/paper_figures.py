@@ -14,7 +14,8 @@ def main():
 
     ax.grid(which="both")
 
-    fig.savefig("average_centroids_paper")
+    # TODO: remove extension
+    fig.savefig("average_centroids_paper.png")
 
 
 if __name__ == "__main__":
