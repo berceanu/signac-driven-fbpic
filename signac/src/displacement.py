@@ -60,7 +60,7 @@ def main():
                 smoothing_factor=1e-8,
                 fn_postfix=f"{count:06d}",
                 vmax=5e5,
-                plot_range=[[70.25e-3, 71.75e-3], [-400e-6, 400e-6]],
+                plot_range=[[None, None], [-600e-6, 400e-6]],
                 cmap="cividis",
                 annotation=f"ne = {job_densities[count]:.3e}, W = {job_bending_energies[count]:.3e}",
             )[2]

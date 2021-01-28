@@ -173,7 +173,7 @@ def main():
             fn,
             nbx=200,
             nbz=200,
-            range=[[70.0, 72.0], [-600, 600]],
+            range=[[70.0, 72.0], [-900, 600]],
         )
 
         centroid_z, centroid = bunch_centroid(
