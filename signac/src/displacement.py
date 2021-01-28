@@ -1,6 +1,6 @@
 import pathlib
 import numpy as np
-from matplotlib import pyplot
+import proplot as pplt
 from scipy.constants import golden
 import unyt as u
 from openpmd_viewer.addons import LpaDiagnostics
@@ -12,23 +12,18 @@ from util import ffmpeg_command, shell_run
 import signac
 
 
-def plot_vs_density(x, y, ylabel="", fn="out.png", up_to=None):
-    if up_to is not None:
-        x = x[:up_to].copy()
-        y = y[:up_to].copy()
-
-    fig, ax = pyplot.subplots(figsize=(golden * 4, 4))
+def plot_vs_density(x, y, ylabel=None, fn="out.png"):
+    fig, ax = pplt.subplots(aspect=(golden * 3, 3))
 
     ax.plot(x, y, "*--", linewidth=1)
 
     ax.set_xscale("log")
-    ax.set_xlabel(r"$n_e$ (cm${}^{-3}$)")
+    ax.set_xlabel(r"$n_e$ ($\mathrm{cm^{-3}}$)")
     ax.set_ylabel(ylabel)
 
     ax.grid(which="both")
 
-    fig.savefig(fn, bbox_inches="tight")
-    pyplot.close(fig)
+    fig.savefig(fn, transparent=False)
 
 
 def main():
@@ -65,7 +60,7 @@ def main():
                 smoothing_factor=1e-8,
                 fn_postfix=f"{count:06d}",
                 vmax=5e5,
-                plot_range=[[None, None], [-600e-6, 400e-6]],
+                plot_range=[[70.25e-3, 71.75e-3], [-400e-6, 400e-6]],
                 cmap="cividis",
                 annotation=f"ne = {job_densities[count]:.3e}, W = {job_bending_energies[count]:.3e}",
             )[2]
@@ -73,21 +68,18 @@ def main():
         )
         job_centroid_positions[count] = x_avg.to(u.micrometer)
 
-    for UP_TO in None, None:  # 19, None
-        plot_vs_density(
-            job_densities,
-            job_centroid_positions,
-            up_to=UP_TO,
-            ylabel=r"$\langle x \rangle$ ($\mu$m)",
-            fn=f"average_centroids_{UP_TO}.png",
-        )
-        plot_vs_density(
-            job_densities,
-            job_bending_energies,
-            up_to=UP_TO,
-            ylabel=r"$W$ ($\mu$m${}^{-1}$)",
-            fn=f"bending_energies_{UP_TO}.png",
-        )
+    plot_vs_density(
+        job_densities,
+        job_centroid_positions,
+        ylabel=r"$\langle x \rangle$ ($\mathrm{\mu m}$)",
+        fn=f"average_centroids_no_cut.png",
+    )
+    plot_vs_density(
+        job_densities,
+        job_bending_energies,
+        ylabel=r"$W$ ($\mathrm{\mu m^{-1}}$)",
+        fn=f"bending_energies_no_cut.png",
+    )
 
     command = ffmpeg_command(
         input_files=pathlib.Path.cwd() / "centroid*.png", output_file="centroid.mp4"
