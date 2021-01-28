@@ -248,7 +248,7 @@ def main():
 
     command = ffmpeg_command(
         input_files=pathlib.Path.cwd() / "bunch_centroid" / "bunch_centroid_*.png",
-        output_file="bunch_centroid.mp4",
+        output_file="bunch_centroid_cut.mp4",
     )
     shell_run(command, shell=True)
 
