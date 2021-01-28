@@ -173,7 +173,7 @@ def main():
             fn,
             nbx=200,
             nbz=200,
-            range=[[70.0, 72.0], [-900, 600]],
+            range=[[70.0, 72.0], [-600, 600]],
         )
 
         centroid_z, centroid = bunch_centroid(
@@ -247,7 +247,7 @@ def main():
     for x_c, y_c in zip(x, y):
         ax.annotate(f"{x_c.value:.3e}", xy=(x_c, y_c), textcoords="data", fontsize=6)
 
-    fig.savefig("average_centroids.png", bbox_inches="tight")
+    fig.savefig("average_centroids_cut.png", bbox_inches="tight")
     pyplot.close(fig)
 
     command = ffmpeg_command(
