@@ -1,7 +1,7 @@
 import proplot as pplt
 import numpy as np
 from scipy.constants import golden
-from matplotlib import ticker
+from matplotlib import ticker, pyplot
 
 
 def ticks_format(value, index):
@@ -40,19 +40,23 @@ def plot_average_centroids(x, y, ax, x_scale_is_log=True, save_as_png=True):
         log_or_lin = "log"
         ax.set_xscale("log")
 
-        subs = [2.0, 4.0, 6.0]  # ticks to show per decade
-        ax.xaxis.set_minor_locator(
-            ticker.LogLocator(subs=subs)
-        )  # set the ticks position
-        ax.xaxis.set_minor_formatter(
-            ticker.FuncFormatter(ticks_format)
-        )  # add the custom ticks
         ax.xaxis.set_major_formatter(ticker.LogFormatterMathtext())
+        ax.xaxis.set_major_locator(ticker.LogLocator())
+
+        ticks = ax.get_xticks()
+        x_min, x_max = ax.get_xlim()
+        real_ticks = ticks[np.logical_and(x_min < ticks, ticks < x_max)]
+        if real_ticks.size < 3:
+            subs = [2.0, 4.0, 6.0]  # ticks to show per decade
+            ax.xaxis.set_minor_locator(
+                ticker.LogLocator(subs=subs)
+            )  # set the ticks position
+            ax.xaxis.set_minor_formatter(
+                ticker.FuncFormatter(ticks_format)
+            )  # add the custom ticks
     else:  # linear scale on x axis
         log_or_lin = "linear"
-        formatter = ticker.ScalarFormatter()
-        formatter.set_useMathText(True)
-        formatter.set_useOffset(False)
+        formatter = ticker.ScalarFormatter(useOffset=False, useMathText=True)
         ax.xaxis.set_minor_formatter(formatter)
         ax.xaxis.set_major_formatter(formatter)
 
@@ -68,7 +72,7 @@ def main():
     x, y = np.loadtxt("average_centroids.txt", unpack=True)
 
     fig, ax = pplt.subplots(aspect=(golden * 3, 3))
-    plot_average_centroids(x, y, ax, x_scale_is_log=True, save_as_png=False)
+    plot_average_centroids(x, y, ax, x_scale_is_log=True, save_as_png=True)
 
 
 if __name__ == "__main__":
