@@ -285,8 +285,7 @@ def main():
     random.seed(42)
 
     proj = signac.get_project(search=False)
-    ids = [job.id for job in proj]
-    job = proj.open_job(id=random.choice(ids))
+    job = next(iter(proj))
 
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     time_series = LpaDiagnostics(h5_path, check_all_files=True)
