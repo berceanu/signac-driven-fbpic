@@ -358,8 +358,6 @@ def main():
     # https://github.com/fbpic/fbpic/issues/385
     # TODO: use Gaussian density profile with 2 ramps, close to experiment
     # TODO: use Gaussian bunch, with parameters close to the experimental one
-    # TODO: can we see hosing? can we see self-modulation?
-    # TODO: find computable quantity in Remi's paper
 
 
 if __name__ == "__main__":
