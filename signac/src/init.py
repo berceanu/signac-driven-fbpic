@@ -42,10 +42,9 @@ def main():
             p_zmin=0.0e-6,
             # Maximal radial position of the plasma (meters)
             p_rmax=25.0e-6,
-            n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
+            n_e=8.0e+18 * 1.0e+6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
-            p_nt=None,  # Number of particles per cell along theta, should be 4*Nm
             # The laser
             a0=2.4,  # Laser amplitude
             w0=22.0e-6 / SQRT_FACTOR,  # Laser waist, converted from experimental FWHM@intensity
@@ -61,6 +60,7 @@ def main():
             sigma_left=500.0e-6,
             power=2.0,
             # do not change below this line ##############
+            p_nt=None,  # Number of particles per cell along theta, should be 4*Nm
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             center_right=None,
             p_zmax=None,  # Position of the end of the plasma (meters)
@@ -84,10 +84,12 @@ def main():
         sp["n_c"] = laser.ncrit.to_value("1/m**3")
         sp["E0"] = (laser.E0 / sp["a0"]).to_value("volt/m")
         sp["zR"] = laser.beam.zR.to_value("m")
+
         sp["p_nt"] = 4 * sp["Nm"]
 
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
         sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
+
         sp["L_interact"] = sp["p_zmax"] - sp["p_zmin"]
         sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value("m/s")
         sp["T_interact"] = (
