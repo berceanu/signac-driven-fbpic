@@ -22,7 +22,7 @@ import sliceplots
 from flow import FlowProject, directives
 from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot
-from openpmd_viewer import addons
+from openpmd_viewer.addons import LpaDiagnostics
 import unyt as u
 from peak_detection import (
     plot_electron_energy_spectrum,
@@ -65,7 +65,7 @@ class OdinEnvironment(DefaultSlurmEnvironment):
             "-w",
             "--walltime",
             type=float,
-            default=36,
+            default=72,
             help="The wallclock time in hours.",
         )
         parser.add_argument(
@@ -116,7 +116,7 @@ def fbpic_ran(job):
         did_it_run = False
         return did_it_run
 
-    time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
+    time_series = LpaDiagnostics(h5_path, check_all_files=True)
     iterations: np.ndarray = time_series.iterations
 
     # estimate iteration array based on input parameters
@@ -166,6 +166,7 @@ def plot_initial_density_profile(job):
 
 @ex
 @Project.operation
+@Project.pre.after(plot_initial_density_profile)
 @Project.post.isfile("laser_intensity.png")
 def plot_laser(job):
     """Plot the laser intensity at focus and far from focus, in linear and log scale."""
@@ -186,6 +187,7 @@ def plot_laser(job):
 @ex.with_directives(directives=dict(ngpu=1))
 @directives(ngpu=1)
 @Project.operation
+@Project.pre.after(plot_laser)
 @Project.post(fbpic_ran)
 def run_fbpic(job):
     """
@@ -295,7 +297,7 @@ def save_pngs(job):
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     rho_path = pathlib.Path(job.ws) / "rhos"
     phasespace_path = pathlib.Path(job.ws) / "phasespaces"
-    time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
+    time_series = LpaDiagnostics(h5_path, check_all_files=True)
 
     it_laser_density_plot = partial(
         laser_density_plot,
@@ -350,7 +352,7 @@ def save_final_histogram(job):
     """Save the histogram corresponding to the last iteration."""
 
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
+    time_series = LpaDiagnostics(h5_path, check_all_files=True)
     last_iteration = time_series.iterations[-1]
 
     # compute 1D histogram
@@ -409,7 +411,7 @@ def save_histograms(job):
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    time_series = addons.LpaDiagnostics(h5_path, check_all_files=True)
+    time_series = LpaDiagnostics(h5_path, check_all_files=True)
     number_of_iterations: int = time_series.iterations.size
 
     # Do a mock histogram in order to get the number of bins
