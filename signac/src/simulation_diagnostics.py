@@ -8,7 +8,7 @@ import unyt as u
 import colorcet as cc
 
 
-def phasespace_plot(
+def phasespace_plot(  # TODO: create histogram manually, use same axis limits and vmin, vmax
     iteration,
     tseries,
     save_path=pathlib.Path.cwd(),
