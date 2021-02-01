@@ -3,6 +3,6 @@
 # Run the project operations, in parallel, using at most N GPUs.
 # Usage: ./project.sh N
 
-# parallel on N GPUs FIXME remove pretend
+# parallel on N GPUs
 python src/project.py submit -o ex --bundle=$1 --parallel
 
