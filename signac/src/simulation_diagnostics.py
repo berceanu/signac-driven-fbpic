@@ -3,30 +3,80 @@ import pathlib
 from copy import copy
 import numpy as np
 from matplotlib import pyplot, colors, cm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import unyt as u
 import colorcet as cc
 
 
-def phasespace_plot(  # TODO: create histogram manually, use same axis limits and vmin, vmax
+def phase_space_hist(iteration, tseries, *, nbuz=200, nbz=200, uzmin=40.0, uzmax=None):
+    """
+    Compute the phase-space uz vs z 2D histogram,
+    with given number of bins.
+    """
+    if uzmax is None:
+        hist_range = None
+    else:
+        hist_range = [None, [uzmin, uzmax]]
+
+    z, uz, w = tseries.get_particle(
+        var_list=["z", "uz", "w"],
+        species="electrons",
+        iteration=iteration,
+        select={"uz": [uzmin, uzmax]},
+    )
+    # convert from m to mm
+    z_mm = z * 1e3
+
+    H, zedges, uzedges = np.histogram2d(
+        z_mm,
+        uz,
+        bins=(nbz, nbuz),
+        weights=w,  # convert to count of real electrons
+        range=hist_range,
+    )
+    Z, UZ = np.meshgrid(zedges, uzedges)
+
+    H = H.T  # Let each row list bins with common x range.
+
+    return H, Z, UZ
+
+
+def phasespace_plot(
     iteration,
     tseries,
+    uzmax=1.5e3,
+    vmin=0.0,
+    vmax=1.0e8,
     save_path=pathlib.Path.cwd(),
 ):
     """
     Plot the longitudinal (uz v z) electron phase space.
     """
 
+    H, Z, UZ = phase_space_hist(iteration, tseries, uzmax=uzmax)
+
     fig, ax = pyplot.subplots(figsize=(7, 5))
-    z, uz = tseries.get_particle(
-        var_list=["z", "uz"],
-        species="electrons",
-        iteration=iteration,
-        select={"uz": [40, 1.5e3]},
-        plot=True,
-        vmax=1e8,
-        cmap='nipy_spectral',
+
+    img = ax.pcolormesh(
+        Z,
+        UZ,
+        H,
+        cmap=cm.get_cmap("plasma"),
+        norm=colors.SymLogNorm(linthresh=1, vmin=vmin, vmax=vmax, base=10),
     )
+
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="4%", pad=0.02)
+    cbar = ax.figure.colorbar(
+        img,
+        cax=cax,
+    )
+    cbar.set_label(r"number of electrons")
+
+    ax.set_xlabel(r"$z$ ($\mathrm{mm}$)")
+    ax.set_ylabel(r"$u_z$ ($m_e c$)")
+
     filename = pathlib.Path(save_path) / f"phasespace{iteration:06d}.png"
     fig.savefig(filename)
     pyplot.close(fig)
