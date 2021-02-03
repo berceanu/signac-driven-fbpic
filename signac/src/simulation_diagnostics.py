@@ -57,6 +57,10 @@ def phase_space_plot(
 
     fig, ax = pyplot.subplots(figsize=(7, 5))
 
+    t_s = tseries.current_t * u.second
+    t_ps = t_s.to(u.picosecond)
+    ax.set_title(f"t = {t_ps:.2f} (iteration {iteration:,g})")
+
     img = ax.pcolormesh(
         Z,
         UZ,
