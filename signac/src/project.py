@@ -116,7 +116,7 @@ def fbpic_ran(job):
         did_it_run = False
         return did_it_run
 
-    time_series = LpaDiagnostics(h5_path, check_all_files=True)
+    time_series = LpaDiagnostics(h5_path)
     iterations: np.ndarray = time_series.iterations
 
     # estimate iteration array based on input parameters
@@ -297,7 +297,7 @@ def save_pngs(job):
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     rho_path = pathlib.Path(job.ws) / "rhos"
     phasespace_path = pathlib.Path(job.ws) / "phasespaces"
-    time_series = LpaDiagnostics(h5_path, check_all_files=True)
+    time_series = LpaDiagnostics(h5_path)
 
     it_laser_density_plot = partial(
         laser_density_plot,
@@ -352,12 +352,17 @@ def generate_centroid_movie(job):
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.isfile("final_histogram.npz")
+@Project.post.true("ax_title")
 def save_final_histogram(job):
     """Save the histogram corresponding to the last iteration."""
 
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    time_series = LpaDiagnostics(h5_path, check_all_files=True)
+    time_series = LpaDiagnostics(h5_path)
     last_iteration = time_series.iterations[-1]
+
+    current_time = (time_series.t[-1] * u.second).to(u.picosecond)
+    ax_title = f"t = {current_time:.2f} (iteration {last_iteration:,g})"
+    job.doc.setdefault("ax_title", ax_title)
 
     # compute 1D histogram
     energy_hist, bin_edges, _ = particle_energy_histogram(
@@ -376,7 +381,7 @@ def plot_final_histogram(job):
     """Plot the electron spectrum corresponding to the last iteration."""
 
     plot_electron_energy_spectrum(
-        job.fn("final_histogram.npz"), job.fn("final_histogram.png")
+        job.fn("final_histogram.npz"), job.fn("final_histogram.png"), ax_title=job.doc.ax_title,
     )
 
 
@@ -415,7 +420,7 @@ def save_histograms(job):
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    time_series = LpaDiagnostics(h5_path, check_all_files=True)
+    time_series = LpaDiagnostics(h5_path)
     number_of_iterations: int = time_series.iterations.size
 
     # Do a mock histogram in order to get the number of bins
