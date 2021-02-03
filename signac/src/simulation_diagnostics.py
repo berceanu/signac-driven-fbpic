@@ -157,17 +157,24 @@ def laser_density_plot(
 
     fig, ax = pyplot.subplots(figsize=(10, 6))
 
+    R = rho / (u.electron_charge.to_value("C") * n_c)
+    # print(f"{R.min():.2f}, {R.max():.2f}")
+
+    E = envelope / E0
+    # print(f"{E.min():.2f}, {E.max():.2f}")
+
     im_rho = ax.imshow(
-        rho / (u.elementary_charge.to_value("C") * n_c),
+        R,
         extent=rho_info.imshow_extent * 1e6,  # conversion to microns
         origin="lower",
-        norm=colors.SymLogNorm(linthresh=1e-4, linscale=0.15, base=10),
+        norm=colors.SymLogNorm(vmin=-0.3, vmax=6.0, linthresh=1.0e-3, linscale=0.15, base=10),
         cmap=cm.get_cmap("cividis"),
     )
     im_envelope = ax.imshow(
-        envelope / E0,
+        E,
         extent=env_info.imshow_extent * 1e6,
         origin="lower",
+        norm=colors.Normalize(vmin=0.0, vmax=5.0),
         cmap=laser_cmap,
     )
     im_envelope.set_clim(vmin=1.0)
@@ -340,7 +347,7 @@ def main():
     job = next(iter(proj))
 
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    time_series = LpaDiagnostics(h5_path, check_all_files=True)
+    time_series = LpaDiagnostics(h5_path)
 
     it = random.choice(time_series.iterations.tolist())
     print(f"job {job.id}, iteration {it}")
