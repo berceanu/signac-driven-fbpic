@@ -25,11 +25,11 @@ def phase_space_hist(iteration, tseries, *, nbuz=200, nbz=200, uzmin=40.0, uzmax
         iteration=iteration,
         select={"uz": [uzmin, uzmax]},
     )
-    # convert from m to mm
-    z_mm = z * 1e3
+    # convert from m to um
+    z_um = z * 1e6
 
     H, zedges, uzedges = np.histogram2d(
-        z_mm,
+        z_um,
         uz,
         bins=(nbz, nbuz),
         weights=w,  # convert to count of real electrons
@@ -76,7 +76,7 @@ def phase_space_plot(
     )
     cbar.set_label(r"number of electrons")
 
-    ax.set_xlabel(r"$z$ ($\mathrm{mm}$)")
+    ax.set_xlabel(r"$z$ ($\mathrm{\mu m}$)")
     ax.set_ylabel(r"$u_z$ ($m_e c$)")
 
     filename = pathlib.Path(save_path) / f"phasespace{iteration:06d}.png"
