@@ -47,7 +47,7 @@ def plot_laser_intensity(
     t = {field: (z[field] - z0 * u.meter) / u.clight for field in ("near", "far")}
     col_label = {
         "near": f"z={z['near'].to(u.micrometer):.1f}, t={t['near'].to(u.fs):.1f}",
-        "far": f"z={z['far'].to(u.mm):.1f}, t={t['far'].to(u.ps):.1f}",
+        "far": f"z={z['far'].to(u.mm):.2f}, t={t['far'].to(u.ps):.2f}",
     }
 
     far_waist = flattened_waist_far_from_focus(
