@@ -42,7 +42,7 @@ def phase_space_hist(iteration, tseries, *, nbuz=200, nbz=200, uzmin=40.0, uzmax
     return H, Z, UZ
 
 
-def phasespace_plot(
+def phase_space_plot(
     iteration,
     tseries,
     uzmax=None,
@@ -347,7 +347,7 @@ def main():
     )
 
     laser_density_plot(iteration=it, tseries=time_series)
-    phasespace_plot(iteration=it, tseries=time_series)
+    phase_space_plot(iteration=it, tseries=time_series)
 
 
 if __name__ == "__main__":

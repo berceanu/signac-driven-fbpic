@@ -33,7 +33,7 @@ from util import ffmpeg_command, shell_run
 from simulation_diagnostics import (
     particle_energy_histogram,
     laser_density_plot,
-    phasespace_plot,
+    phase_space_plot,
 )
 from density_functions import plot_density_profile, make_gaussian_dens_func
 from laser_profiles import make_flat_laser_profile, plot_laser_intensity
@@ -307,8 +307,8 @@ def save_pngs(job):
         n_c=job.sp.n_c,
         E0=job.sp.E0,
     )
-    it_phasespace_plot = partial(
-        phasespace_plot,
+    it_phase_space_plot = partial(
+        phase_space_plot,
         tseries=time_series,
         uzmax=1.5e3,
         vmax=1.0e8,
@@ -316,7 +316,7 @@ def save_pngs(job):
     )
 
     with Pool(3) as pool:
-        pool.map(it_phasespace_plot, time_series.iterations.tolist())
+        pool.map(it_phase_space_plot, time_series.iterations.tolist())
         pool.map(it_laser_density_plot, time_series.iterations.tolist())
 
 
