@@ -45,9 +45,8 @@ def phase_space_hist(iteration, tseries, *, nbuz=200, nbz=200, uzmin=40.0, uzmax
 def phasespace_plot(
     iteration,
     tseries,
-    uzmax=1.5e3,
-    vmin=0.0,
-    vmax=1.0e8,
+    uzmax=None,
+    vmax=None,
     save_path=pathlib.Path.cwd(),
 ):
     """
@@ -63,7 +62,7 @@ def phasespace_plot(
         UZ,
         H,
         cmap=cm.get_cmap("plasma"),
-        norm=colors.SymLogNorm(linthresh=1, vmin=vmin, vmax=vmax, base=10),
+        norm=colors.SymLogNorm(linthresh=1, vmin=0.0, vmax=vmax, base=10),
     )
 
     divider = make_axes_locatable(ax)
