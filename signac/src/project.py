@@ -308,7 +308,12 @@ def save_pngs(job):
         E0=job.sp.E0,
     )
     it_phasespace_plot = partial(
-        phasespace_plot, tseries=time_series, save_path=phasespace_path
+        phasespace_plot,
+        tseries=time_series,
+        uzmax=1.5e3,
+        vmin=0.0,
+        vmax=1.0e8,
+        save_path=phasespace_path,
     )
 
     with Pool(3) as pool:
