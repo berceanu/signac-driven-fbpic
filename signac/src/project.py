@@ -38,6 +38,7 @@ from simulation_diagnostics import (
 from density_functions import plot_density_profile, make_gaussian_dens_func
 from laser_profiles import make_flat_laser_profile, plot_laser_intensity
 from render_lwfa_script import write_lwfa_script
+from timer import Timer
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -197,6 +198,7 @@ def plot_laser(job):
 @Project.operation
 @Project.pre.after(plot_laser)
 @Project.post(fbpic_ran)
+@Project.post.true("elapsed_time")
 def run_fbpic(job):
     """
     This ``signac-flow`` operation runs a ``fbpic`` simulation.
@@ -281,8 +283,16 @@ def run_fbpic(job):
     # set deterministic random seed
     np.random.seed(0)
 
+    # time the fbpic run
+    t = Timer()
+    t.start()
+
     # Run the simulation
     sim.step(job.sp.N_step, show_progress=False)
+
+    # stop the timer
+    elapsed_time = t.stop()
+    job.doc.setdefault("elapsed_time", elapsed_time)
 
     # redirect stdout back and close "stdout.txt"
     sys.stdout = orig_stdout
