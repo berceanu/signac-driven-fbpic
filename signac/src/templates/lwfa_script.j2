@@ -48,47 +48,47 @@ use_cuda = True
 n_order = -1
 
 # The simulation box
-Nz = {{sp.Nz}}  # Number of gridpoints along z
-zmax = {{sp.zmax}}  # Right end of the simulation box (meters)
-zmin = {{sp.zmin}}  # Left end of the simulation box (meters)
-Nr = {{sp.Nr}}  # Number of gridpoints along r
-rmax = {{sp.rmax}}  # Length of the box along r (meters)
-Nm = {{sp.Nm}}  # Number of modes used
+Nz = {{ sp.Nz }}  # Number of gridpoints along z
+zmax = {{ sp.zmax }}  # Right end of the simulation box (meters)
+zmin = {{ sp.zmin }}  # Left end of the simulation box (meters)
+Nr = {{ sp.Nr }}  # Number of gridpoints along r
+rmax = {{ sp.rmax }}  # Length of the box along r (meters)
+Nm = {{ sp.Nm }}  # Number of modes used
 
 # The simulation timestep
 dt = (zmax - zmin) / Nz / c  # Timestep (seconds)
 
 # The particles
-p_zmin = {{sp.p_zmin}}  # Position of the beginning of the plasma (meters)
-p_zmax = {{sp.p_zmax}}  # Position of the end of the plasma (meters)
-p_rmax = {{sp.p_rmax}}  # Maximal radial position of the plasma (meters)
-n_e = {{sp.n_e}}  # Density (electrons.meters^-3)
-p_nz = {{sp.p_nz}}  # Number of particles per cell along z
-p_nr = {{sp.p_nr}}  # Number of particles per cell along r
-p_nt = {{sp.p_nt}}  # Number of particles per cell along theta
+p_zmin = {{ sp.p_zmin }}  # Position of the beginning of the plasma (meters)
+p_zmax = {{ sp.p_zmax }}  # Position of the end of the plasma (meters)
+p_rmax = {{ sp.p_rmax }}  # Maximal radial position of the plasma (meters)
+n_e = {{ sp.n_e }}  # Density (electrons.meters^-3)
+p_nz = {{ sp.p_nz }}  # Number of particles per cell along z
+p_nr = {{ sp.p_nr }}  # Number of particles per cell along r
+p_nt = {{ sp.p_nt }}  # Number of particles per cell along theta
 
 # The laser
-a0 = {{sp.a0}}  # Laser amplitude
-w0 = {{sp.w0}}  # Laser waist
-z0 = {{sp.z0}}  # Laser centroid
-lambda0 = {{sp.lambda0}}  # Laser wavelength
-zfoc = {{sp.zfoc}}  # Focal position
-tau = {{sp.tau}}  # Laser duration
-profile_flatness = {{sp.profile_flatness}}  # Flatness of laser profile far from focus (larger means flatter)
+a0 = {{ sp.a0 }}  # Laser amplitude
+w0 = {{ sp.w0 }}  # Laser waist
+z0 = {{ sp.z0 }}  # Laser centroid
+lambda0 = {{ sp.lambda0 }}  # Laser wavelength
+zfoc = {{ sp.zfoc }}  # Focal position
+tau = {{ sp.tau }}  # Laser duration
+profile_flatness = {{ sp.profile_flatness }}  # Flatness of laser profile far from focus (larger means flatter)
 
 # The moving window
 v_window = c  # Speed of the window
 
 # The diagnostics and the checkpoints/restarts
-diag_period = {{sp.diag_period}}  # Period of the diagnostics in number of timesteps
+diag_period = {{ sp.diag_period }}  # Period of the diagnostics in number of timesteps
 
 # The density profile
-flat_top_dist = {{sp.flat_top_dist}}  # plasma flat top distance
-sigma_right = {{sp.sigma_right}}
-center_left = {{sp.center_left}}
-sigma_left = {{sp.sigma_left}}
-power = {{sp.power}}
-center_right = {{sp.center_right}}
+flat_top_dist = {{ sp.flat_top_dist }}  # plasma flat top distance
+sigma_right = {{ sp.sigma_right }}
+center_left = {{ sp.center_left }}
+sigma_left = {{ sp.sigma_left }}
+power = {{ sp.power }}
+center_right = {{ sp.center_right }}
 
 
 def dens_func(z, r):
@@ -136,7 +136,7 @@ def dens_func(z, r):
 
 
 # The interaction length of the simulation (meters)
-L_interact = {{sp.L_interact}}  # increase to simulate longer distance!
+L_interact = {{ sp.L_interact }}  # increase to simulate longer distance!
 # Interaction time (seconds) (to calculate number of PIC iterations)
 T_interact = (L_interact + (zmax - zmin)) / v_window
 # (i.e. the time it takes for the moving window to slide across the plasma)
