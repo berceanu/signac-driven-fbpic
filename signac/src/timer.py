@@ -1,5 +1,9 @@
 import time
-import unyt as u
+import datetime
+
+
+def convert_from(seconds):
+    return str(datetime.timedelta(seconds=seconds))
 
 
 class TimerError(Exception):
@@ -22,8 +26,9 @@ class Timer:
         if self._start_time is None:
             raise TimerError(f"Timer is not running. Use .start() to start it")
 
-        elapsed_time = (time.perf_counter() - self._start_time) * u.second
+        elapsed_time = convert_from(time.perf_counter() - self._start_time)
         self._start_time = None
+
         return elapsed_time
 
 
@@ -35,7 +40,7 @@ def main():
     time.sleep(5.0)
 
     elapsed_time = t.stop()  # A few seconds later
-    print(f"Elapsed time: {elapsed_time.to(u.hour):0.3e}")
+    print(f"Elapsed time: {elapsed_time}")
 
 
 if __name__ == "__main__":
