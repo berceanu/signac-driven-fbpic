@@ -28,7 +28,9 @@ def main():
 
     x_from_center = np.array([200, 600, 1000, 1400, 1800]) * 1e-6
 
-    for focus in nozzle_center_offset(x_from_center):
+    for index, focus in enumerate(nozzle_center_offset(x_from_center), start=1):
+        print(f"#{index:,g}: {focus:.3e}")
+        
         sp = dict(
             # The simulation box
             Nz=2048,  # Number of gridpoints along z
