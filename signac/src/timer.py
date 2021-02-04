@@ -1,8 +1,13 @@
+"""Utilities for timing code execution."""
 import time
 import datetime
 
 
 def convert_from(seconds):
+    """
+    Convert seconds to H:M:S format.
+    Works for periods over 24H also.
+    """
     return str(datetime.timedelta(seconds=seconds))
 
 
