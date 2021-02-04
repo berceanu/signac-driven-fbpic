@@ -195,7 +195,7 @@ def run_fbpic(job):
     :param job: the job instance is a handle to the data of a unique statepoint
     """
     from fbpic.main import Simulation
-    from fbpic.lpa_utils.laser import add_laser_pulse, FlattenedGaussianLaser
+    from fbpic.lpa_utils.laser import add_laser_pulse
     from fbpic.openpmd_diag import (
         FieldDiagnostic,
         ParticleDiagnostic,
