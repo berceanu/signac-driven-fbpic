@@ -154,12 +154,14 @@ def are_rho_pngs(job):
 def are_phasespace_pngs(job):
     return are_pngs(job, "phasespace")
 
+
 @ex
 @Project.operation
 @Project.post.isfile("lwfa_script.py")
 def lwfa_script(job):
     """Write lwfa_script.py in the job's workspace folder."""
     write_lwfa_script(job)
+
 
 @ex
 @Project.operation
@@ -387,7 +389,9 @@ def plot_final_histogram(job):
     """Plot the electron spectrum corresponding to the last iteration."""
 
     plot_electron_energy_spectrum(
-        job.fn("final_histogram.npz"), job.fn("final_histogram.png"), ax_title=job.doc.ax_title,
+        job.fn("final_histogram.npz"),
+        job.fn("final_histogram.png"),
+        ax_title=job.doc.ax_title,
     )
 
 

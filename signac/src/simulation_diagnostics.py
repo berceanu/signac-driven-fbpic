@@ -167,7 +167,9 @@ def laser_density_plot(
         R,
         extent=rho_info.imshow_extent * 1e6,  # conversion to microns
         origin="lower",
-        norm=colors.SymLogNorm(vmin=-0.3, vmax=6.0, linthresh=1.0e-3, linscale=0.15, base=10),
+        norm=colors.SymLogNorm(
+            vmin=-0.3, vmax=6.0, linthresh=1.0e-3, linscale=0.15, base=10
+        ),
         cmap=cm.get_cmap("cividis"),
     )
     im_envelope = ax.imshow(

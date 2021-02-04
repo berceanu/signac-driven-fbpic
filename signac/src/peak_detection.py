@@ -180,10 +180,16 @@ def main():
     energy_low = 100
     energy_high = 300
 
-    Q = integrated_charge(job.fn("final_histogram.npz"), from_energy=energy_low, to_energy=energy_high)
-    pos = peak_position(job.fn("final_histogram.npz"), from_energy=energy_low, to_energy=energy_high)
+    Q = integrated_charge(
+        job.fn("final_histogram.npz"), from_energy=energy_low, to_energy=energy_high
+    )
+    pos = peak_position(
+        job.fn("final_histogram.npz"), from_energy=energy_low, to_energy=energy_high
+    )
 
-    print(f"{Q:.1f} pc between {energy_low} and {energy_high} MeV, peak at {pos:.1f} MeV")
+    print(
+        f"{Q:.1f} pc between {energy_low} and {energy_high} MeV, peak at {pos:.1f} MeV"
+    )
 
 
 if __name__ == "__main__":

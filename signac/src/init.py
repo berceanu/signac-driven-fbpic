@@ -30,7 +30,7 @@ def main():
 
     for index, focus in enumerate(nozzle_center_offset(x_from_center), start=1):
         print(f"#{index:,g}: {focus:.3e}")
-        
+
         sp = dict(
             # The simulation box
             Nz=2048,  # Number of gridpoints along z
@@ -44,13 +44,15 @@ def main():
             p_zmin=0.0e-6,
             # Maximal radial position of the plasma (meters)
             p_rmax=25.0e-6,
-            n_e=8.0e+18 * 1.0e+6,  # Density (electrons.meters^-3)
+            n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
             # The laser
             a0=2.4,  # Laser amplitude
-            w0=22.0e-6 / SQRT_FACTOR,  # Laser waist, converted from experimental FWHM@intensity
-            tau=25.0e-15 / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
+            w0=22.0e-6
+            / SQRT_FACTOR,  # Laser waist, converted from experimental FWHM@intensity
+            tau=25.0e-15
+            / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
             z0=-10.0e-6,  # Laser centroid
             zfoc=focus,  # Focal position
             lambda0=0.815e-6,  # Laser wavelength
@@ -115,7 +117,7 @@ def main():
         job.doc.setdefault("λp", f"{plasma.λp:.3f}")
 
         job.doc.setdefault("x", nozzle_center_offset(job.sp.zfoc))
-        
+
         p = pathlib.Path(job.ws)
         for folder in ("rhos", "phasespaces"):
             pathlib.Path(p / folder).mkdir(parents=True, exist_ok=True)
