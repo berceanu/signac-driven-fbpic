@@ -180,7 +180,6 @@ def plot_laser(job):
         lambda0=job.sp.lambda0,
         w0=job.sp.w0,
         fn=job.fn("laser_intensity.png"),
-        vert_bars=True,
     )
 
 
