@@ -28,10 +28,10 @@ def main():
         img,
         cax=cax,
     )
-    cbar.set_label(r"data")
+    cbar.set_label(r"data ($\mathrm{\#}$)")
 
-    ax.set_xlabel(r"$x$ ($\mathrm{.}$)")
-    ax.set_ylabel(r"$y$ ($\mathrm{.}$)")
+    ax.set_xlabel(r"$x$ ($\mathrm{\#}$)")
+    ax.set_ylabel(r"$y$ ($\mathrm{\#}$)")
 
     fig.savefig("imshow.png")
     pyplot.close(fig)
