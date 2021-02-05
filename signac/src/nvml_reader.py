@@ -1,55 +1,63 @@
+"""
+Reads GPU usage info from CSV file and plots it.
+"""
 import pandas as pd
 import pathlib
 from matplotlib import pyplot
 
-# 'gpu_uuid', 'pid'
 
-
-def plot_vs_time(df, *, col=None, ylabel=None, ax=None):
-    if ax is None:
-        ax = pyplot.gca()
+def plot_vs_time(grouped, *, ax, col=None, ylabel=None):
+    """All plotting is done with time on the x axis,
+    this is the base function for that."""
+    for uuid, pid in grouped.groups.keys():
+        grouped[col].get_group((uuid, pid)).plot(ax=ax, label=f"{uuid}, PID={pid}")
 
     ax.grid()
 
     ax.set_ylabel(ylabel)
-    ax.set_xlabel("Time")
-
-    for uuid in df["gpu_uuid"].cat.categories:
-        ax.plot("time_stamp", col, data=df, label=uuid)
-
-    ax.legend()
+    ax.set_xlabel("Timestamp")
 
     return ax
 
 
-def plot_gpu_usage(df):
-    ax = plot_vs_time(df, col="GPU_Util_%", ylabel="GPU usage (%)")
-    return ax
+def plot_gpu_usage(grouped, *, ax):
+    return plot_vs_time(grouped, col="GPU_Util_%", ylabel="Utilization (%)", ax=ax)
 
 
-def plot_used_power(df):
-    ax = plot_vs_time(df, col="used_power_W", ylabel="Used power (W)")
-    return ax
+def plot_used_power(grouped, *, ax):
+    return plot_vs_time(grouped, col="used_power_W", ylabel="Power (W)", ax=ax)
 
 
-def plot_used_memory(df):
-    ax = plot_vs_time(df, col="used_gpu_memory_MiB", ylabel="GPU MEM usage (MiB)")
+def plot_used_memory(grouped, *, ax):
+    return plot_vs_time(
+        grouped, col="used_gpu_memory_MiB", ylabel="MEM usage (MiB)", ax=ax
+    )
 
 
 def main():
+    """Main entry point."""
     p = pathlib.Path.cwd() / "nvml.csv"
     df = pd.read_csv(p)
-    df["gpu_uuid"] = df["gpu_uuid"].astype("|S40")
-    df["gpu_uuid"] = df["gpu_uuid"].astype("category")
+
+    df["gpu_uuid"] = df["gpu_uuid"].astype("string")
     df["time_stamp"] = pd.to_datetime(df["time_stamp"])
+    df.set_index("time_stamp", inplace=True)
 
-    fig, ax = pyplot.subplots()
+    print(df.info(), "\n")
+    print(df.describe(), "\n")
 
-    # plot_gpu_usage(df)
-    # plot_used_power(df)
-    plot_used_memory(df)
+    grouped = df.groupby(["gpu_uuid", "pid"])
 
-    fig.savefig("nvml.png")
+    fig, axes = pyplot.subplots(figsize=(12, 8), nrows=3, sharex=True)
+
+    for i, (foo, ax) in enumerate(
+        zip((plot_gpu_usage, plot_used_power, plot_used_memory), axes.flatten())
+    ):
+        foo(grouped, ax=ax)
+        if i == 0:
+            ax.legend()
+
+    fig.savefig("nvml.png", dpi=192)
     pyplot.close(fig)
 
 
