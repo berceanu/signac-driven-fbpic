@@ -85,10 +85,11 @@ def main():
         sp["E0"] = (laser.E0 / sp["a0"]).to_value("volt/m")
         sp["zR"] = laser.beam.zR.to_value("m")
 
-        sp["Nz"] = int((sp["zmax"] - sp["zmin"]) * sp["z_rezolution_factor"] / sp["lambda0"])
+        sp["Nz"] = int(
+            (sp["zmax"] - sp["zmin"]) * sp["z_rezolution_factor"] / sp["lambda0"]
+        )
         sp["p_nt"] = 4 * sp["Nm"]
         sp["p_rmax"] = sp["rmax"]
-
 
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
         sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]

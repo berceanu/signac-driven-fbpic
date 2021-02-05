@@ -35,9 +35,7 @@ def main():
     out_file = pathlib.Path.cwd() / f"nvml_{now}.csv"
 
     with out_file.open("w") as f:
-        f.write(
-            "time_stamp,gpu_uuid,pid,used_gpu_memory_MiB,used_power_W,GPU_Util_%\n"
-        )
+        f.write("time_stamp,gpu_uuid,pid,used_gpu_memory_MiB,used_power_W,GPU_Util_%\n")
 
     while is_python_running(gpu_count):
         time.sleep(10)
