@@ -26,11 +26,7 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    x_from_center = np.array([200, 600, 1000, 1400, 1800]) * 1e-6
-
-    for index, focus in enumerate(nozzle_center_offset(x_from_center), start=1):
-        print(f"#{index:,g}: {focus:.3e}")
-
+    for _ in range(1):  # placeholder
         sp = dict(
             # The simulation box
             z_rezolution_factor=20,  # Δz = lambda0 / z_rezolution_factor
@@ -54,7 +50,7 @@ def main():
             tau=25.0e-15
             / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
             z0=-10.0e-6,  # Laser centroid
-            zfoc=focus,  # Focal position
+            zfoc=nozzle_center_offset(1400e-6),  # Focal position
             lambda0=0.815e-6,  # Laser wavelength
             profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter)
             # The density profile
