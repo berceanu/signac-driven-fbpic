@@ -33,7 +33,7 @@ def main():
 
         sp = dict(
             # The simulation box
-            Nz=2048,  # Number of gridpoints along z
+            z_rezolution_factor=20,  # Δz = lambda0 / z_rezolution_factor
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             Nr=256,  # Number of gridpoints along r
@@ -64,6 +64,7 @@ def main():
             sigma_left=500.0e-6,
             power=2.0,
             # do not change below this line ##############
+            Nz=None,  # Number of gridpoints along z
             p_nt=None,  # Number of particles per cell along theta, should be 4*Nm
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             center_right=None,
@@ -89,6 +90,7 @@ def main():
         sp["E0"] = (laser.E0 / sp["a0"]).to_value("volt/m")
         sp["zR"] = laser.beam.zR.to_value("m")
 
+        sp["Nz"] = (sp["zmax"] - sp["zmin"]) * sp["z_rezolution_factor"] / sp["lambda0"]
         sp["p_nt"] = 4 * sp["Nm"]
 
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
