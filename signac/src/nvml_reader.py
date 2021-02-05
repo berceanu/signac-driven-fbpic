@@ -1,6 +1,9 @@
 """
 Reads GPU usage info from CSV file and plots it.
+Saves the figure as a PNG file.
+Usage: python nvml_reader.py filename.csv
 """
+import sys
 import pandas as pd
 import pathlib
 from matplotlib import pyplot
@@ -36,7 +39,10 @@ def plot_used_memory(grouped, *, ax):
 
 def main():
     """Main entry point."""
-    p = pathlib.Path.cwd() / "nvml.csv"
+    csv_fname = str(sys.argv[1])
+    p = pathlib.Path.cwd() / csv_fname
+    csv_timestamp = p.stem.split("_")[1]
+
     df = pd.read_csv(p)
 
     df["gpu_uuid"] = df["gpu_uuid"].astype("string")
@@ -57,7 +63,7 @@ def main():
         if i == 0:
             ax.legend()
 
-    fig.savefig("nvml.png", dpi=192)
+    fig.savefig(f"nvml_{csv_timestamp}.png", dpi=192)
     pyplot.close(fig)
 
 
