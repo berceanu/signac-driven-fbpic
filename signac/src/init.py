@@ -29,7 +29,7 @@ def main():
     for _ in range(1):  # placeholder
         sp = dict(
             # The simulation box
-            z_rezolution_factor=16.633,  # Δz = lambda0 / z_rezolution_factor (default 20)
+            z_rezolution_factor=20,  # Δz = lambda0 / z_rezolution_factor (default 20)
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             Nr=512,  # Number of gridpoints along r
