@@ -30,7 +30,7 @@ def main():
 
     with out_file.open("w") as f:
         f.write(
-            "time_stamp, gpu_uuid, pid, used_gpu_memory_MiB, used_power_W, GPU_Util_%\n"
+            "time_stamp,gpu_uuid,pid,used_gpu_memory_MiB,used_power_W,GPU_Util_%\n"
         )
 
     while is_python_running(gpu_count):
@@ -51,7 +51,7 @@ def main():
 
                     with out_file.open("a") as f:
                         f.write(
-                            f"{time_stamp}, {uuid}, {p.pid}, {mem_MiB:g}, {pow_draw_watt}, {gpu_util_percentage}\n"
+                            f"{time_stamp},{uuid},{p.pid},{mem_MiB:g},{pow_draw_watt},{gpu_util_percentage}\n"
                         )
 
     pynvml.nvmlShutdown()
