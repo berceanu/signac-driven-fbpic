@@ -229,8 +229,8 @@ def run_fbpic(job):
         zmin=job.sp.zmin,
         boundaries={
             "z": "open",
-            "r": "open",
-        },  # 'r': 'open' can also be used (more expensive)
+            "r": job.sp.r_boundary_conditions,
+        },
         n_order=-1,
         use_cuda=True,
         verbose_level=2,

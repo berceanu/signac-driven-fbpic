@@ -26,7 +26,7 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    for _ in range(1):  # placeholder
+    for _ in range(1):  # placeholder FIXME
         sp = dict(
             # The simulation box
             z_rezolution_factor=20,  # Δz = lambda0 / z_rezolution_factor (default 20)
@@ -34,6 +34,7 @@ def main():
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             Nr=512,  # Number of gridpoints along r
             rmax=50.0e-6,  # Length of the box along r (meters)
+            r_boundary_conditions="open",  #  'open' (default) / 'reflective'; 'open' more expensive
             Nm=3,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
