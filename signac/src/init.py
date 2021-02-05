@@ -29,17 +29,15 @@ def main():
     for _ in range(1):  # placeholder
         sp = dict(
             # The simulation box
-            z_rezolution_factor=20,  # Δz = lambda0 / z_rezolution_factor
+            z_rezolution_factor=16.633,  # Δz = lambda0 / z_rezolution_factor (default 20)
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
-            Nr=256,  # Number of gridpoints along r
-            rmax=25.0e-6,  # Length of the box along r (meters)
+            Nr=512,  # Number of gridpoints along r
+            rmax=50.0e-6,  # Length of the box along r (meters)
             Nm=3,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
-            # Maximal radial position of the plasma (meters)
-            p_rmax=25.0e-6,
             n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
@@ -61,6 +59,7 @@ def main():
             power=2.0,
             # do not change below this line ##############
             Nz=None,  # Number of gridpoints along z
+            p_rmax=None,  # Maximal radial position of the plasma (meters)
             p_nt=None,  # Number of particles per cell along theta, should be 4*Nm
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             center_right=None,
@@ -88,6 +87,8 @@ def main():
 
         sp["Nz"] = (sp["zmax"] - sp["zmin"]) * sp["z_rezolution_factor"] / sp["lambda0"]
         sp["p_nt"] = 4 * sp["Nm"]
+        sp["p_rmax"] = sp["rmax"]
+
 
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
         sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
