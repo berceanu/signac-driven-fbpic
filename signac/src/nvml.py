@@ -1,3 +1,7 @@
+"""
+Periodically polls all the GPUs and writes usage info
+for all running Python processes to disk in CSV format.
+"""
 import pynvml
 import pathlib
 import datetime
@@ -23,6 +27,7 @@ def is_python_running(number_of_gpus):
 
 
 def main():
+    """Main entry point."""
     pynvml.nvmlInit()
     gpu_count = pynvml.nvmlDeviceGetCount()
 
