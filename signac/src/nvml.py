@@ -31,7 +31,8 @@ def main():
     pynvml.nvmlInit()
     gpu_count = pynvml.nvmlDeviceGetCount()
 
-    out_file = pathlib.Path.cwd() / "nvml.csv"
+    now = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    out_file = pathlib.Path.cwd() / f"nvml_{now}.csv"
 
     with out_file.open("w") as f:
         f.write(
