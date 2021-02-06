@@ -1,5 +1,6 @@
 import pathlib
 import signac
+import unyt as u
 
 project = signac.get_project()
 
