@@ -19,6 +19,7 @@ class MyDashboard(Dashboard):
         rmax = (job.sp.rmax * u.meter).to(u.micrometer)
         return f"Δz = λ / {n}, Nr = {job.sp.Nr}, rmax = {rmax:.1f}; {job.sp.r_boundary_conditions} BC"
 
+
 # To use multiple workers, a single shared key must be used. By default, the
 # secret key is randomly generated at runtime by each worker. Using a provided
 # shared key allows sessions to be shared across workers. This key was
@@ -44,4 +45,3 @@ dashboard = MyDashboard(config=config, modules=modules)
 
 if __name__ == "__main__":
     dashboard.main()
-
