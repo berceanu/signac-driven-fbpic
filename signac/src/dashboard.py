@@ -10,14 +10,12 @@ import unyt as u
 
 class MyDashboard(Dashboard):
     def job_sorter(self, job):
-        return job.doc.x
+        return (job.sp.z_rezolution_factor, job.sp.Nr, job.sp.rmax)
 
     def job_title(self, job):
-        x = (job.doc.x * u.meter).to(u.micrometer)
-        return f"x={x:.1f}"
-
-    # def job_subtitle(self, job):
-    #     pass
+        n = f"{job.sp.z_rezolution_factor:.1f}"
+        rmax = (job.sp.rmax * u.meter).to(u.micrometer)
+        return f"Δz = λ / {n}, Nr = {job.sp.Nr}, rmax = {rmax:.1f}; {job.sp.r_boundary_conditions} BC"
 
 
 if __name__ == "__main__":
