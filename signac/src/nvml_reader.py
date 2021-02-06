@@ -49,11 +49,11 @@ def main():
     df["time_stamp"] = pd.to_datetime(df["time_stamp"])
     df.set_index("time_stamp", inplace=True)
 
-    print(df.info(), "\n")
-    print(df.describe(), "\n")
+    print(df.describe(), "\n")  # TODO describe after aggregation on GPU/PID
 
     grouped = df.groupby(["gpu_uuid", "pid"])
 
+    # TODO separate per-GPU plots
     fig, axes = pyplot.subplots(figsize=(12, 8), nrows=3, sharex=True)
 
     for i, (foo, ax) in enumerate(

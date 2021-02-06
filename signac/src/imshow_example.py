@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot, colors, cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-
+# TODO eventually delete file
 def main():
     left = -0.5
     bottom = -0.5
