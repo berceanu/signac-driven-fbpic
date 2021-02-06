@@ -20,11 +20,6 @@ class MyDashboard(Dashboard):
         return f"Δz = λ / {n}, Nr = {job.sp.Nr}, rmax = {rmax:.1f}; {job.sp.r_boundary_conditions} BC"
 
 
-# To use multiple workers, a single shared key must be used. By default, the
-# secret key is randomly generated at runtime by each worker. Using a provided
-# shared key allows sessions to be shared across workers. This key was
-# generated with os.urandom(16)
-
 config = {
     "DASHBOARD_PATHS": ["."],
     "SECRET_KEY": b"\x99o\x90'/\rK\xf5\x10\xed\x8bC\xaa\x03\x9d\x99",
