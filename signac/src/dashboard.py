@@ -31,8 +31,8 @@ modules = [
     VideoViewer(name="Evolution", enabled=False),
     ImageViewer(name="Histogram", img_globs=["hist2d.png"], enabled=False),
     ImageViewer(name="Spectrum", img_globs=["final_histogram.png"]),
+    ImageViewer(name="All Plots", enabled=False),
     FileList(name="All Files", enabled=False),
-    # ImageViewer(name="All plots", enabled=False),
     # Notes(name="Notes", enabled=False),
 ]
 
