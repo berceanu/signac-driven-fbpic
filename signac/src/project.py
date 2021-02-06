@@ -198,7 +198,7 @@ def plot_laser(job):
 @Project.operation
 @Project.pre.after(plot_laser)
 @Project.post(fbpic_ran)
-@Project.post.true("elapsed_time")
+@Project.post.true("runtime")
 def run_fbpic(job):
     """
     This ``signac-flow`` operation runs a ``fbpic`` simulation.
@@ -291,8 +291,8 @@ def run_fbpic(job):
     sim.step(job.sp.N_step, show_progress=False)
 
     # stop the timer
-    elapsed_time = t.stop()
-    job.doc.setdefault("elapsed_time", elapsed_time)
+    runtime = t.stop()
+    job.doc.setdefault("runtime", runtime)
 
     # redirect stdout back and close "stdout.txt"
     sys.stdout = orig_stdout

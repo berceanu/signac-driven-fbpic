@@ -31,10 +31,10 @@ class Timer:
         if self._start_time is None:
             raise TimerError(f"Timer is not running. Use .start() to start it")
 
-        elapsed_time = convert_from(time.perf_counter() - self._start_time)
+        runtime = convert_from(time.perf_counter() - self._start_time)
         self._start_time = None
 
-        return elapsed_time
+        return runtime
 
 
 def main():
@@ -44,8 +44,8 @@ def main():
 
     time.sleep(5.0)
 
-    elapsed_time = t.stop()  # A few seconds later
-    print(f"Elapsed time: {elapsed_time}")
+    runtime = t.stop()  # A few seconds later
+    print(f"Elapsed time: {runtime}")
 
 
 if __name__ == "__main__":
