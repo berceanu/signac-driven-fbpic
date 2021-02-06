@@ -13,9 +13,9 @@ def copy_with_hash(path_to_fname, dst_dir, signac_job):
 
 
 if __name__ == "__main__":
-    for job in sorted(project.find_jobs(), key=lambda job: job.sp.n_e):
-        ne = job.sp.n_e / 1e6
-        print(f"{ne:.3e} -> {job.id:.6}")
+    for job in sorted(project.find_jobs(), key=lambda job: job.doc.x):
+        x = (job.doc.x * u.meter).to(u.micrometer)
+        print(f"{x:.1f} -> {job.id:.6}")
 
     out_path = pathlib.Path.cwd() / "runs"
     out_path.mkdir(parents=True, exist_ok=True)
@@ -25,6 +25,6 @@ if __name__ == "__main__":
     p.write_bytes(statepoints.read_bytes())
 
     for job in project:
-        for f_name in ("bunch/final_bunch.txt", "rho.mp4", "centroid.mp4"):
+        for f_name in ("final_histogram.png", "rho.mp4", "phasespace.mp4"):
             src = pathlib.Path(job.fn(f_name))
             copy_with_hash(src, out_path, job)
