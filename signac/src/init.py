@@ -34,7 +34,7 @@ def main():
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             Nr=512,  # Number of gridpoints along r
             rmax=50.0e-6,  # Length of the box along r (meters)
-            r_boundary_conditions="open",  #  'open' (default) / 'reflective'; 'open' more expensive
+            r_boundary_conditions="reflective",  #  'open' (default) / 'reflective'; 'open' more expensive
             Nm=3,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
