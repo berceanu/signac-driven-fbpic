@@ -404,7 +404,7 @@ def plot_final_histogram(job):
         ax_title=job.doc.ax_title,
     )
 
-
+# TODO replace ax_title hack with propper code
 @ex
 @Project.operation
 @Project.pre.after(plot_final_histogram)
