@@ -30,6 +30,7 @@ config = {
     "SECRET_KEY": b"\x99o\x90'/\rK\xf5\x10\xed\x8bC\xaa\x03\x9d\x99",
 }
 
+# TODO chose newbie-friendly set of modules
 modules = [
     StatepointList(name="Parameters", enabled=False),
     DocumentList(enabled=False),
