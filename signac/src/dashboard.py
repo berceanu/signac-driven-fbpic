@@ -28,7 +28,7 @@ config = {
 modules = [
     StatepointList(name="Parameters", enabled=False),
     DocumentList(name="Info", enabled=False),
-    VideoViewer(name="Time Evolution", enabled=False),
+    VideoViewer(name="Evolution", enabled=False),
     ImageViewer(name="Histogram", img_globs=["hist2d.png"], enabled=False),
     ImageViewer(name="Spectrum", img_globs=["final_histogram.png"]),
     FileList(name="All Files", enabled=False),
