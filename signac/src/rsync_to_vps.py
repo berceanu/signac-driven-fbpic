@@ -2,6 +2,7 @@
 import pathlib
 import signac
 from util import shell_run
+import shutil
 
 
 def main():
@@ -9,6 +10,7 @@ def main():
     project = signac.get_project(search=False)
     scratch_pr_path = pathlib.Path(project.workspace())
 
+    # copy the workspace to current dir, excluding large files
     rsync_scratch_to_here = rf"rsync -amvP --exclude='*.h5' --exclude='*.txt' --exclude='*.npz' --exclude='*/rhos' --exclude='*/phasespaces' {scratch_pr_path}/ workspace"
     print(rsync_scratch_to_here)
     shell_run(rsync_scratch_to_here, shell=True)
@@ -29,6 +31,7 @@ def main():
     new_contents = "\n".join(lines)
     rc.write_text(new_contents)
 
+    # copy local workspace/ via SSH
     rsync_here_to_vps = rf"rsync -amvP --include='signac.rc' --include='dashboard.py' --include='wsgi.py' --include='*/' --include='workspace/***' --exclude='*' ./ signac-dashboard-ubuntu-4gb:Development/signac"
     print(rsync_here_to_vps)
     shell_run(rsync_here_to_vps, shell=True)
@@ -37,6 +40,10 @@ def main():
     contents = bck.read_text()
     rc.write_text(contents)
     bck.unlink()
+
+    # delete local workspace/
+    p = pathlib.Path.cwd() / "workspace/"
+    shutil.rmtree(p)
 
 
 if __name__ == "__main__":
