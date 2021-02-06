@@ -292,7 +292,7 @@ def run_fbpic(job):
 
     # stop the timer
     runtime = t.stop()
-    job.doc.setdefault("runtime", runtime)
+    job.doc.setdefault("runtime", runtime.split(".")[0])
 
     # redirect stdout back and close "stdout.txt"
     sys.stdout = orig_stdout
