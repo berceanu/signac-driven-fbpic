@@ -1,3 +1,4 @@
+"""Updates the signac workspace and dashboard.py on a VPS instance."""
 import pathlib
 import signac
 from util import shell_run
@@ -12,7 +13,7 @@ def main():
     print(rsync_scratch_to_here)
     shell_run(rsync_scratch_to_here, shell=True)
 
-    rsync_here_to_vps = rf"rsync -amvP --include='dashboard.py' --include='*/' --include='workspace/***' --exclude='*' ./ signac-dashboard-ubuntu-4gb:Development/signac"
+    rsync_here_to_vps = rf"rsync -amvP --include='dashboard.py' --include='wsgi.py' --include='*/' --include='workspace/***' --exclude='*' ./ signac-dashboard-ubuntu-4gb:Development/signac"
     print(rsync_here_to_vps)
     shell_run(rsync_here_to_vps, shell=True)
 
