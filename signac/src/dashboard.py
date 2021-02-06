@@ -4,6 +4,8 @@ from signac_dashboard.modules import (
     DocumentList,
     ImageViewer,
     VideoViewer,
+    FileList,
+    Notes,
 )
 import unyt as u
 
@@ -22,6 +24,8 @@ if __name__ == "__main__":
     modules = [
         StatepointList(name="Parameters", enabled=False),
         DocumentList(enabled=False),
+        FileList(),
+        Notes(),
         ImageViewer(enabled=False),
         ImageViewer(name="2D Histogram", img_globs=["hist2d.png"]),
         ImageViewer(name="Electron Spectrum", img_globs=["final_histogram.png"]),
