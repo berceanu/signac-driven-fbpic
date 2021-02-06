@@ -14,55 +14,6 @@ def nozzle_center_offset(distance):
     return other_distance
 
 
-def w_ave(a, weights):
-    """
-    Calculate the weighted average of array `a`
-    Parameters
-    ----------
-    a : 1d array
-        Calculate the weighted average for these a.
-    weights : 1d array
-        An array of weights for the values in a.
-    Returns
-    -------
-    Float with the weighted average
-    Returns nan if input array is empty
-    """
-    # Check if input contains data
-    if not np.any(weights) and not np.any(a):
-        # If input is empty return NaN
-        return np.nan
-    else:
-        # Calculate the weighted average
-        average = np.average(a, weights=weights)
-        return average
-
-
-def w_std(a, weights):
-    """
-    Calculate the weighted standard deviation.
-    Parameters
-    ----------
-    a : array_like
-        Calculate the weighted standard deviation for these a.
-    weights : array_like
-        An array of weights for the values in a.
-    Returns
-    -------
-    Float with the weighted standard deviation.
-    Returns nan if input array is empty
-    """
-    # Check if input contains data
-    if not np.any(weights) and not np.any(a):
-        # If input is empty return NaN
-        return np.nan
-    else:
-        # Calculate the weighted standard deviation
-        average = np.average(a, weights=weights)
-        variance = np.average((a - average) ** 2, weights=weights)
-        return np.sqrt(variance)
-
-
 def ffmpeg_command(
     frame_rate: float = 10.0,  # CHANGEME
     input_files: str = "pic%04d.png",  # pic0001.png, pic0002.png, ...

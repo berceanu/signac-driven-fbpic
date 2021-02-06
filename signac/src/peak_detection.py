@@ -24,7 +24,7 @@ class Peak:
 def get_persistent_homology(seq):
     peaks = []
     # Maps indices to peaks
-    idxtopeak = [None for s in seq]
+    idxtopeak = [None for _ in seq]
     # Sequence indices sorted by values
     indices = range(len(seq))
     indices = sorted(indices, key=lambda i: seq[i], reverse=True)
