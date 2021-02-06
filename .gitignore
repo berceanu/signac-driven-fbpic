@@ -117,3 +117,4 @@ workspace/
 *.npz
 *.out
 *.csv
+signac/runs/*json
