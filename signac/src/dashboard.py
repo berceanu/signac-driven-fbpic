@@ -28,12 +28,12 @@ config = {
 modules = [
     StatepointList(name="Parameters", enabled=False),
     DocumentList(name="Info", enabled=False),
-    VideoViewer(name="Time evolution", enabled=False),
-    # Notes(),
+    VideoViewer(name="Time Evolution", enabled=False),
     ImageViewer(name="Histogram", img_globs=["hist2d.png"], enabled=False),
     ImageViewer(name="Spectrum", img_globs=["final_histogram.png"]),
-    ImageViewer(name="All figures", enabled=False),
-    FileList(name="Files", enabled=False),
+    FileList(name="All Files", enabled=False),
+    # ImageViewer(name="All plots", enabled=False),
+    # Notes(name="Notes", enabled=False),
 ]
 
 dashboard = MyDashboard(config=config, modules=modules)
