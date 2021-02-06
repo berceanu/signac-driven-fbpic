@@ -14,7 +14,7 @@ def copy_with_hash(path_to_fname, dst_dir, signac_job):
 
 
 if __name__ == "__main__":
-    for job in sorted(project.find_jobs(), key=lambda job: job.doc.x):
+    for job in sorted(project, key=lambda job: job.doc.x):
         x = (job.doc.x * u.meter).to(u.micrometer)
         print(f"{x:.1f} -> {job.id:.6}")
 
