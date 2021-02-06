@@ -13,9 +13,30 @@ def main():
     print(rsync_scratch_to_here)
     shell_run(rsync_scratch_to_here, shell=True)
 
-    rsync_here_to_vps = rf"rsync -amvP --include='dashboard.py' --include='wsgi.py' --include='*/' --include='workspace/***' --exclude='*' ./ signac-dashboard-ubuntu-4gb:Development/signac"
+    p = pathlib.Path.cwd()
+    rc = p / "signac.rc"
+    bck = p / "signac.rc.bck"
+
+    # copy `signac.rc` to `signac.rc.bck`
+    contents = rc.read_text()
+    bck.write_text(contents)
+
+    # change `workspace_dir` inside `signac.rc`
+    lines = contents.splitlines()
+    before_eq, _ = lines[1].split("=")
+    after_eq = " workspace"
+    lines[1] = "=".join((before_eq, after_eq))
+    new_contents = "\n".join(lines)
+    rc.write_text(new_contents)
+
+    rsync_here_to_vps = rf"rsync -amvP --include='signac.rc' --include='dashboard.py' --include='wsgi.py' --include='*/' --include='workspace/***' --exclude='*' ./ signac-dashboard-ubuntu-4gb:Development/signac"
     print(rsync_here_to_vps)
     shell_run(rsync_here_to_vps, shell=True)
+
+    # copy `signac.rc.bck` to `signac.rc`
+    contents = bck.read_text()
+    rc.write_text(contents)
+    bck.unlink()
 
 
 if __name__ == "__main__":
