@@ -32,13 +32,13 @@ config = {
 
 modules = [
     StatepointList(name="Parameters", enabled=False),
-    DocumentList(name="Derived parameters", enabled=False),
-    FileList(enabled=False),
+    DocumentList(name="Info", enabled=False),
+    VideoViewer(name="Time evolution", enabled=False),
     # Notes(),
+    ImageViewer(name="Histogram", img_globs=["hist2d.png"], enabled=False),
+    ImageViewer(name="Spectrum", img_globs=["final_histogram.png"]),
     ImageViewer(name="All figures", enabled=False),
-    ImageViewer(name="2D Histogram", img_globs=["hist2d.png"], enabled=False),
-    ImageViewer(name="Electron Spectrum", img_globs=["final_histogram.png"]),
-    VideoViewer(name="Evolution movies", enabled=False),
+    FileList(name="Files", enabled=False),
 ]
 
 dashboard = MyDashboard(config=config, modules=modules)
