@@ -362,7 +362,7 @@ def generate_rho_movie(job):
 @Project.operation
 @Project.pre.after(save_pngs)
 @Project.post.isfile("phasespace.mp4")
-def generate_centroid_movie(job):
+def generate_phasespace_movie(job):
     generate_movie(job, stem="phasespace")
 
 
