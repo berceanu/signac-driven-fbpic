@@ -407,6 +407,15 @@ def plot_final_histogram(job):
 
 @ex
 @Project.operation
+@Project.pre.after(plot_final_histogram)
+@Project.post(lambda job: "ax_title" not in job.doc)
+def remove_ax_title(job):
+    """Remove the `ax_title` key form the job's document."""
+    del job.doc["ax_title"]
+
+
+@ex
+@Project.operation
 @Project.pre.after(save_final_histogram)
 @Project.post.true("peak_charge")
 @Project.post.true("peak_position")
