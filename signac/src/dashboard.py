@@ -19,16 +19,29 @@ class MyDashboard(Dashboard):
         rmax = (job.sp.rmax * u.meter).to(u.micrometer)
         return f"Δz = λ / {n}, Nr = {job.sp.Nr}, rmax = {rmax:.1f}; {job.sp.r_boundary_conditions} BC"
 
+# To use multiple workers, a single shared key must be used. By default, the
+# secret key is randomly generated at runtime by each worker. Using a provided
+# shared key allows sessions to be shared across workers. This key was
+# generated with os.urandom(16)
+
+config = {
+    "DASHBOARD_PATHS": ["."],
+    "SECRET_KEY": b"\x99o\x90'/\rK\xf5\x10\xed\x8bC\xaa\x03\x9d\x99",
+}
+
+modules = [
+    StatepointList(name="Parameters", enabled=False),
+    DocumentList(enabled=False),
+    FileList(),
+    Notes(),
+    ImageViewer(enabled=False),
+    ImageViewer(name="2D Histogram", img_globs=["hist2d.png"]),
+    ImageViewer(name="Electron Spectrum", img_globs=["final_histogram.png"]),
+    VideoViewer(enabled=False),
+]
+
+dashboard = MyDashboard(config=config, modules=modules)
 
 if __name__ == "__main__":
-    modules = [
-        StatepointList(name="Parameters", enabled=False),
-        DocumentList(enabled=False),
-        FileList(),
-        Notes(),
-        ImageViewer(enabled=False),
-        ImageViewer(name="2D Histogram", img_globs=["hist2d.png"]),
-        ImageViewer(name="Electron Spectrum", img_globs=["final_histogram.png"]),
-        VideoViewer(enabled=False),
-    ]
-    MyDashboard(modules=modules).main()
+    dashboard.main()
+
