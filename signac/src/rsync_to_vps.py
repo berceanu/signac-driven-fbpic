@@ -45,6 +45,11 @@ def main():
     p = pathlib.Path.cwd() / "workspace/"
     shutil.rmtree(p)
 
+    # restart VPS
+    reboot_cmd = rf"ssh -t signac-dashboard-ubuntu-4gb 'sudo /sbin/reboot'"
+    print(reboot_cmd)
+    shell_run(reboot_cmd, shell=True)
+
 
 if __name__ == "__main__":
     main()
