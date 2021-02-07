@@ -26,12 +26,12 @@ config = {
 }
 
 modules = [
-    StatepointList(name="Parameters", enabled=False),
+    StatepointList(name="Params", enabled=False),
     DocumentList(name="Info", enabled=False),
     VideoViewer(name="Evolution", enabled=False),
     ImageViewer(name="Histogram", img_globs=["hist2d.png"], enabled=False),
-    ImageViewer(name="Spectrum", img_globs=["final_histogram.png"]),
-    ImageViewer(name="All Plots", enabled=False),
+    ImageViewer(name="Spectrum", img_globs=["final_histogram.png"], enabled=False),
+    ImageViewer(name="All Plots", enabled=True),
     FileList(name="All Files", enabled=False),
     # Notes(name="Notes", enabled=False),
 ]
