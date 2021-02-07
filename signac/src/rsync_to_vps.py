@@ -31,6 +31,11 @@ def main():
     new_contents = "\n".join(lines)
     rc.write_text(new_contents)
 
+    # remove workspace on VPS via SSH
+    rm_cmd = rf"ssh signac-dashboard-ubuntu-4gb 'rm -rf ~/Development/signac'"
+    print(rm_cmd)
+    shell_run(rm_cmd, shell=True)
+
     # copy local workspace/ via SSH
     rsync_here_to_vps = rf"rsync -amvP --include='signac.rc' --include='dashboard.py' --include='wsgi.py' --include='*/' --include='workspace/***' --exclude='*' ./ signac-dashboard-ubuntu-4gb:Development/signac"
     print(rsync_here_to_vps)
