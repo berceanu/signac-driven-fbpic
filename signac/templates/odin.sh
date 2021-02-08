@@ -1,65 +1,59 @@
-{# The following variables are available to all scripts. #}
-{% if parallel %}
-{% set np_global = operations|map(attribute='directives.np')|sum %}
-{% else %}
-{% set np_global = operations|map(attribute='directives.np')|max %}
-{% endif %}
-{% block header %}
-#!/bin/bash
-#SBATCH --job-name="{{ id }}"
-{% if partition %}
-#SBATCH --partition={{ partition }}
-{% endif %}
-{% if memory %}
-#SBATCH --mem={{ memory }}
-{% endif %}
-{% if walltime %}
-#SBATCH -t {{ walltime|format_timedelta }}
-{% endif %}
-{% if job_output %}
-#SBATCH --output={{ job_output }}
-#SBATCH --error={{ job_output }}
-{% endif %}
+{% extends "slurm.sh" %}
 
-{# https://docs.signac.io/projects/flow/en/latest/supported_environments/comet.html #}
+{% block header %}
 {% block tasks %}
 {% set threshold = 0 if force else 0.9 %}
 {% set cpu_tasks = operations|calc_tasks('np', parallel, force) %}
 {% set gpu_tasks = operations|calc_tasks('ngpu', parallel, force) %}
-{% set nn_cpu = cpu_tasks|calc_num_nodes(16) %}
-{% set nn_gpu = gpu_tasks|calc_num_nodes(16) %}
+{% if gpu_tasks and 'gpu' not in partition and not force %}
+{% raise "Requesting GPUs requires a gpu partition!" %}
+{% endif %}
+{% set nn_cpu = cpu_tasks|calc_num_nodes(24) if 'gpu' not in partition else cpu_tasks|calc_num_nodes(24) %}
+{% set nn_gpu = gpu_tasks|calc_num_nodes(16) if 'gpu' in partition else 0 %}
 {% set nn = nn|default((nn_cpu, nn_gpu)|max, true) %}
-#SBATCH --mem-per-cpu=32125
+{% if 'gpu' in partition %}
+#SBATCH --nodes={{ nn|default(1, true) }}
 #SBATCH --ntasks-per-node={{ (gpu_tasks, cpu_tasks)|max }}
-#SBATCH --gres=gpu:{{ (gpu_tasks, 16)|min }}
-{% endblock %}
-
-{% endblock %}
+#SBATCH --gpus={{ gpu_tasks }}
+{% else %}
+#SBATCH --nodes={{ nn }}
+#SBATCH --ntasks-per-node={{ (24, cpu_tasks)|min }}
+{% endif %}
+{% endblock tasks %}
+{% endblock header %}
 
 {% block project_header %}
-set -e
-set -u
-
-### . startjob
-
+{{ super() }}
 module use $HOME/MyModules
 module load miniforge3pic/latest
 
-cd {{ project.config.project_dir }}
-{% endblock %}
+{% endblock project_header %}
+
 {% block body %}
 {% set cmd_suffix = cmd_suffix|default('') ~ (' &' if parallel else '') %}
 {% for operation in operations %}
-export CUDA_VISIBLE_DEVICES={{ loop.index0 }}
-sleep 1m
+
 # {{ "%s"|format(operation) }}
+export CUDA_VISIBLE_DEVICES={{ loop.index0 }}
 {{ operation.cmd }}{{ cmd_suffix }}
+{% if operation.eligible_operations|length > 0 %}
+# Eligible to run:
+{% for run_op in operation.eligible_operations %}
+# {{ run_op.cmd }}
 {% endfor %}
-{% endblock %}
-{% block footer %}
-{% if parallel %}
-wait
+{% endif %}
+{% if operation.operations_with_unmet_preconditions|length > 0 %}
+# Operations with unmet preconditions:
+{% for run_op in operation.operations_with_unmet_preconditions %}
+# {{ run_op.cmd }}
+{% endfor %}
+{% endif %}
+{% if operation.operations_with_met_postconditions|length > 0 %}
+# Operations with all postconditions met:
+{% for run_op in operation.operations_with_met_postconditions %}
+# {{ run_op.cmd }}
+{% endfor %}
 {% endif %}
 
-### . endjob
-{% endblock %}
+{% endfor %}
+{% endblock body %}
