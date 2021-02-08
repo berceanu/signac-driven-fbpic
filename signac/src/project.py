@@ -370,7 +370,6 @@ def generate_phasespace_movie(job):
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.isfile("final_histogram.npz")
-@Project.post.true("ax_title")
 def save_final_histogram(job):
     """Save the histogram corresponding to the last iteration."""
 
