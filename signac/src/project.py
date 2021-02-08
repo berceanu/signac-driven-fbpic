@@ -45,14 +45,10 @@ log_file_name = "fbpic-project.log"
 
 
 class OdinEnvironment(DefaultSlurmEnvironment):
-    """Environment profile for the LGED cluster.
-    https://docs.signac.io/projects/flow/en/latest/supported_environments/comet.html#flow.environments.xsede.CometEnvironment
-    """
+    """Environment profile for the LGED cluster."""
 
     hostname_pattern = r".*\.ra5\.eli-np\.ro$"
     template = "odin.sh"
-    cores_per_node = 16
-    mpi_cmd = "mpiexec"
 
     @classmethod
     def add_args(cls, parser):
