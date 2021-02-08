@@ -1,6 +1,22 @@
 {% extends "slurm.sh" %}
 
 {% block header %}
+#!/bin/bash
+#SBATCH --job-name="{{ id }}"
+{% if partition %}
+#SBATCH --partition={{ partition }}
+{% endif %}
+{% if memory %}
+#SBATCH --mem={{ memory }}
+{% endif %}
+{% if walltime %}
+#SBATCH -t {{ walltime|format_timedelta }}
+{% endif %}
+{% if job_output %}
+#SBATCH --output={{ job_output }}
+#SBATCH --error={{ job_output }}
+{% endif %}
+
 {% block tasks %}
 {% set threshold = 0 if force else 0.9 %}
 {% set cpu_tasks = operations|calc_tasks('np', parallel, force) %}
@@ -23,6 +39,8 @@
 {% endblock header %}
 
 {% block project_header %}
+
+
 {{ super() }}
 module use $HOME/MyModules
 module load miniforge3pic/latest
