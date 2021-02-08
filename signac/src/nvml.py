@@ -7,6 +7,15 @@ import pynvml
 import pathlib
 import datetime
 import time
+import schedule
+
+# Accomodate more than one `fbpic` run per GPU
+# Accomodate PIConGPU usecase => track all 16 GPUs; don't search for Python processes only
+
+def job():
+    print("Executing..")
+
+schedule.every(10).seconds.do(job)
 
 
 def is_python_process(pid):
@@ -65,6 +74,8 @@ def main():
 
     pynvml.nvmlShutdown()
 
+    while True:
+        schedule.run_pending()
 
 if __name__ == "__main__":
     main()
