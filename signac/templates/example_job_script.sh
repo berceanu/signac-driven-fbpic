@@ -6,7 +6,8 @@
 #SBATCH --tasks-per-node=2
 #SBATCH --cpus-per-task=4
 
-#SBATCH --gres=gpu:2
+#SBATCH --gpus=2
+
 #SBATCH --gpus-per-task=1
 
 srun --gres=gpu:1 bash -c 'CUDA_VISIBLE_DEVICES=$SLURM_PROCID env' | grep CUDA_VISIBLE
