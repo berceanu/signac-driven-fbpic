@@ -7,6 +7,6 @@ echo "${SOURCE}"
 BACKUP_DIR="$(dirname "${SOURCE}")"
 BACKUP_FILE="$(basename "${SOURCE}")"
 DATE=$(date +%Y-%m-%d-%H%M%S)
-echo "${BACKUP_DIR}/${BACKUP_FILE}-${DATE}.tar.gz"
+echo "${BACKUP_DIR}/${BACKUP_FILE}-${DATE}.tar"
 
-tar -cvzpf ${BACKUP_DIR}/${BACKUP_FILE}-${DATE}.tar.gz ${SOURCE} > /dev/null 2>&1 &
+tar -cvpf ${BACKUP_DIR}/${BACKUP_FILE}-${DATE}.tar ${SOURCE} > /dev/null 2>&1 &
