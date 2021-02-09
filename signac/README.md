@@ -19,7 +19,6 @@ If, instead of starting from scratch, one wants to add new simulations to an
 existing project, `src/init.py` should be used instead of `init.sh`:
 
 ```console
-$ conda activate signac-driven-fbpic
 $ python3 src/init.py
 ```
 
@@ -44,58 +43,12 @@ To run the simulations on a single GPU, in a serial manner, do
 
 ```console
 $ screen -S fbpic
-$ conda activate signac-driven-fbpic
 $ [time] python3 src/project.py run
 ```
 
 The optional `time` command will give the total runtime once the project
 operations are all completed.
 
-## Check completion status
-
-To check the status of currently running operations, one can (periodically)
-execute
-
-```console
-$ ./status.sh
-```
-
-Where available, the command [`nvtop`](https://github.com/Syllo/nvtop) can be
-used to check the usage of the machine's GPUs. Otherwise, use `nvidia-smi`.
-
-## Visualize post-processed results via the web interface
-
-To check the output of running the `signac` project operations, a web server
-can be launched via
-
-```console
-$ screen -S dashboard
-$ ./dashboard.sh
-```
-
-One can then open a web browser and point it to `localhost:7777`.
-
-### Accessing the web interface from your local machine
-
-In case the simulations are running on a remote server, it is possible to
-visualize the results from one's local machine by using `ssh` local port
-forwarding.
-
-On the remote server
-
-- launch the web interface inside a `screen` session, as described above
-
-On the local machine
-
-- create an `ssh` tunnel for port forwarding
-
-  ```console
-  $ ssh -f username@remote_server -L 9999:localhost:7777 -N
-  ```
-
-- open a web browser and point it to `localhost:9999`
-
 # Notes
 
 - all commands should be ran from the directory that contains this README file
-- simulation path on `CETAL` machine: `/Date2/andrei/runs/fbpic/signac-driven-fbpic/signac`
