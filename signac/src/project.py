@@ -28,7 +28,7 @@ from peak_detection import (
     integrated_charge,
     peak_position,
 )
-from util import ffmpeg_command, shell_run, Timer
+from util import ffmpeg_command, seconds_to_hms, shell_run, Timer
 from simulation_diagnostics import (
     particle_energy_histogram,
     laser_density_plot,
@@ -116,7 +116,7 @@ def fbpic_ran(job):
     iterations: np.ndarray = time_series.iterations
 
     # estimate iteration array based on input parameters
-    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=int)
 
     # check if iterations array corresponds to input params
     did_it_run = np.array_equal(estimated_iterations, iterations)
@@ -135,7 +135,7 @@ def are_pngs(job, stem):
     files = [fn.name for fn in p.glob("*.png")]
 
     # estimate iteration array based on input parameters
-    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=int)
 
     pngs = (f"{stem}{it:06d}.png" for it in iterations)
 
@@ -149,6 +149,12 @@ def are_rho_pngs(job):
 def are_phasespace_pngs(job):
     return are_pngs(job, "phasespace")
 
+@ex
+@Project.operation
+@Project.post.true("macroparticle_count")
+def add_document_keys(job):
+    count = job.sp.p_nt * job.sp.p_nr * job.sp.p_nz * job.sp.Nz * job.sp.Nr
+    job.doc.setdefault("macroparticle_count", f"{count:.2e}")
 
 @ex
 @Project.operation
@@ -192,7 +198,6 @@ def plot_laser(job):
 @Project.operation
 @Project.pre.after(plot_laser)
 @Project.post(fbpic_ran)
-@Project.post.true("runtime")
 def run_fbpic(job):
     """
     This ``signac-flow`` operation runs a ``fbpic`` simulation.
@@ -286,12 +291,15 @@ def run_fbpic(job):
 
     # stop the timer
     runtime = t.stop()
-    job.doc.setdefault("runtime", runtime.split(".")[0])
+    job.doc.setdefault("runtime", str(seconds_to_hms(runtime)).split(".")[0])
+    time_per_iteration = (runtime * u.second / job.sp.N_step).to(u.millisecond)
+    job.doc.setdefault("time_per_iteration", f"{time_per_iteration:.1f}")
 
     # redirect stdout back and close "stdout.txt"
     sys.stdout = orig_stdout
     f.close()
 
+    
 
 @ex.with_directives(directives=dict(np=3))
 @directives(np=3)
@@ -491,7 +499,7 @@ def plot_2d_hist(job):
         job.fn("hist_edges.txt"), dtype=np.float64, comments="#", ndmin=1
     )
     # compute moving window position for each iteration
-    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=int)
     times = iterations * job.sp.dt * u.second
     positions = times * u.clight
 

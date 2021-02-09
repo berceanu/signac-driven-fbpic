@@ -8,12 +8,12 @@ import datetime
 logger = logging.getLogger(__name__)
 
 
-def convert_from(seconds):
+def seconds_to_hms(seconds):
     """
     Convert seconds to H:M:S format.
     Works for periods over 24H also.
     """
-    return str(datetime.timedelta(seconds=seconds))
+    return datetime.timedelta(seconds=seconds)
 
 
 class TimerError(Exception):
@@ -36,7 +36,7 @@ class Timer:
         if self._start_time is None:
             raise TimerError(f"Timer is not running. Use .start() to start it")
 
-        runtime = convert_from(time.perf_counter() - self._start_time)
+        runtime = time.perf_counter() - self._start_time
         self._start_time = None
 
         return runtime
@@ -105,7 +105,8 @@ def main():
     time.sleep(5.0)
 
     runtime = t.stop()  # A few seconds later
-    print(f"Elapsed time: {runtime}")
+    print(type(runtime))
+    print(f"Elapsed time: {seconds_to_hms(runtime)}")
 
 
 if __name__ == "__main__":
