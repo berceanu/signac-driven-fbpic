@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Initialize the project's data space.
 
 Iterates over all defined state points and initializes

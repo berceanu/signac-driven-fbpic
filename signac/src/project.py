@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """This module contains the operation functions for this project.
 
 The workflow defined in this file can be executed from the command
