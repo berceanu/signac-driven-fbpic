@@ -104,7 +104,6 @@ def main():
 
         project.open_job(sp).init()
 
-    project.write_statepoints()
 
     for job in project:
         Δz = ((job.sp.zmax - job.sp.zmin) / job.sp.Nz * u.meter).to(u.micrometer)
