@@ -31,6 +31,7 @@ export FBPIC_DISABLE_THREADING=1
 export MKL_NUM_THREADS=1
 export NUMBA_NUM_THREADS=1
 export OMP_NUM_THREADS=1
+export CUDA_DEVICE_ORDER=PCI_BUS_ID
 
 {% endblock project_header %}
 
