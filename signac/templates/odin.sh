@@ -1,22 +1,5 @@
 {% extends "slurm.sh" %}
 
-{% block header %}
-#!/bin/bash
-#SBATCH --job-name="{{ id }}"
-{% if partition %}
-#SBATCH --partition={{ partition }}
-{% endif %}
-{% if memory %}
-#SBATCH --mem={{ memory }}
-{% endif %}
-{% if walltime %}
-#SBATCH -t {{ walltime|format_timedelta }}
-{% endif %}
-{% if job_output %}
-#SBATCH --output={{ job_output }}
-#SBATCH --error={{ job_output }}
-{% endif %}
-
 {% block tasks %}
 {% set threshold = 0 if force else 0.9 %}
 {% set cpu_tasks = operations|calc_tasks('np', parallel, force) %}
@@ -24,19 +7,18 @@
 {% if gpu_tasks and 'gpu' not in partition and not force %}
 {% raise "Requesting GPUs requires a gpu partition!" %}
 {% endif %}
-{% set nn_cpu = cpu_tasks|calc_num_nodes(24) if 'gpu' not in partition else cpu_tasks|calc_num_nodes(24) %}
+{% set nn_cpu = cpu_tasks|calc_num_nodes(48) if 'gpu' not in partition else cpu_tasks|calc_num_nodes(48) %}
 {% set nn_gpu = gpu_tasks|calc_num_nodes(16) if 'gpu' in partition else 0 %}
 {% set nn = nn|default((nn_cpu, nn_gpu)|max, true) %}
 {% if 'gpu' in partition %}
 #SBATCH --nodes={{ nn|default(1, true) }}
 #SBATCH --ntasks-per-node={{ (gpu_tasks, cpu_tasks)|max }}
-#SBATCH --gpus={{ gpu_tasks }}
+#SBATCH --gres=gpu:{{ gpu_tasks }}
 {% else %}
 #SBATCH --nodes={{ nn }}
-#SBATCH --ntasks-per-node={{ (24, cpu_tasks)|min }}
+#SBATCH --ntasks-per-node={{ (48, cpu_tasks)|min }}
 {% endif %}
 {% endblock tasks %}
-{% endblock header %}
 
 {% block project_header %}
 
