@@ -93,7 +93,7 @@ def main():
         )
         dz = get_dz(sp["zmax"], sp["zmin"], sp["Nz"])
         dr = 10 * dz
-        sp["Nr"] = sp["rmax"] / dr
+        sp["Nr"] = int(sp["rmax"] / dr)
 
         sp["p_nt"] = 4 * sp["Nm"]
         sp["p_rmax"] = sp["rmax"]
