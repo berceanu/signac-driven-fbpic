@@ -29,7 +29,7 @@ from peak_detection import (
     integrated_charge,
     peak_position,
 )
-from util import ffmpeg_command, shell_run
+from util import ffmpeg_command, shell_run, Timer
 from simulation_diagnostics import (
     particle_energy_histogram,
     laser_density_plot,
@@ -38,7 +38,6 @@ from simulation_diagnostics import (
 from density_functions import plot_density_profile, make_gaussian_dens_func
 from laser_profiles import make_flat_laser_profile, plot_laser_intensity
 from render_lwfa_script import write_lwfa_script
-from timer import Timer
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"

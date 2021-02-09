@@ -2,8 +2,44 @@
 import subprocess
 import logging
 import numpy as np
+import time
+import datetime
 
 logger = logging.getLogger(__name__)
+
+
+def convert_from(seconds):
+    """
+    Convert seconds to H:M:S format.
+    Works for periods over 24H also.
+    """
+    return str(datetime.timedelta(seconds=seconds))
+
+
+class TimerError(Exception):
+    """A custom exception used to report errors in use of Timer class"""
+
+
+class Timer:
+    def __init__(self):
+        self._start_time = None
+
+    def start(self):
+        """Start a new timer"""
+        if self._start_time is not None:
+            raise TimerError(f"Timer is running. Use .stop() to stop it")
+
+        self._start_time = time.perf_counter()
+
+    def stop(self):
+        """Stop the timer, and report the elapsed time"""
+        if self._start_time is None:
+            raise TimerError(f"Timer is not running. Use .start() to start it")
+
+        runtime = convert_from(time.perf_counter() - self._start_time)
+        self._start_time = None
+
+        return runtime
 
 
 def nozzle_center_offset(distance):
@@ -55,12 +91,21 @@ def shell_run(*cmd, **kwargs):
 
 
 def main():
+    """Main entry point."""
     print(ffmpeg_command())
 
     d = np.array([500, 750, 1000, 1250, 1500]) * 1e-6
     print(d)
     print(nozzle_center_offset(d))
     print(nozzle_center_offset(nozzle_center_offset(d)))
+
+    t = Timer()
+    t.start()
+
+    time.sleep(5.0)
+
+    runtime = t.stop()  # A few seconds later
+    print(f"Elapsed time: {runtime}")
 
 
 if __name__ == "__main__":
