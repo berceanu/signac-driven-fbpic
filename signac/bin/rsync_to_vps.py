@@ -1,8 +1,26 @@
 """Updates the signac workspace and dashboard.py on a VPS instance."""
 import pathlib
 import signac
-from util import shell_run
 import shutil
+import subprocess
+
+
+def shell_run(*cmd, **kwargs):
+    """
+    Run the command ``cmd`` in the shell.
+
+    :param cmd: the command to be run, with separate arguments
+    :param kwargs: optional keyword arguments for ``Popen``, eg. shell=True
+    :return: the shell STDOUT and STDERR
+    """
+    stdout = (
+        subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs
+        )
+        .communicate()[0]
+        .decode("utf-8")
+    )
+    return stdout
 
 
 def main():
