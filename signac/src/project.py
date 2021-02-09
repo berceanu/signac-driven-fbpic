@@ -149,12 +149,14 @@ def are_rho_pngs(job):
 def are_phasespace_pngs(job):
     return are_pngs(job, "phasespace")
 
+
 @ex
 @Project.operation
 @Project.post.true("macroparticle_count")
 def add_document_keys(job):
     count = job.sp.p_nt * job.sp.p_nr * job.sp.p_nz * job.sp.Nz * job.sp.Nr
     job.doc.setdefault("macroparticle_count", f"{count:.2e}")
+
 
 @ex
 @Project.operation
@@ -299,7 +301,6 @@ def run_fbpic(job):
     sys.stdout = orig_stdout
     f.close()
 
-    
 
 @ex.with_directives(directives=dict(np=3))
 @directives(np=3)
