@@ -9,4 +9,7 @@ BACKUP_FILE="$(basename "${SOURCE}")"
 DATE=$(date +%Y-%m-%d-%H%M%S)
 echo "${BACKUP_DIR}/${BACKUP_FILE}-${DATE}.tar"
 
-tar -cvpf ${BACKUP_DIR}/${BACKUP_FILE}-${DATE}.tar ${SOURCE} > /dev/null 2>&1 &
+tar -cpvf ${BACKUP_DIR}/${BACKUP_FILE}-${DATE}.tar ${SOURCE} > /dev/null 2>&1 &
+
+# Usage ./backup_workspace.sh (runs in background)
+# To extract, tar xvf ...
