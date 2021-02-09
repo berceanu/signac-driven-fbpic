@@ -54,7 +54,7 @@ $ git push origin dev
 
 ```bash
 $ source ~/custom.sh
-$ mamba install -c conda-forge six wheel fastrlock python-dateutil unyt numba scipy matplotlib pandas h5py openpmd-api mkl cupy pyopencl ocl-icd-system signac signac-flow signac-dashboard pylint black rope pynvml schedule
+$ mamba install -c conda-forge six wheel fastrlock python-dateutil unyt numba scipy matplotlib pandas h5py openpmd-api mkl cupy pyopencl ocl-icd-system signac signac-flow signac-dashboard pylint black rope pynvml schedule colorcet
 ```
 
 ```bash
