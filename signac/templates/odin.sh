@@ -27,6 +27,11 @@
 module use $HOME/MyModules
 module load miniforge3pic/latest
 
+export FBPIC_DISABLE_THREADING=1
+export MKL_NUM_THREADS=1
+export NUMBA_NUM_THREADS=1
+export OMP_NUM_THREADS=1
+
 {% endblock project_header %}
 
 {% block body %}
