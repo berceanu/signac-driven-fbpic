@@ -294,7 +294,7 @@ def run_fbpic(job):
     # stop the timer
     runtime = t.stop()
     job.doc.setdefault("runtime", str(seconds_to_hms(runtime)).split(".")[0])
-    time_per_iteration = (runtime * u.second / job.sp.N_step).to(u.millisecond)
+    time_per_iteration = (runtime * u.second / job.sp.N_step).to(u.ms)
     job.doc.setdefault("time_per_iteration", f"{time_per_iteration:.1f}")
 
     # redirect stdout back and close "stdout.txt"
