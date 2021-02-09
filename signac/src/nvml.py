@@ -6,13 +6,12 @@ Usage: python src/nvml.py > /dev/null 2>&1 &
 import pynvml
 import pathlib
 import datetime
-import time
 import schedule
 
 # Accomodate more than one `fbpic` run per GPU
 # Accomodate PIConGPU usecase => track all 16 GPUs; don't search for Python processes only
 
-
+# TODO comput ms/step and total particle count and save in job document
 
 def job(gpu_count, out_file):
     for gpu in range(gpu_count):
@@ -34,7 +33,6 @@ def job(gpu_count, out_file):
                 )
 
 
-# TODO adapt for PIConGPU / general non-python processes
 # TODO add other metrics like temperature, throttling state and/of clock freq
 
 
