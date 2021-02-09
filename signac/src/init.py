@@ -17,6 +17,9 @@ from util import nozzle_center_offset
 NUMBER_OF_H5 = 200
 SQRT_FACTOR = math.sqrt(2 * math.log(2))
 
+def get_dz(zmax, zmin, Nz):
+    """Longitudinal resolution (meters)."""
+    return (zmax - zmin) / Nz
 
 def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""
@@ -28,11 +31,10 @@ def main():
     for _ in range(1):  # placeholder FIXME
         sp = dict(
             # The simulation box
-            z_rezolution_factor=20,  # Δz = lambda0 / z_rezolution_factor (default 20)
+            z_rezolution_factor=32,  # Δz = lambda0 / z_rezolution_factor (default 20)
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
-            Nr=512,  # Number of gridpoints along r
-            rmax=50.0e-6,  # Length of the box along r (meters)
+            rmax=70.0e-6,  # Length of the box along r (meters)
             r_boundary_conditions="reflective",  #  'open' (default) / 'reflective'; 'open' more expensive
             Nm=3,  # Number of modes used
             # The particles
@@ -59,6 +61,7 @@ def main():
             power=2.0,
             # do not change below this line ##############
             Nz=None,  # Number of gridpoints along z
+            Nr=None,  # Number of gridpoints along r
             p_rmax=None,  # Maximal radial position of the plasma (meters)
             p_nt=None,  # Number of particles per cell along theta, should be 4*Nm
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
@@ -88,6 +91,10 @@ def main():
         sp["Nz"] = int(
             (sp["zmax"] - sp["zmin"]) * sp["z_rezolution_factor"] / sp["lambda0"]
         )
+        dz = get_dz(sp["zmax"], sp["zmin"], sp["Nz"])
+        dr = 10 * dz
+        sp["Nr"] = sp["rmax"] / dr
+
         sp["p_nt"] = 4 * sp["Nm"]
         sp["p_rmax"] = sp["rmax"]
 
@@ -105,7 +112,7 @@ def main():
         project.open_job(sp).init()
 
     for job in project:
-        Δz = ((job.sp.zmax - job.sp.zmin) / job.sp.Nz * u.meter).to(u.micrometer)
+        Δz = (get_dz(job.sp.zmax, job.sp.zmin, job.sp.Nz) * u.meter).to(u.micrometer)
         Δr = (job.sp.rmax / job.sp.Nr * u.meter).to(u.micrometer)
 
         job.doc.setdefault("Δz", f"{Δz:.3f}")
