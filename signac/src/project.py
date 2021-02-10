@@ -334,7 +334,7 @@ def save_pngs(job):
 
     :param job: the job instance is a handle to the data of a unique statepoint
 
-    Note: This operation takes about 30 mins on thor.
+    Note: This operation takes about 30 mins on a single core.
     """
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     rho_path = pathlib.Path(job.ws) / "rhos"
