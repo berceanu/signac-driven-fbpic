@@ -45,22 +45,31 @@ class OdinEnvironment(DefaultSlurmEnvironment):
 
     hostname_pattern = r".*\.ra5\.eli-np\.ro$"
     template = "odin.sh"
+    mpi_cmd = "mpirun"
 
     @classmethod
     def add_args(cls, parser):
-        super(OdinEnvironment, cls).add_args(parser)
+        """Add arguments to parser.
+
+        Parameters
+        ----------
+        parser : :class:`argparse.ArgumentParser`
+            The argument parser where arguments will be added.
+
+        """
+        super().add_args(parser)
         parser.add_argument(
             "--partition",
-            choices=["cpu", "gpu"],
+            choices=("cpu", "gpu"),
             default="gpu",
-            help="Specify the partition to submit to.",
+            help="Specify the partition to submit to. (default=gpu)",
         )
         parser.add_argument(
             "-w",
             "--walltime",
             type=float,
             default=72,
-            help="The wallclock time in hours.",
+            help="The wallclock time in hours. (default=72)",
         )
         parser.add_argument(
             "--job-output",
@@ -70,6 +79,19 @@ class OdinEnvironment(DefaultSlurmEnvironment):
                 '(slurm default is "slurm-%%j.out").'
             ),
         )
+        parser.add_argument(
+            "--memory",
+            default="1500g",
+            help=(
+                'Specify how much memory to reserve per node, e.g. "4g" for '
+                '4 gigabytes or "512m" for 512 megabytes. Only relevant '
+                "for shared queue jobs. (default=1500g)"
+            ),
+        )
+
+
+
+__all__ = ["OdinEnvironment"]
 
 
 class Project(FlowProject):
