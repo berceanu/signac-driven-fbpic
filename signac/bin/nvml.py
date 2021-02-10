@@ -39,7 +39,7 @@ def job(gpu_count, out_file):
 
             with out_file.open("a") as f:
                 f.write(
-                    f"{time_stamp},{uuid},{p.pid},{mem_MiB:g},{pow_draw_watt},{gpu_util_percentage},{throtttle_state['sw_power_cap']},{throtttle_state['hw_slowdown']}\n"
+                    f"{time_stamp},{uuid},{p.pid},{mem_MiB:g},{pow_draw_watt:.0f},{gpu_util_percentage},{throtttle_state['sw_power_cap']},{throtttle_state['hw_slowdown']}\n"
                 )
 
 
