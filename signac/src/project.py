@@ -333,6 +333,8 @@ def save_pngs(job):
     * save a snapshot of the plasma density field ``rho`` to {job_dir}/rhos/rho{it:06d}.png
 
     :param job: the job instance is a handle to the data of a unique statepoint
+
+    Note: This operation takes about 30 mins on thor.
     """
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     rho_path = pathlib.Path(job.ws) / "rhos"
