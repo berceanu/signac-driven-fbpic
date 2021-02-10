@@ -317,7 +317,7 @@ def save_pngs(job):
     phasespace_path = pathlib.Path(job.ws) / "phasespaces"
     time_series = LpaDiagnostics(h5_path)
 
-    for ts_it in time_series.iterations.tolist():
+    for ts_it in time_series.iterations:
         laser_density_plot(
             iteration=ts_it,
             tseries=time_series,
