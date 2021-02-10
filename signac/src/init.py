@@ -35,7 +35,7 @@ def main():
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             rmax=70.0e-6,  # Length of the box along r (meters)
-            r_boundary_conditions="reflective",  #  'open' (default) / 'reflective'; 'open' more expensive
+            r_boundary_conditions="open",  #  'open' (default) / 'reflective'; 'open' more expensive
             Nm=3,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
@@ -92,7 +92,7 @@ def main():
             (sp["zmax"] - sp["zmin"]) * sp["z_rezolution_factor"] / sp["lambda0"]
         )
         dz = get_dz(sp["zmax"], sp["zmin"], sp["Nz"])
-        dr = 10 * dz
+        dr = 5 * dz
         sp["Nr"] = int(sp["rmax"] / dr)
 
         sp["p_nt"] = 4 * sp["Nm"]
