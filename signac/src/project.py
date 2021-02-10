@@ -13,7 +13,6 @@ import logging
 import math
 import sys
 import pathlib
-from multiprocessing import Pool
 from functools import partial
 
 import numpy as np
@@ -302,8 +301,7 @@ def run_fbpic(job):
     f.close()
 
 
-@ex.with_directives(directives=dict(np=3))
-@directives(np=3)
+@ex
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
@@ -320,25 +318,22 @@ def save_pngs(job):
     phasespace_path = pathlib.Path(job.ws) / "phasespaces"
     time_series = LpaDiagnostics(h5_path)
 
-    it_laser_density_plot = partial(
-        laser_density_plot,
-        tseries=time_series,
-        rho_field_name="rho_electrons",
-        save_path=rho_path,
-        n_c=job.sp.n_c,
-        E0=job.sp.E0,
-    )
-    it_phase_space_plot = partial(
-        phase_space_plot,
-        tseries=time_series,
-        uzmax=1.5e3,
-        vmax=1.0e8,
-        save_path=phasespace_path,
-    )
-
-    with Pool(3) as pool:
-        pool.map(it_phase_space_plot, time_series.iterations.tolist())
-        pool.map(it_laser_density_plot, time_series.iterations.tolist())
+    for ts_it in time_series.iterations.tolist():
+        laser_density_plot(
+            iteration=ts_it,
+            tseries=time_series,
+            rho_field_name="rho_electrons",
+            save_path=rho_path,
+            n_c=job.sp.n_c,
+            E0=job.sp.E0,
+        )
+        phase_space_plot(
+            iteration=ts_it,
+            tseries=time_series,
+            uzmax=1.5e3,
+            vmax=1.0e8,
+            save_path=phasespace_path,
+        )
 
 
 def generate_movie(job, stem):
