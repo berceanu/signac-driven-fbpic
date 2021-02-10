@@ -13,8 +13,6 @@ import logging
 import math
 import sys
 import pathlib
-from multiprocessing import Pool
-from functools import partial
 
 import numpy as np
 import sliceplots
@@ -47,22 +45,31 @@ class OdinEnvironment(DefaultSlurmEnvironment):
 
     hostname_pattern = r".*\.ra5\.eli-np\.ro$"
     template = "odin.sh"
+    mpi_cmd = "mpirun"
 
     @classmethod
     def add_args(cls, parser):
-        super(OdinEnvironment, cls).add_args(parser)
+        """Add arguments to parser.
+
+        Parameters
+        ----------
+        parser : :class:`argparse.ArgumentParser`
+            The argument parser where arguments will be added.
+
+        """
+        super().add_args(parser)
         parser.add_argument(
             "--partition",
-            choices=["cpu", "gpu"],
+            choices=("cpu", "gpu"),
             default="gpu",
-            help="Specify the partition to submit to.",
+            help="Specify the partition to submit to. (default=gpu)",
         )
         parser.add_argument(
             "-w",
             "--walltime",
             type=float,
             default=72,
-            help="The wallclock time in hours.",
+            help="The wallclock time in hours. (default=72)",
         )
         parser.add_argument(
             "--job-output",
@@ -72,6 +79,19 @@ class OdinEnvironment(DefaultSlurmEnvironment):
                 '(slurm default is "slurm-%%j.out").'
             ),
         )
+        parser.add_argument(
+            "--memory",
+            default="1500g",
+            help=(
+                'Specify how much memory to reserve per node, e.g. "4g" for '
+                '4 gigabytes or "512m" for 512 megabytes. Only relevant '
+                "for shared queue jobs. (default=1500g)"
+            ),
+        )
+
+
+
+__all__ = ["OdinEnvironment"]
 
 
 class Project(FlowProject):
@@ -302,8 +322,7 @@ def run_fbpic(job):
     f.close()
 
 
-@ex.with_directives(directives=dict(np=3))
-@directives(np=3)
+@ex
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
@@ -320,25 +339,22 @@ def save_pngs(job):
     phasespace_path = pathlib.Path(job.ws) / "phasespaces"
     time_series = LpaDiagnostics(h5_path)
 
-    it_laser_density_plot = partial(
-        laser_density_plot,
-        tseries=time_series,
-        rho_field_name="rho_electrons",
-        save_path=rho_path,
-        n_c=job.sp.n_c,
-        E0=job.sp.E0,
-    )
-    it_phase_space_plot = partial(
-        phase_space_plot,
-        tseries=time_series,
-        uzmax=1.5e3,
-        vmax=1.0e8,
-        save_path=phasespace_path,
-    )
-
-    with Pool(3) as pool:
-        pool.map(it_phase_space_plot, time_series.iterations.tolist())
-        pool.map(it_laser_density_plot, time_series.iterations.tolist())
+    for ts_it in time_series.iterations:
+        laser_density_plot(
+            iteration=ts_it,
+            tseries=time_series,
+            rho_field_name="rho_electrons",
+            save_path=rho_path,
+            n_c=job.sp.n_c,
+            E0=job.sp.E0,
+        )
+        phase_space_plot(
+            iteration=ts_it,
+            tseries=time_series,
+            uzmax=1.5e3,
+            vmax=1.0e8,
+            save_path=phasespace_path,
+        )
 
 
 def generate_movie(job, stem):
