@@ -39,9 +39,11 @@ def job(gpu_count, out_file):
 
             with out_file.open("a") as f:
                 f.write(
-                    f"{time_stamp},{uuid},{p.pid},{mem_MiB:g},{pow_draw_watt:.0f},{gpu_util_percentage},{throtttle_state['sw_power_cap']},{throtttle_state['hw_slowdown']}\n"
+                    f"{time_stamp},{uuid},{p.pid},{mem_MiB:.0f},{pow_draw_watt:.0f},{gpu_util_percentage},{throtttle_state['sw_power_cap']},{throtttle_state['hw_slowdown']}\n"
                 )
 
+# TODO (possibly) spawn a separate background process and run together with signac project
+# see https://schedule.readthedocs.io/en/stable/background-execution.html
 
 def main():
     """Main entry point."""
@@ -57,7 +59,7 @@ def main():
             "time_stamp,gpu_uuid,pid,used_gpu_memory_MiB,used_power_W,GPU_Util_%,sw_power_cap,hw_slowdown\n"
         )
 
-    schedule.every(10).seconds.do(job, gpu_count=gpu_count, out_file=out_file)
+    schedule.every().minute.do(job, gpu_count=gpu_count, out_file=out_file)
 
     while True:
         schedule.run_pending()
