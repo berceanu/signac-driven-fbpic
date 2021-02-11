@@ -177,6 +177,8 @@ def add_document_keys(job):
     count = job.sp.p_nt * job.sp.p_nr * job.sp.p_nz * job.sp.Nz * job.sp.Nr
     job.doc.setdefault("macroparticle_count", f"{count:.2e}")
 
+# TODO: add document key for disk space occupied by the job's .h5 output files
+# TODO: add key retro-actively to existing simulations
 
 @ex
 @Project.operation
@@ -214,7 +216,10 @@ def plot_laser(job):
         fn=job.fn("laser_intensity.png"),
     )
 
-
+# TODO create simple mock signac project for testing out the generated SLURM script
+# TODO set nranks = 4 and run over MPI
+# see https://docs.signac.io/en/latest/cluster_submission.html?highlight=nranks#term-mpi-openmp-hybrid
+# https://docs.signac.io/en/latest/recipes.html?highlight=nranks#using-multiple-execution-environments-for-operations
 @ex.with_directives(directives=dict(ngpu=1))
 @directives(ngpu=1)
 @Project.operation
@@ -252,7 +257,7 @@ def run_fbpic(job):
             "z": "open",
             "r": job.sp.r_boundary_conditions,
         },
-        n_order=-1,
+        n_order=-1,  #  TODO use job.sp.n_order
         use_cuda=True,
         verbose_level=2,
     )
@@ -550,6 +555,7 @@ def plot_2d_hist(job):
     hist2d.ax0.plot(all_z * 1e6, dens, linewidth=2.5, linestyle="dashed", color="0.75")
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
+# TODO (possibly) delete the job's `diags/` folder
 
 if __name__ == "__main__":
     logging.basicConfig(
