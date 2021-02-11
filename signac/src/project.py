@@ -218,6 +218,7 @@ def plot_laser(job):
 
 # TODO create simple mock signac project for testing out the generated SLURM script
 # TODO set nranks = 4 and run over MPI
+# grep for nranks in local signac-flow repo
 # see https://docs.signac.io/en/latest/cluster_submission.html?highlight=nranks#term-mpi-openmp-hybrid
 # https://docs.signac.io/en/latest/recipes.html?highlight=nranks#using-multiple-execution-environments-for-operations
 @ex.with_directives(directives=dict(ngpu=1))
@@ -556,6 +557,7 @@ def plot_2d_hist(job):
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
 # TODO (possibly) delete the job's `diags/` folder
+# TODO (possibly) integrate `nvml.py` via `schedule` as background thread
 
 if __name__ == "__main__":
     logging.basicConfig(
