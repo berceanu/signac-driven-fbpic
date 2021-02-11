@@ -33,9 +33,9 @@ def job(gpu_count, out_file):
             for name, mask in throtttle_reasons.items():
                 if mask & supported_throttle_reasons:
                     if mask & throttle_reasons:
-                        throtttle_state[name] = "A"  # Active
+                        throtttle_state[name] = "ON"  # Active
                     else:
-                        throtttle_state[name] = "NA"  # Not Active
+                        throtttle_state[name] = "OFF"  # Not Active
 
             with out_file.open("a") as f:
                 f.write(
