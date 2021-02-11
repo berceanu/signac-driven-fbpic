@@ -1,6 +1,6 @@
 """
 Reads GPU usage info from CSV file and plots it.
-Saves the figure as a PNG file.
+Saves the figure(s) as PNG file(s).
 Usage: python nvml_reader.py filename.csv
 """
 import sys
@@ -66,6 +66,23 @@ def main():
     fig.savefig(f"nvml_{csv_timestamp}.png", dpi=192)
     pyplot.close(fig)
 
+#               Start                 End 
+# ------------------- ------------------- 
+# 2021-02-10T11:28:01 2021-02-10T20:23:42 
+# 2021-02-10T11:28:01 2021-02-10T20:23:42
+
+# check also sacct --format="Start, End" -j 702
+#               Start                 End 
+# ------------------- ------------------- 
+# 2021-02-10T21:07:04             Unknown 
+# 2021-02-10T21:07:04             Unknown 
+
+# Format output is, YYYY-MM-DDTHH:MM:SS
+
+# Workflow: select a duration: Start to End
+# Plot all 16 GPUs during that time window on a single figure
+# Separate figures for used power and used memory
+# Generic rougier-style plot which is fed the data
 
 if __name__ == "__main__":
     main()
