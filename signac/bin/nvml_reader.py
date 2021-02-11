@@ -7,12 +7,37 @@ import sys
 import pandas as pd
 import pathlib
 from matplotlib import pyplot
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import pynvml
 
 # TODO find smallest non-overlapping set of short UUID
 # see how signac-dashboard does it for the job subtitle
 
+def length_of_longest_string(list_of_strings):
+    return len(max(list_of_strings , key = len))
+
+
+def min_len_unique_uuid(uuids):
+    """Determine the minimum string length required for a UUID to be unique."""
+    uuid_length = length_of_longest_string(uuids)
+    tmp = set()
+    for i in range(uuid_length):
+        tmp.clear()
+        for _id in uuids:
+            if _id[:i] in tmp:
+                break
+            else:
+                tmp.add(_id[:i])
+        else:
+            break
+    return i
+
+def set_short_uuids(gpus):
+    uuids = [gpu.uuid for gpu in gpus]
+    min_len = min_len_unique_uuid(uuids)
+    # mutating!
+    for gpu in gpus:
+        gpu.short_uuid = gpu.uuid[:min_len]
 
 @dataclass
 class InventoryItem:
@@ -32,6 +57,7 @@ class GpuDevice:
 
     index: int  # from 0 to N - 1, with N the number of GPUs
     uuid: str  # eg, "GPU-1dfe3b5c-79a0-0422-f0d0-b22c6ded0af0"
+    short_uuid: str = field(init=False, repr=False)
     total_memory: int  # MiB
     power_limit: int  # Watt
 
@@ -61,8 +87,8 @@ def get_properties_of_all_gpus():
 def plot_vs_time(grouped, *, ax, col=None, ylabel=None):
     """All plotting is done with time on the x axis,
     this is the base function for that."""
-    for uuid, pid in grouped.groups.keys():
-        grouped[col].get_group((uuid, pid)).plot(ax=ax, label=f"{uuid}, PID={pid}")
+    for uuid in grouped.groups.keys():
+        grouped[col].get_group(uuid).plot(ax=ax, label=f"{uuid}")
 
     ax.grid()
 
@@ -89,7 +115,8 @@ def plot_used_memory(grouped, *, ax):
 def main():
     """Main entry point."""
     gpus = get_properties_of_all_gpus()
-    print(gpus)
+
+    set_short_uuids(gpus)
 
     # csv_fname = str(sys.argv[1])
     p = pathlib.Path.cwd() / "nvml_20210209-230247.csv"
@@ -97,16 +124,19 @@ def main():
 
     df = pd.read_csv(p)
 
+    uuid_min_len = min_len_unique_uuid([gpu.uuid for gpu in gpus])
     df["gpu_uuid"] = df["gpu_uuid"].astype("string")
+    df["short_gpu_uuid"] = df["gpu_uuid"].str[:uuid_min_len]
+
+
     df["time_stamp"] = pd.to_datetime(df["time_stamp"])
     df.set_index("time_stamp", inplace=True)
 
     # select by date / time
     df = df.loc['2021-02-10 11:28' : '2021-02-10 20:24']
 
-    print(df.describe(), "\n")  # TODO describe after aggregation on GPU/PID
-
-    grouped = df.groupby(["gpu_uuid", "pid"])
+    grouped = df.groupby(["short_gpu_uuid"])
+    print(grouped[["used_power_W", "used_gpu_memory_MiB"]].agg(["max", "mean", "std"]))
 
     # TODO separate per-GPU plots
     fig, axes = pyplot.subplots(figsize=(12, 8), nrows=3, sharex=True)
