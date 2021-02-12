@@ -26,7 +26,7 @@ from peak_detection import (
     integrated_charge,
     peak_position,
 )
-from util import ffmpeg_command, seconds_to_hms, shell_run, Timer
+from util import du, ffmpeg_command, seconds_to_hms, shell_run, Timer
 from simulation_diagnostics import (
     particle_energy_histogram,
     laser_density_plot,
@@ -177,8 +177,7 @@ def add_document_keys(job):
     count = job.sp.p_nt * job.sp.p_nr * job.sp.p_nz * job.sp.Nz * job.sp.Nr
     job.doc.setdefault("macroparticle_count", f"{count:.2e}")
 
-# TODO: add document key for disk space occupied by the job's .h5 output files
-# TODO: add key retro-actively to existing simulations
+
 
 @ex
 @Project.operation
@@ -258,7 +257,7 @@ def run_fbpic(job):
             "z": "open",
             "r": job.sp.r_boundary_conditions,
         },
-        n_order=-1,  #  TODO use job.sp.n_order
+        n_order=job.sp.n_order,
         use_cuda=True,
         verbose_level=2,
     )
@@ -555,6 +554,14 @@ def plot_2d_hist(job):
     )
     hist2d.ax0.plot(all_z * 1e6, dens, linewidth=2.5, linestyle="dashed", color="0.75")
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
+
+@ex
+@Project.operation
+@Project.pre.after(run_fbpic)
+@Project.post.true("disk_usage")
+def store_disk_usage(job):
+    usage = du(job.ws)
+    job.doc.setdefault('disk_usage', usage)
 
 # TODO (possibly) delete the job's `diags/` folder
 # TODO (possibly) integrate `nvml.py` via `schedule` as background thread

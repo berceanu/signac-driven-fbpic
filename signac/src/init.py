@@ -35,8 +35,8 @@ def main():
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             rmax=70.0e-6,  # Length of the box along r (meters)
-            r_boundary_conditions="open",  #  'open' (default) / 'reflective'; 'open' more expensive
-            # TODO add n_order, and update the schema https://docs.signac.io/en/latest/recipes.html#migrating-changing-the-data-space-schema
+            r_boundary_conditions="reflective",  #  'reflective' (default) / 'open' more expensive
+            n_order=32,  # Order of the stencil for z derivatives in the Maxwell solver
             Nm=3,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
