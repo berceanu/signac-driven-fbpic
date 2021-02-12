@@ -36,6 +36,7 @@ def main():
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             rmax=70.0e-6,  # Length of the box along r (meters)
             r_boundary_conditions="open",  #  'open' (default) / 'reflective'; 'open' more expensive
+            # TODO add n_order, and update the schema https://docs.signac.io/en/latest/recipes.html#migrating-changing-the-data-space-schema
             Nm=3,  # Number of modes used
             # The particles
             # Position of the beginning of the plasma (meters)
