@@ -45,7 +45,7 @@ use_cuda = True
 # dispersion relation for electromagnetic waves. (Typically,
 # `n_order = 32` is a good trade-off.)
 # See https://arxiv.org/abs/1611.05712 for more information.
-n_order = -1
+n_order = {{ sp.n_order }}
 
 # The simulation box
 Nz = {{ sp.Nz }}  # Number of gridpoints along z
@@ -159,8 +159,8 @@ if __name__ == '__main__':
         zmin=zmin,
         boundaries={
             "z": "open",
-            "r": "open",
-        },  # 'r': 'open' can also be used (more expensive)
+            "r": {{ sp.r_boundary_conditions }},
+        },  # 'r': 'open' is more expensive
         n_order=n_order,
         use_cuda=use_cuda,
     )
