@@ -18,6 +18,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=31200m
 #SBATCH --gres=gpu:{{ gpu_tasks }}
+#SBATCH --gres-flags=enforce-binding
 {% else %}
 #SBATCH --nodes={{ nn }}
 #SBATCH --ntasks-per-node={{ (cores_per_node, cpu_tasks)|min }}
@@ -46,7 +47,6 @@ export CUDA_DEVICE_ORDER=PCI_BUS_ID
 {% for operation in operations %}
 
 # {{ "%s"|format(operation) }}
-export CUDA_VISIBLE_DEVICES={{ "%s"|format(environment.cuda_device_batches[loop.index0]) }}
 {{ operation.cmd }}{{ cmd_suffix }}
 {% if operation.eligible_operations|length > 0 %}
 # Eligible to run:
