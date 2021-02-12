@@ -30,6 +30,7 @@ def main():
 
     for zrf, roz in product((24, 32), (5, 10)):
         sp = dict(
+            nranks=16,  # number of MPI ranks (default 16); it's also the number of GPUs used per job
             # The simulation box
             z_rezolution_factor=zrf,  # Δz = lambda0 / z_rezolution_factor (default 24)
             dr_over_dz=roz,  # Δr = dr_over_dz * Δz (default 10)
