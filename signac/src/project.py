@@ -46,6 +46,7 @@ class OdinEnvironment(DefaultSlurmEnvironment):
     hostname_pattern = r".*\.ra5\.eli-np\.ro$"
     template = "odin.sh"
     mpi_cmd = "mpirun"
+    cuda_device_batches = ["0,1,2,3", "4,5,6,7", "8,9,10,11", "12,13,14,15"]
 
     @classmethod
     def add_args(cls, parser):
@@ -215,13 +216,10 @@ def plot_laser(job):
         fn=job.fn("laser_intensity.png"),
     )
 
-# TODO create simple mock signac project for testing out the generated SLURM script
-# TODO set nranks = 4 and run over MPI
-# grep for nranks in local signac-flow repo
-# see https://docs.signac.io/en/latest/cluster_submission.html?highlight=nranks#term-mpi-openmp-hybrid
-# https://docs.signac.io/en/latest/recipes.html?highlight=nranks#using-multiple-execution-environments-for-operations
-@ex.with_directives(directives=dict(ngpu=1))
-@directives(ngpu=1)
+# omp_num_threads=1 by default
+# np=nranks * omp_num_threads by default
+@ex.with_directives(directives=dict(nranks=4, ngpu=4))
+@directives(nranks=4, ngpu=4)
 @Project.operation
 @Project.pre.after(plot_laser)
 @Project.post(fbpic_ran)
