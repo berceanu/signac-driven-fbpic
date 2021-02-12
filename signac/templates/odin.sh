@@ -45,7 +45,7 @@ export CUDA_DEVICE_ORDER=PCI_BUS_ID
 {% for operation in operations %}
 
 # {{ "%s"|format(operation) }}
-export CUDA_VISIBLE_DEVICES={{ loop.index0 }}
+export CUDA_VISIBLE_DEVICES={{ "%s"|format(environment.cuda_device_batches[loop.index0]) }}
 {{ operation.cmd }}{{ cmd_suffix }}
 {% if operation.eligible_operations|length > 0 %}
 # Eligible to run:
