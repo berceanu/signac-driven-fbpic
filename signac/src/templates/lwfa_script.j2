@@ -159,8 +159,8 @@ if __name__ == '__main__':
         zmin=zmin,
         boundaries={
             "z": "open",
-            "r": {{ sp.r_boundary_conditions }},
-        },  # 'r': 'open' is more expensive
+            "r": {{ '\"' + sp.r_boundary_conditions + '\"' }},
+        },  # "r": "open" is more expensive
         n_order=n_order,
         use_cuda=use_cuda,
     )
