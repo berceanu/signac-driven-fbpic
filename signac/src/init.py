@@ -28,10 +28,11 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    for _ in range(1):  # placeholder FIXME
+    for roz in (5, 10):
         sp = dict(
             # The simulation box
-            z_rezolution_factor=32,  # Δz = lambda0 / z_rezolution_factor (default 20)
+            z_rezolution_factor=32,  # Δz = lambda0 / z_rezolution_factor (default 24)
+            dr_over_dz=roz,  # Δr = dr_over_dz * Δz (default 10)
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             rmax=70.0e-6,  # Length of the box along r (meters)
@@ -93,7 +94,7 @@ def main():
             (sp["zmax"] - sp["zmin"]) * sp["z_rezolution_factor"] / sp["lambda0"]
         )
         dz = get_dz(sp["zmax"], sp["zmin"], sp["Nz"])
-        dr = 5 * dz
+        dr = sp["dr_over_dz"] * dz
         sp["Nr"] = int(sp["rmax"] / dr)
 
         sp["p_nt"] = 4 * sp["Nm"]
