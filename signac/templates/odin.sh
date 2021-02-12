@@ -13,9 +13,10 @@
 {% set nn_gpu = gpu_tasks|calc_num_nodes(gpus_per_node) if 'gpu' in partition else 0 %}
 {% set nn = nn|default((nn_cpu, nn_gpu)|max, true) %}
 {% if 'gpu' in partition %}
-#SBATCH --nodes={{ nn|default(1, true) }}
+#SBATCH --ntasks={{ (gpu_tasks, cpu_tasks)|max }}
 #SBATCH --ntasks-per-node={{ (gpu_tasks, cpu_tasks)|max }}
 #SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=31200m
 #SBATCH --gres=gpu:{{ gpu_tasks }}
 {% else %}
 #SBATCH --nodes={{ nn }}
@@ -47,7 +48,6 @@ export CUDA_DEVICE_ORDER=PCI_BUS_ID
 # {{ "%s"|format(operation) }}
 export CUDA_VISIBLE_DEVICES={{ "%s"|format(environment.cuda_device_batches[loop.index0]) }}
 {{ operation.cmd }}{{ cmd_suffix }}
-sleep 2m
 {% if operation.eligible_operations|length > 0 %}
 # Eligible to run:
 {% for run_op in operation.eligible_operations %}

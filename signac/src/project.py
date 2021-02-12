@@ -82,7 +82,7 @@ class OdinEnvironment(DefaultSlurmEnvironment):
         )
         parser.add_argument(
             "--memory",
-            default="1500g",
+            # default="1500g",
             help=(
                 'Specify how much memory to reserve per node, e.g. "4g" for '
                 '4 gigabytes or "512m" for 512 megabytes. Only relevant '
