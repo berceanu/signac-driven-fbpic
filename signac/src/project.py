@@ -71,7 +71,7 @@ class OdinEnvironment(DefaultSlurmEnvironment):
             default=72,
             help="The wallclock time in hours. (default=72)",
         )
-
+# TODO: add --mem-per-cpu argument
 
 __all__ = ["OdinEnvironment"]
 
