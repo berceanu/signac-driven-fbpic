@@ -42,6 +42,40 @@ def min_len_unique_uuid(uuids):
     return i
 
 
+def get_all_gpus():
+    """Populates the list of available GPUs on the machine."""
+    pynvml.nvmlInit()
+    gpu_count = pynvml.nvmlDeviceGetCount()
+
+    gpus = list()
+    for gpu in range(gpu_count):
+        handle = pynvml.nvmlDeviceGetHandleByIndex(gpu)
+        uuid = pynvml.nvmlDeviceGetUUID(handle).decode("UTF-8")
+        mem_total = pynvml.nvmlDeviceGetMemoryInfo(handle).total / 1024 ** 2
+        enforced_power_limit = pynvml.nvmlDeviceGetEnforcedPowerLimit(handle) / 1000
+        device = GpuDevice(
+            index=gpu,
+            uuid=uuid,
+            total_memory=int(mem_total),
+            power_limit=int(enforced_power_limit),
+        )
+        gpus.append(device)
+    pynvml.nvmlShutdown()
+    return GpuList(gpus)
+
+
+class GpuListError(Exception):
+    """Custom Error class for GpuList."""
+
+
+class GpuPanelError(Exception):
+    """Custom Error class for GpuPanel."""
+
+
+class GpuFigureError(Exception):
+    """Custom Error class for GpuFigure."""
+
+
 @dataclass
 class GpuDevice:
     """Stores GPU properties, per device."""
@@ -51,10 +85,6 @@ class GpuDevice:
     uuid_short: str = field(init=False)  #  eg, "GPU-1d"
     total_memory: int  # MiB (Mebibyte)
     power_limit: int  # Watt
-
-
-class GpuListError(Exception):
-    """Custom Error class for GpuList."""
 
 
 @dataclass
@@ -109,6 +139,7 @@ class HorizontalBar:
     y_position: float
     width: float
     xdata: np.ndarray  # TODO add repr=False
+    ydata: np.ndarray  # TODO add repr=False
     ax: Axes = field(repr=False)
     label: str = field(repr=False)
     ticks: List[Tick] = field(repr=False)
@@ -182,9 +213,12 @@ class HorizontalBar:
         self.add_left_spine()
         self.add_ticks()
 
-
-class GpuPanelError(Exception):
-    """Custom Error class for GpuPanel."""
+    def plot_data(self, y_data=None, color="black", linewidth=2, zorder=2):
+        if y_data is None:
+            y_data = self.ydata
+        self.ax.plot(
+            self.xdata, y_data, color=color, linewidth=linewidth, zorder=zorder
+        )
 
 
 @dataclass
@@ -192,6 +226,7 @@ class GpuPanel:
     ax: Axes = field(repr=False)
     gpus: GpuList
     xdata: np.ndarray  # TODO add repr=False
+    ydata: np.ndarray  # TODO add repr=False
     num_gpus: int = field(init=False, repr=False)
     indexes: List[int] = field(init=False, repr=False)
     bars: List[HorizontalBar] = field(init=False)  # TODO add repr=False
@@ -201,24 +236,40 @@ class GpuPanel:
             raise GpuPanelError("A plot panel must have at least 1 GPU.")
         for attr in "num_gpus", "indexes":
             setattr(self, attr, getattr(self.gpus, attr))
+        nrows, ncols = self.ydata.shape
+        if nrows != self.num_gpus:
+            raise GpuPanelError(
+                "Number of rows in Y data different from number of GPUs in Panel."
+            )
         self.create_horizontal_bars()
 
     def create_horizontal_bars(self):
         # we split the y-axis of self.ax into n_bars intervals of length 1
-        # bar_centers +/- 0.5
+        # bar_center +/- 0.5
         n = 8  # FIXME
-        bar_centers = n - (np.arange(n) + 0.5)
+        bar_center = n - (np.arange(n) + 0.5)
         bar_width = np.full(shape=n, fill_value=n, dtype=float)
-        ticks = [
+        bar_ticks = [
             Tick(pos, label)
             for pos, label in zip((0.25, 0.5, 0.75), ("0.5", "1.0", "1.5"))
         ]  # FIXME
-        self.bars = [
-            HorizontalBar(y_pos, width, self.xdata, self.ax, label, ticks)
-            for y_pos, width, label in zip(
-                bar_centers, bar_width, self.gpus.short_uuids
+
+        bars = list()
+        for count, (y_pos, width, suuid, y_row) in enumerate(
+            zip(bar_center, bar_width, self.gpus.short_uuids, self.ydata)
+        ):
+            bar_y_data = count + 0.5 + 2 * y_row / 8  # FIXME
+            hb = HorizontalBar(
+                y_position=y_pos,
+                width=width,
+                xdata=self.xdata,
+                ydata=bar_y_data,
+                ax=self.ax,
+                label=suuid,
+                ticks=bar_ticks,
             )
-        ]
+            bars.append(hb)
+        self.bars = bars
 
     def set_axis_limits(self):
         self.ax.set_xlim(0, 8)
@@ -242,14 +293,9 @@ class GpuPanel:
         self.draw_horizontal_bars()
         self.add_tick_labels()
 
-    def plot_data(self, y_data, color="black", linewidth=2, zorder=2):
-        self.ax.plot(
-            self.xdata, y_data, color=color, linewidth=linewidth, zorder=zorder
-        )
-
-
-class GpuFigureError(Exception):
-    """Custom Error class for GpuFigure."""
+    def plot_lines(self):
+        for bar in self.bars:
+            bar.plot_data()
 
 
 @dataclass
@@ -263,10 +309,11 @@ class GpuFigure:
     panel_right: GpuPanel = field(init=False)
     num_gpus: int = field(init=False, repr=False)
     indexes: List[int] = field(init=False, repr=False)
+    bars: List[HorizontalBar] = field(init=False)  # TODO add repr=False
 
     def __post_init__(self):
         self.create_panels()
-        for attr in "indexes", "num_gpus":
+        for attr in "indexes", "num_gpus", "bars":
             setattr(
                 self,
                 attr,
@@ -275,6 +322,11 @@ class GpuFigure:
         if self.num_gpus != self.gpus.num_gpus:
             raise GpuFigureError(
                 "Number of GPUs in figure is different from the sum of the number of GPUs in each panel."
+            )
+        nrows, ncols = self.Y.shape
+        if nrows != self.num_gpus:
+            raise GpuFigureError(
+                "Number of rows in Y data different from total number of GPUs."
             )
 
     def __iter__(self):
@@ -288,14 +340,16 @@ class GpuFigure:
         for pos, index in subplots.items():
             axs[pos] = pyplot.subplot(nrows, ncols, index, aspect=1)
 
-        left_gpus, right_gpus = self.gpus.split()  # FIXME
+        gpus_left, gpus_right = self.gpus.split()  # FIXME
         assert (
-            left_gpus.num_gpus == right_gpus.num_gpus
+            gpus_left.num_gpus == gpus_right.num_gpus
         ), "Different number of GPUs in the two panels."
-        self.xdata = self.X * left_gpus.num_gpus / self.X.max()  # rescaling x data
+        self.xdata = self.X * gpus_left.num_gpus / self.X.max()  # rescaling x data
 
-        self.panel_left = GpuPanel(axs["left"], left_gpus, self.xdata)
-        self.panel_right = GpuPanel(axs["right"], right_gpus, self.xdata)
+        ydata_left, ydata_right = np.vsplit(self.Y, 2)
+
+        self.panel_left = GpuPanel(axs["left"], gpus_left, self.xdata, ydata_left)
+        self.panel_right = GpuPanel(axs["right"], gpus_right, self.xdata, ydata_right)
 
     def prepare(self):
         for panel in self:
@@ -303,46 +357,24 @@ class GpuFigure:
 
     def plot_lines(self):
         for panel in self:
-            for count, p_gpu_idx in enumerate(panel.indexes):
-                # plot main line
-                panel.plot_data(
-                    y_data=count + 0.5 + 2 * self.Y[p_gpu_idx] / panel.num_gpus
-                )
-                for f_gpu_idx in self.indexes:
-                    if p_gpu_idx != f_gpu_idx:
-                        # plot other lines
-                        panel.plot_data(
-                            y_data=count + 0.5 + 2 * self.Y[f_gpu_idx] / panel.num_gpus,
-                            color="0.5",
-                            linewidth=0.5,
-                            zorder=-10,
-                        )
+            panel.plot_lines()
+
+    def plot_other_lines(self):
+        for i_ha, ha in enumerate(self.bars):
+            for i_hb, hb in enumerate(self.bars):
+                if i_ha != i_hb:
+                    ha.plot_data(
+                        y_data=hb.ydata, color="0.5", linewidth=0.5, zorder=-10
+                    )
+
+    def render(self):
+        self.prepare()
+        self.plot_lines()
+        self.plot_other_lines()
 
     def save(self, fname="gpu_figure.png", dpi=192):
         self.fig.savefig(fname, dpi=dpi)
         pyplot.close(self.fig)
-
-
-def get_all_gpus():
-    """Populates the list of available GPUs on the machine."""
-    pynvml.nvmlInit()
-    gpu_count = pynvml.nvmlDeviceGetCount()
-
-    gpus = list()
-    for gpu in range(gpu_count):
-        handle = pynvml.nvmlDeviceGetHandleByIndex(gpu)
-        uuid = pynvml.nvmlDeviceGetUUID(handle).decode("UTF-8")
-        mem_total = pynvml.nvmlDeviceGetMemoryInfo(handle).total / 1024 ** 2
-        enforced_power_limit = pynvml.nvmlDeviceGetEnforcedPowerLimit(handle) / 1000
-        device = GpuDevice(
-            index=gpu,
-            uuid=uuid,
-            total_memory=int(mem_total),
-            power_limit=int(enforced_power_limit),
-        )
-        gpus.append(device)
-    pynvml.nvmlShutdown()
-    return GpuList(gpus)
 
 
 def main():
@@ -376,8 +408,7 @@ def main():
     # ----------------------------------------------------------------------------------
 
     f = GpuFigure(gpus, X, Y)
-    f.prepare()
-    f.plot_lines()
+    f.render()
     f.save()
 
 
