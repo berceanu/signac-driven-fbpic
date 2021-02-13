@@ -218,7 +218,7 @@ def plot_laser(job):
 
 # omp_num_threads=1 by default
 # np=nranks * omp_num_threads by default
-@ex.with_directives(lambda job: dict(nranks=job.sp.nranks, ngpu=job.sp.nranks))
+@ex.with_directives(dict(nranks=lambda job: job.sp.nranks, ngpu=lambda job: job.sp.nranks))
 @Project.operation
 @Project.pre.after(plot_laser)
 @Project.post(fbpic_ran)
