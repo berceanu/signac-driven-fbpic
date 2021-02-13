@@ -3,8 +3,6 @@ Reads GPU usage info from CSV file and plots it.
 Saves the figure(s) as PNG file(s).
 Usage: python nvml_reader.py filename.csv
 """
-import sys
-from matplotlib import axes
 import pandas as pd
 import pathlib
 from matplotlib import pyplot
@@ -14,12 +12,12 @@ import numpy as np
 from typing import List
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from functools import partial
 
 
 def split_in_half(some_list):
     list_length = len(some_list)
-    assert list_length % 2 == 0, "List should contain even number of elements."
+    if not list_length % 2 == 0:
+        raise ValueError("List should contain even number of elements.")
     half = list_length // 2
     return some_list[:half], some_list[half:]
 
@@ -51,17 +49,20 @@ class GpuDevice:
     index: int  # from 0 to N - 1, with N the number of GPUs
     uuid: str  # eg, "GPU-1dfe3b5c-79a0-0422-f0d0-b22c6ded0af0"
     uuid_short: str = field(init=False)  #  eg, "GPU-1d"
-    total_memory: int  # MiB
+    total_memory: int  # MiB (Mebibyte)
     power_limit: int  # Watt
+
+class GpuListError(Exception):
+    """Custom Error class for GpuList."""
 
 
 @dataclass
 class GpuList:
     gpus: List[GpuDevice]
-    num_gpus: int = field(init=False)
-    uuids: List[str] = field(init=False)
-    short_uuids: List[str] = field(init=False)
-    indexes: List[int] = field(init=False)
+    num_gpus: int = field(init=False, repr=False)
+    uuids: List[str] = field(init=False, repr=False)
+    short_uuids: List[str] = field(init=False, repr=False)
+    indexes: List[int] = field(init=False, repr=False)
 
     def __iter__(self):
         return iter(self.gpus)
@@ -75,97 +76,91 @@ class GpuList:
     def __post_init__(self):
         self.num_gpus = len(self)
         self.uuids = [gpu.uuid for gpu in self]
-        self.set_short_uuids()
         self.indexes = [gpu.index for gpu in self]
+        self.set_short_uuids()
 
     def set_short_uuids(self):
         min_len = min_len_unique_uuid(self.uuids)
         # mutating!
         short_ids = list()
-        for gpu in self.gpus:
-            id = gpu.uuid[:min_len]
-            gpu.uuid_short = id
-            short_ids.append(id)
+        for gpu in self:
+            gpu.uuid_short = gpu.uuid[:min_len]
+            short_ids.append(gpu.uuid_short)
         self.short_uuids = short_ids
 
     def split(self):
-        first_half, second_half = split_in_half(self.gpus)
+        try:
+            first_half, second_half = split_in_half(self.gpus)
+        except ValueError:
+            raise GpuListError("Can't split in half and odd number of GPUs.")
         return GpuList(first_half), GpuList(second_half)
 
 
 class GpuPanelError(Exception):
-    pass
-
+    """Custom Error class for GpuPanel."""
 
 @dataclass
 class GpuPanel:
-    ax: Axes
+    ax: Axes = field(repr=False)
     gpus: GpuList
-    X: np.ndarray
-    xdata: np.ndarray = field(init=False)
-    Yy: np.ndarray = field(init=False)
-    num_gpus: int = field(init=False)
-    indexes: List[int] = field(init=False)
+    xdata: np.ndarray  # TODO add repr=False
+    bar_pos: np.ndarray = field(init=False, repr=False)
+    num_gpus: int = field(init=False, repr=False)
+    indexes: List[int] = field(init=False, repr=False)
 
     def __post_init__(self):
         if not self.gpus:
             raise GpuPanelError("A plot panel must have at least 1 GPU.")
-        self.num_gpus = self.gpus.num_gpus
-        self.indexes = self.gpus.indexes
-        self.Yy = self.bars_vertical_positions()
-        self.rescale_x_data()
-
-    def rescale_x_data(self):
-        self.xdata = self.X * self.num_gpus / self.X.max()
-
-    def bars_vertical_positions(self):
+        for attr in "num_gpus", "indexes":
+            setattr(self, attr, getattr(self.gpus, attr)) 
         n = self.num_gpus
-        return n - (np.arange(n) + 0.5)
+        self.bar_pos = n - (np.arange(n) + 0.5)
 
     def draw_horizontal_bars(self):
         Xx = np.full(shape=self.num_gpus, fill_value=self.num_gpus, dtype=int)
-        # plot n bars of equal widths and vertical positions Yy
-        self.ax.barh(y=self.Yy, width=Xx, height=0.75, color=".95", zorder=-20)
+        # plot n bars of equal widths at vertical positions bar_pos
+        self.ax.barh(y=self.bar_pos, width=Xx, height=0.75, color=".95", zorder=-20)
         self.ax.set_xlim(0, self.num_gpus)
         self.ax.set_ylim(0, self.num_gpus)
         self.ax.set_axis_off()
         return self.ax
 
     def print_gpu_labels(self):
-        for y_pos, label in zip(self.Yy, self.gpus.short_uuids):
+        for bar_pos, bar_label in zip(self.bar_pos, self.gpus.short_uuids):
             # GPU label
             self.ax.text(
-                x=-0.1, y=y_pos, s=label, horizontalalignment="right", fontsize=16
+                x=-0.1, y=bar_pos, s=bar_label, horizontalalignment="right", fontsize=16
             )
             # black vertical line on the left edge
             self.ax.axvline(
                 x=0,
-                ymin=(y_pos - 0.4) / self.num_gpus,
-                ymax=(y_pos + 0.4) / self.num_gpus,
+                ymin=(bar_pos - 0.4) / self.num_gpus,
+                ymax=(bar_pos + 0.4) / self.num_gpus,
                 color="black",
                 linewidth=3,
             )
         return self.ax
 
-    def print_major_tick_labels(self):
-        _, right = self.ax.get_xlim()
-        labels = {"0.5": 0.25, "1.0": 0.5, "1.5": 0.75}
+    def print_major_tick_labels(self, labels=None):
+        right_edge = self.ax.get_xlim()[1]
+        if labels is None:
+            labels = {"0.5": 0.25, "1.0": 0.5, "1.5": 0.75}
         for label, x_fraction in labels.items():
             # major tick label
             self.ax.text(
-                x=x_fraction * right,
+                x=x_fraction * right_edge,
                 y=0,
                 s=label,
                 verticalalignment="top",
                 horizontalalignment="center",
                 fontsize=10,
             )
-            for y_pos in self.Yy:
+            for bar_pos in self.bar_pos:
                 # gray vertical line at major tick
                 self.ax.axvline(
-                    x=x_fraction * right,
-                    ymin=(y_pos - 0.375) / self.num_gpus,
-                    ymax=(y_pos + 0.375) / self.num_gpus,
+                    x=x_fraction * right_edge,
+                    ymin=(bar_pos - 0.375) / self.num_gpus,
+                    ymax=(bar_pos + 0.375) / self.num_gpus,
                     color="0.5",
                     linewidth=0.5,
                     zorder=-15,
@@ -183,43 +178,46 @@ class GpuPanel:
         )
         return self.ax
 
-
-# class GpuFigureError(Exception):
-#     pass
+class GpuFigureError(Exception):
+    """Custom Error class for GpuFigure."""
 
 
 @dataclass
 class GpuFigure:
-    all_gpus: GpuList
-    X: np.ndarray
-    Y: np.ndarray
-    fig: Figure = field(init=False)
+    gpus: GpuList = field(repr=False)
+    X: np.ndarray = field(repr=False)
+    Y: np.ndarray = field(repr=False)
+    xdata: np.ndarray = field(init=False)  # TODO add , repr=False
+    fig: Figure = field(init=False, repr=False)
     panel_left: GpuPanel = field(init=False)
     panel_right: GpuPanel = field(init=False)
-    panels: List[GpuPanel] = field(init=False)
-    indexes: List[int] = field(init=False)
-    num_gpus: int = field(init=False)
+    num_gpus: int = field(init=False, repr=False)
+    indexes: List[int] = field(init=False, repr=False)
 
     def __post_init__(self):
-        self.instantiate()
-        self.panels = [self.panel_left, self.panel_right]
-        self.indexes = self.panel_left.indexes + self.panel_right.indexes
-        self.num_gpus = self.panel_left.num_gpus + self.panel_right.num_gpus
+        self.create_figure()
+        for attr in "indexes", "num_gpus":
+            setattr(self, attr, getattr(self.panel_left, attr) + getattr(self.panel_right, attr))
+        if self.num_gpus != self.gpus.num_gpus:
+            raise GpuFigureError("Number of GPUs in figure is different from the sum of the number of GPUs in each panel.")
 
     def __iter__(self):
-        return iter(self.panels)
+        return iter((self.panel_left, self.panel_right))
 
-    def instantiate(self):
-        self.fig = pyplot.figure(figsize=(20, 8))
+    def create_figure(self, figsize=(20, 8)):
+        self.fig = pyplot.figure(figsize=figsize)
 
         nrows, ncols = 1, 2
         axs, subplots = dict(), dict(left=1, right=2)
         for pos, index in subplots.items():
             axs[pos] = pyplot.subplot(nrows, ncols, index, aspect=1)
 
-        left_gpus, right_gpus = self.all_gpus.split()
-        self.panel_left = GpuPanel(axs["left"], left_gpus, self.X)
-        self.panel_right = GpuPanel(axs["right"], right_gpus, self.X)
+        left_gpus, right_gpus = self.gpus.split()  # FIXME
+        assert left_gpus.num_gpus == right_gpus.num_gpus, "Different number of GPUs in the two panels."
+        self.xdata = self.X * left_gpus.num_gpus / self.X.max()  # rescaling x data
+
+        self.panel_left = GpuPanel(axs["left"], left_gpus, self.xdata)
+        self.panel_right = GpuPanel(axs["right"], right_gpus, self.xdata)
 
     def prepare(self):
         for panel in self:
@@ -227,14 +225,14 @@ class GpuFigure:
 
     def plot_lines(self):
         for panel in self:
-            for i, p_idx in enumerate(panel.indexes):
+            for count, p_gpu_idx in enumerate(panel.indexes):
                 # plot main line
-                panel.plot_data(y_data=i + 0.5 + 2 * self.Y[p_idx] / panel.num_gpus)
-                for f_idx in self.indexes:
-                    if p_idx != f_idx:
+                panel.plot_data(y_data=count + 0.5 + 2 * self.Y[p_gpu_idx] / panel.num_gpus)
+                for f_gpu_idx in self.indexes:
+                    if p_gpu_idx != f_gpu_idx:
                         # plot other lines
                         panel.plot_data(
-                            y_data=i + 0.5 + 2 * self.Y[f_idx] / panel.num_gpus,
+                            y_data=count + 0.5 + 2 * self.Y[f_gpu_idx] / panel.num_gpus,
                             color="0.5",
                             linewidth=0.5,
                             zorder=-10,
@@ -274,8 +272,6 @@ def main():
     # ----------------------------------------------------------------------------------
 
     p = pathlib.Path.cwd() / "nvml_20210209-230247.csv"
-    # csv_timestamp = p.stem.split("_")[1]
-
     df = pd.read_csv(p)
 
     uuid_min_len = len(gpus[0].uuid_short)
