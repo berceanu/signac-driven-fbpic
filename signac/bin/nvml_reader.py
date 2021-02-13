@@ -52,6 +52,7 @@ class GpuDevice:
     total_memory: int  # MiB (Mebibyte)
     power_limit: int  # Watt
 
+
 class GpuListError(Exception):
     """Custom Error class for GpuList."""
 
@@ -96,87 +97,156 @@ class GpuList:
         return GpuList(first_half), GpuList(second_half)
 
 
+@dataclass
+class Tick:
+    __slots__ = ["position", "label"]
+    position: float
+    label: str
+
+
+@dataclass
+class HorizontalBar:
+    y_position: float
+    width: float
+    xdata: np.ndarray  # TODO add repr=False
+    ax: Axes = field(repr=False)
+    label: str = field(repr=False)
+    ticks: List[Tick] = field(repr=False)
+    height: float = 0.75
+    background_color: str = "0.95"
+    hide_tick_labels: bool = True
+
+    def draw_solid_background(self):
+        self.ax.barh(
+            y=self.y_position,
+            width=self.width,
+            height=self.height,
+            color=self.background_color,
+            zorder=-20,
+        )
+
+    def add_label(self, left_offset=-0.1):
+        self.ax.text(
+            x=left_offset,
+            y=self.y_position,
+            s=self.label,
+            horizontalalignment="right",
+            fontsize=16,
+        )
+
+    def add_left_spine(self, color="black", linewidth=3):
+        self.ax.axvline(
+            x=0,
+            ymin=(self.y_position - 0.4) / 8,  # FIXME
+            ymax=(self.y_position + 0.4) / 8,
+            color=color,
+            linewidth=linewidth,
+        )
+
+    def add_vertical_tick_line(self, x_pos, color="0.5", linewidth=0.5):
+        self.ax.axvline(
+            x=x_pos,
+            ymin=(self.y_position - 0.375) / 8,  # FIXME
+            ymax=(self.y_position + 0.375) / 8,
+            color=color,
+            linewidth=linewidth,
+            zorder=-15,
+        )
+
+    def label_tick(self, x_pos, tick_label):
+        self.ax.text(
+            x=x_pos,
+            y=0,
+            s=tick_label,
+            verticalalignment="top",
+            horizontalalignment="center",
+            fontsize=10,
+        )
+
+    def add_tick_lines(self):
+        for tick in self.ticks:
+            self.add_vertical_tick_line(tick.position * 8)  # FIXME
+
+    def add_tick_labels(self):
+        for tick in self.ticks:
+            self.label_tick(tick.position * 8, tick.label)  # FIXME
+
+    def add_ticks(self):
+        self.add_tick_lines()
+        if not self.hide_tick_labels:
+            self.add_tick_labels()
+
+    def prepare(self):
+        self.draw_solid_background()
+        self.add_label()
+        self.add_left_spine()
+        self.add_ticks()
+
+
 class GpuPanelError(Exception):
     """Custom Error class for GpuPanel."""
+
 
 @dataclass
 class GpuPanel:
     ax: Axes = field(repr=False)
     gpus: GpuList
     xdata: np.ndarray  # TODO add repr=False
-    bar_pos: np.ndarray = field(init=False, repr=False)
     num_gpus: int = field(init=False, repr=False)
     indexes: List[int] = field(init=False, repr=False)
+    bars: List[HorizontalBar] = field(init=False)  # TODO add repr=False
 
     def __post_init__(self):
         if not self.gpus:
             raise GpuPanelError("A plot panel must have at least 1 GPU.")
         for attr in "num_gpus", "indexes":
-            setattr(self, attr, getattr(self.gpus, attr)) 
-        n = self.num_gpus
-        self.bar_pos = n - (np.arange(n) + 0.5)
+            setattr(self, attr, getattr(self.gpus, attr))
+        self.create_horizontal_bars()
+
+    def create_horizontal_bars(self):
+        # we split the y-axis of self.ax into n_bars intervals of length 1
+        # bar_centers +/- 0.5
+        n = 8  # FIXME
+        bar_centers = n - (np.arange(n) + 0.5)
+        bar_width = np.full(shape=n, fill_value=n, dtype=float)
+        ticks = [
+            Tick(pos, label)
+            for pos, label in zip((0.25, 0.5, 0.75), ("0.5", "1.0", "1.5"))
+        ]  # FIXME
+        self.bars = [
+            HorizontalBar(y_pos, width, self.xdata, self.ax, label, ticks)
+            for y_pos, width, label in zip(
+                bar_centers, bar_width, self.gpus.short_uuids
+            )
+        ]
+
+    def set_axis_limits(self):
+        self.ax.set_xlim(0, 8)
+        self.ax.set_ylim(0, 8)  # FIXME
+
+    def hide_axis(self):
+        self.ax.set_axis_off()
 
     def draw_horizontal_bars(self):
-        Xx = np.full(shape=self.num_gpus, fill_value=self.num_gpus, dtype=int)
-        # plot n bars of equal widths at vertical positions bar_pos
-        self.ax.barh(y=self.bar_pos, width=Xx, height=0.75, color=".95", zorder=-20)
-        self.ax.set_xlim(0, self.num_gpus)
-        self.ax.set_ylim(0, self.num_gpus)
-        self.ax.set_axis_off()
-        return self.ax
+        """Plot n bars of equal widths displaced vertically."""
+        for bar in self.bars:
+            bar.prepare()
 
-    def print_gpu_labels(self):
-        for bar_pos, bar_label in zip(self.bar_pos, self.gpus.short_uuids):
-            # GPU label
-            self.ax.text(
-                x=-0.1, y=bar_pos, s=bar_label, horizontalalignment="right", fontsize=16
-            )
-            # black vertical line on the left edge
-            self.ax.axvline(
-                x=0,
-                ymin=(bar_pos - 0.4) / self.num_gpus,
-                ymax=(bar_pos + 0.4) / self.num_gpus,
-                color="black",
-                linewidth=3,
-            )
-        return self.ax
-
-    def print_major_tick_labels(self, labels=None):
-        right_edge = self.ax.get_xlim()[1]
-        if labels is None:
-            labels = {"0.5": 0.25, "1.0": 0.5, "1.5": 0.75}
-        for label, x_fraction in labels.items():
-            # major tick label
-            self.ax.text(
-                x=x_fraction * right_edge,
-                y=0,
-                s=label,
-                verticalalignment="top",
-                horizontalalignment="center",
-                fontsize=10,
-            )
-            for bar_pos in self.bar_pos:
-                # gray vertical line at major tick
-                self.ax.axvline(
-                    x=x_fraction * right_edge,
-                    ymin=(bar_pos - 0.375) / self.num_gpus,
-                    ymax=(bar_pos + 0.375) / self.num_gpus,
-                    color="0.5",
-                    linewidth=0.5,
-                    zorder=-15,
-                )
-        return self.ax
+    def add_tick_labels(self):
+        """Only add labels to bottom bar."""
+        self.bars[-1].add_tick_labels()
 
     def prepare(self):
+        self.set_axis_limits()
+        self.hide_axis()
         self.draw_horizontal_bars()
-        self.print_gpu_labels()
-        self.print_major_tick_labels()
+        self.add_tick_labels()
 
     def plot_data(self, y_data, color="black", linewidth=2, zorder=2):
         self.ax.plot(
             self.xdata, y_data, color=color, linewidth=linewidth, zorder=zorder
         )
-        return self.ax
+
 
 class GpuFigureError(Exception):
     """Custom Error class for GpuFigure."""
@@ -195,16 +265,22 @@ class GpuFigure:
     indexes: List[int] = field(init=False, repr=False)
 
     def __post_init__(self):
-        self.create_figure()
+        self.create_panels()
         for attr in "indexes", "num_gpus":
-            setattr(self, attr, getattr(self.panel_left, attr) + getattr(self.panel_right, attr))
+            setattr(
+                self,
+                attr,
+                getattr(self.panel_left, attr) + getattr(self.panel_right, attr),
+            )
         if self.num_gpus != self.gpus.num_gpus:
-            raise GpuFigureError("Number of GPUs in figure is different from the sum of the number of GPUs in each panel.")
+            raise GpuFigureError(
+                "Number of GPUs in figure is different from the sum of the number of GPUs in each panel."
+            )
 
     def __iter__(self):
         return iter((self.panel_left, self.panel_right))
 
-    def create_figure(self, figsize=(20, 8)):
+    def create_panels(self, figsize=(20, 8)):
         self.fig = pyplot.figure(figsize=figsize)
 
         nrows, ncols = 1, 2
@@ -213,7 +289,9 @@ class GpuFigure:
             axs[pos] = pyplot.subplot(nrows, ncols, index, aspect=1)
 
         left_gpus, right_gpus = self.gpus.split()  # FIXME
-        assert left_gpus.num_gpus == right_gpus.num_gpus, "Different number of GPUs in the two panels."
+        assert (
+            left_gpus.num_gpus == right_gpus.num_gpus
+        ), "Different number of GPUs in the two panels."
         self.xdata = self.X * left_gpus.num_gpus / self.X.max()  # rescaling x data
 
         self.panel_left = GpuPanel(axs["left"], left_gpus, self.xdata)
@@ -227,7 +305,9 @@ class GpuFigure:
         for panel in self:
             for count, p_gpu_idx in enumerate(panel.indexes):
                 # plot main line
-                panel.plot_data(y_data=count + 0.5 + 2 * self.Y[p_gpu_idx] / panel.num_gpus)
+                panel.plot_data(
+                    y_data=count + 0.5 + 2 * self.Y[p_gpu_idx] / panel.num_gpus
+                )
                 for f_gpu_idx in self.indexes:
                     if p_gpu_idx != f_gpu_idx:
                         # plot other lines
@@ -299,6 +379,7 @@ def main():
     f.prepare()
     f.plot_lines()
     f.save()
+
 
 # nvml.py started @ 16:54 on 13 Feb 2021
 
