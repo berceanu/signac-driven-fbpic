@@ -45,8 +45,7 @@ class OdinEnvironment(DefaultSlurmEnvironment):
 
     hostname_pattern = r".*\.ra5\.eli-np\.ro$"
     template = "odin.sh"
-    mpi_cmd = "mpirun"
-    cuda_device_batches = ["0,1,2,3", "4,5,6,7", "8,9,10,11", "12,13,14,15"]
+    mpi_cmd = "srun --mpi=pmi2"
 
     @classmethod
     def add_args(cls, parser):
@@ -72,24 +71,6 @@ class OdinEnvironment(DefaultSlurmEnvironment):
             default=72,
             help="The wallclock time in hours. (default=72)",
         )
-        parser.add_argument(
-            "--job-output",
-            help=(
-                "What to name the job output file. "
-                "If omitted, uses the system default "
-                '(slurm default is "slurm-%%j.out").'
-            ),
-        )
-        parser.add_argument(
-            "--memory",
-            # default="1500g",
-            help=(
-                'Specify how much memory to reserve per node, e.g. "4g" for '
-                '4 gigabytes or "512m" for 512 megabytes. Only relevant '
-                "for shared queue jobs. (default=1500g)"
-            ),
-        )
-
 
 
 __all__ = ["OdinEnvironment"]
@@ -179,7 +160,6 @@ def add_document_keys(job):
     job.doc.setdefault("macroparticle_count", f"{count:.2e}")
 
 
-
 @ex
 @Project.operation
 @Project.post.isfile("lwfa_script.py")
@@ -216,9 +196,12 @@ def plot_laser(job):
         fn=job.fn("laser_intensity.png"),
     )
 
+
 # omp_num_threads=1 by default
 # np=nranks * omp_num_threads by default
-@ex.with_directives(dict(nranks=lambda job: job.sp.nranks, ngpu=lambda job: job.sp.nranks))
+@ex.with_directives(
+    dict(nranks=lambda job: job.sp.nranks, ngpu=lambda job: job.sp.nranks)
+)
 @Project.operation
 @Project.pre.after(plot_laser)
 @Project.post(fbpic_ran)
@@ -552,13 +535,15 @@ def plot_2d_hist(job):
     hist2d.ax0.plot(all_z * 1e6, dens, linewidth=2.5, linestyle="dashed", color="0.75")
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
+
 @ex
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.true("disk_usage")
 def store_disk_usage(job):
     usage = du(job.ws)
-    job.doc.setdefault('disk_usage', usage)
+    job.doc.setdefault("disk_usage", usage)
+
 
 # TODO (possibly) delete the job's `diags/` folder
 # TODO (possibly) integrate `nvml.py` via `schedule` as background thread

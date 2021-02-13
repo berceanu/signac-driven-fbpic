@@ -3,6 +3,7 @@
 {% block tasks %}
 {% set cores_per_node = 48 %}
 {% set gpus_per_node = 16 %}
+{% set mem-per-cpu = "31200m" %}
 {% set threshold = 0 if force else 0.9 %}
 {% set cpu_tasks = operations|calc_tasks('np', parallel, force) %}
 {% set gpu_tasks = operations|calc_tasks('ngpu', parallel, force) %}
@@ -16,11 +17,11 @@
 #SBATCH --ntasks={{ (gpu_tasks, cpu_tasks)|max }}
 #SBATCH --ntasks-per-node={{ (gpu_tasks, cpu_tasks)|max }}
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=31200m
+#SBATCH --mem-per-cpu={{ mem-per-cpu }}
 #SBATCH --gres=gpu:{{ gpu_tasks }}
 #SBATCH --gres-flags=enforce-binding
 {% else %}
-#SBATCH --nodes={{ nn }}
+#SBATCH --ntasks={{ (cores_per_node, cpu_tasks)|min }}
 #SBATCH --ntasks-per-node={{ (cores_per_node, cpu_tasks)|min }}
 {% endif %}
 {% endblock tasks %}
@@ -28,7 +29,6 @@
 {% block header %}
 {{ super () -}}
 #SBATCH --account=berceanu_a+
-#SBATCH --export=HOME,USER,TERM,WRKDIR
 {% endblock header %}
 
 {% block project_header %}
@@ -40,13 +40,4 @@ export FBPIC_DISABLE_THREADING=1
 export MKL_NUM_THREADS=1
 export NUMBA_NUM_THREADS=1
 export OMP_NUM_THREADS=1
-export CUDA_DEVICE_ORDER=PCI_BUS_ID
 {% endblock project_header %}
-
-{% block body %}
-{% set cmd_suffix = cmd_suffix|default('') ~ (' &' if parallel else '') %}
-{% for operation in operations %}
-
-{{ operation.cmd }}{{ cmd_suffix }}
-{% endfor %}
-{% endblock body %}
