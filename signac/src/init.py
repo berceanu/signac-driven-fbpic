@@ -28,12 +28,12 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    for zrf, roz in product((24, 32), (5, 10)):
+    for _ in range(1):
         sp = dict(
-            nranks=16,  # number of MPI ranks (default 16); it's also the number of GPUs used per job
+            nranks=8,  # number of MPI ranks (default 16); it's also the number of GPUs used per job
             # The simulation box
-            z_rezolution_factor=zrf,  # Δz = lambda0 / z_rezolution_factor (default 24)
-            dr_over_dz=roz,  # Δr = dr_over_dz * Δz (default 10)
+            z_rezolution_factor=32,  # Δz = lambda0 / z_rezolution_factor (default 24)
+            dr_over_dz=5,  # Δr = dr_over_dz * Δz (default 10)
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             rmax=70.0e-6,  # Length of the box along r (meters)
