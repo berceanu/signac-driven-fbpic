@@ -28,6 +28,7 @@
 {% block header %}
 {{ super () -}}
 #SBATCH --account=berceanu_a+
+#SBATCH --export=HOME,USER,TERM,WRKDIR
 {% endblock header %}
 
 {% block project_header %}
@@ -46,25 +47,6 @@ export CUDA_DEVICE_ORDER=PCI_BUS_ID
 {% set cmd_suffix = cmd_suffix|default('') ~ (' &' if parallel else '') %}
 {% for operation in operations %}
 
-# {{ "%s"|format(operation) }}
 {{ operation.cmd }}{{ cmd_suffix }}
-{% if operation.eligible_operations|length > 0 %}
-# Eligible to run:
-{% for run_op in operation.eligible_operations %}
-# {{ run_op.cmd }}
-{% endfor %}
-{% endif %}
-{% if operation.operations_with_unmet_preconditions|length > 0 %}
-# Operations with unmet preconditions:
-{% for run_op in operation.operations_with_unmet_preconditions %}
-# {{ run_op.cmd }}
-{% endfor %}
-{% endif %}
-{% if operation.operations_with_met_postconditions|length > 0 %}
-# Operations with all postconditions met:
-{% for run_op in operation.operations_with_met_postconditions %}
-# {{ run_op.cmd }}
-{% endfor %}
-{% endif %}
 {% endfor %}
 {% endblock body %}
