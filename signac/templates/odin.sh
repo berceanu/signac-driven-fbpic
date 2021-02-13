@@ -3,7 +3,6 @@
 {% block tasks %}
 {% set cores_per_node = 48 %}
 {% set gpus_per_node = 16 %}
-{% set mem-per-cpu = "31200m" %}
 {% set threshold = 0 if force else 0.9 %}
 {% set cpu_tasks = operations|calc_tasks('np', parallel, force) %}
 {% set gpu_tasks = operations|calc_tasks('ngpu', parallel, force) %}
@@ -17,7 +16,7 @@
 #SBATCH --ntasks={{ (gpu_tasks, cpu_tasks)|max }}
 #SBATCH --ntasks-per-node={{ (gpu_tasks, cpu_tasks)|max }}
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu={{ mem-per-cpu }}
+#SBATCH --mem-per-cpu=31200m
 #SBATCH --gres=gpu:{{ gpu_tasks }}
 #SBATCH --gres-flags=enforce-binding
 {% else %}
