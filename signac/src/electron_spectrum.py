@@ -42,8 +42,8 @@ class ElectronSpectrum:
     """Keeps track of the spectrum."""
 
     fname: str
-    iteration_time_ps: float
     iteration: int = field(init=False)
+    iteration_time_ps: float = field(init=False)
     differential_charge: np.ndarray = field(init=False, repr=False)
     smooth_differential_charge: np.ndarray = field(init=False, repr=False)
     energy: np.ndarray = field(init=False, repr=False)
@@ -61,7 +61,12 @@ class ElectronSpectrum:
     title: str = field(init=False, repr=False)
 
     def __post_init__(self):
-        self.differential_charge, energy, self.iteration = self.loadf()
+        (
+            self.differential_charge,
+            energy,
+            self.iteration,
+            self.iteration_time_ps,
+        ) = self.loadf()
         self.hatch_window.mask = self.hatch_window.create_boolean_mask(energy[:-1])
         self.hatch_window.total_charge = self.hatch_window.integrate_charge(
             energy, self.differential_charge
@@ -77,7 +82,7 @@ class ElectronSpectrum:
 
     def loadf(self):
         f = np.load(self.fname)
-        return f["counts"], f["edges"], f["iteration"]
+        return f["counts"], f["edges"], f["iteration"], f["iteration_time_ps"]
 
     def prepare_figure(self, figsize=(10, 3.5)):
         self.fig, self.ax = pyplot.subplots(figsize=figsize, facecolor="white")
@@ -200,9 +205,7 @@ def main():
     proj = signac.get_project(search=False)
     job = random.choice(list(iter(proj)))
 
-    es = ElectronSpectrum(
-        "final_histogram.npz", iteration_time_ps=10.141
-    )
+    es = ElectronSpectrum("final_histogram.npz")
     es.plot()
     es.savefig()
 
