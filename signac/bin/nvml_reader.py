@@ -464,7 +464,7 @@ def main():
     # 7 GPU-fd 0.5 0.3125 0.625
 
     # TODO: add extra padding ^^
-    
+    # https://ivergara.github.io/ABC-and-dataclasses.html
     for bar in f.panel_right.bars:
         print(bar)
 
