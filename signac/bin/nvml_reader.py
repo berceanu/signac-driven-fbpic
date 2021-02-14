@@ -3,15 +3,23 @@ Reads GPU usage info from CSV file and plots it.
 Saves the figure(s) as PNG file(s).
 Usage: python nvml_reader.py filename.csv
 """
-import pandas as pd
 import pathlib
-from matplotlib import pyplot
 from dataclasses import dataclass, field
-import pynvml
+from typing import List, ClassVar
+
 import numpy as np
-from typing import List
+import pandas as pd
+import pynvml
+from matplotlib import pyplot
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+
+
+def normalize_to_interval(a, b, data):
+    """Given the `data` array, normalize its values in the [a, b] interval."""
+    d = np.atleast_1d(data.copy())
+    norm_data = (b - a) * (d - d.min()) / (d.max() - d.min()) + a
+    return norm_data
 
 
 def split_in_half(some_list):
@@ -133,19 +141,40 @@ class Tick:
     position: float
     label: str
 
+# for count, (bf, bc, bt) in enumerate(zip(bar_from, bar_center, bar_to)):
+# print(f"count={count}: {bf}<{bc}>{bt}, new low {d.min()}, new high {d.max()}")
 
 @dataclass
 class HorizontalBar:
     y_position: float
     width: float
-    xdata: np.ndarray  # TODO add repr=False
-    ydata: np.ndarray  # TODO add repr=False
+    xdata: np.ndarray = field(repr=False)  # TODO add repr=False
+    ydata: np.ndarray = field(repr=False)  # TODO add repr=False
     ax: Axes = field(repr=False)
     label: str = field(repr=False)
     ticks: List[Tick] = field(repr=False)
-    height: float = 0.75
-    background_color: str = "0.95"
+    index: int  # from 0 to N - 1, with N the number of GPUs
+    height: ClassVar[float] = 0.75
+    background_color: ClassVar[str] = "0.95"
     hide_tick_labels: bool = True
+    ydata_normalized: np.ndarray = field(init=False, repr=False)
+
+    def __post_init__(self):
+        self.ydata_normalized = self.normalize_y()
+
+    def __eq__(self, other):
+        if not isinstance(other, HorizontalBar):
+            return NotImplemented
+        return self.index == other.index
+
+    def normalize_y(self, y_data=None):
+        if y_data is None:
+            y_data = self.ydata
+
+        h_2 = self.height / 2
+        return normalize_to_interval(
+            self.y_position - h_2, self.y_position + h_2, y_data
+        )
 
     def draw_solid_background(self):
         self.ax.barh(
@@ -215,7 +244,8 @@ class HorizontalBar:
 
     def plot_data(self, y_data=None, color="black", linewidth=2, zorder=2):
         if y_data is None:
-            y_data = self.ydata
+            y_data = self.ydata_normalized
+        
         self.ax.plot(
             self.xdata, y_data, color=color, linewidth=linewidth, zorder=zorder
         )
@@ -225,16 +255,17 @@ class HorizontalBar:
 class GpuPanel:
     ax: Axes = field(repr=False)
     gpus: GpuList
-    xdata: np.ndarray  # TODO add repr=False
-    ydata: np.ndarray  # TODO add repr=False
+    xdata: np.ndarray = field(repr=False)  # TODO add repr=False
+    ydata: np.ndarray = field(repr=False)  # TODO add repr=False
     num_gpus: int = field(init=False, repr=False)
     indexes: List[int] = field(init=False, repr=False)
+    short_uuids: List[str] = field(init=False, repr=False)
     bars: List[HorizontalBar] = field(init=False)  # TODO add repr=False
 
     def __post_init__(self):
         if not self.gpus:
             raise GpuPanelError("A plot panel must have at least 1 GPU.")
-        for attr in "num_gpus", "indexes":
+        for attr in "num_gpus", "indexes", "short_uuids":
             setattr(self, attr, getattr(self.gpus, attr))
         nrows, ncols = self.ydata.shape
         if nrows != self.num_gpus:
@@ -244,29 +275,31 @@ class GpuPanel:
         self.create_horizontal_bars()
 
     def create_horizontal_bars(self):
-        # we split the y-axis of self.ax into n_bars intervals of length 1
-        # bar_center +/- 0.5
-        n = 8  # FIXME
-        bar_center = n - (np.arange(n) + 0.5)
-        bar_width = np.full(shape=n, fill_value=n, dtype=float)
+        """
+        We split the y-axis of self.ax into n_bars intervals of height 0.75
+        the height of the y-axis is 8.0
+        """
+        n_bars = 8  # FIXME
+        bar_center = n_bars - (np.arange(n_bars) + 0.5)
+        bar_width = np.full(shape=n_bars, fill_value=n_bars, dtype=float)
         bar_ticks = [
             Tick(pos, label)
             for pos, label in zip((0.25, 0.5, 0.75), ("0.5", "1.0", "1.5"))
         ]  # FIXME
 
         bars = list()
-        for count, (y_pos, width, suuid, y_row) in enumerate(
-            zip(bar_center, bar_width, self.gpus.short_uuids, self.ydata)
+        for idx, y_pos, width, s_uuid, y_row in zip(
+            self.indexes, bar_center, bar_width, self.short_uuids, self.ydata
         ):
-            bar_y_data = count + 0.5 + 2 * y_row / 8  # FIXME
             hb = HorizontalBar(
                 y_position=y_pos,
                 width=width,
                 xdata=self.xdata,
-                ydata=bar_y_data,
+                ydata=y_row,
                 ax=self.ax,
-                label=suuid,
+                label=s_uuid,
                 ticks=bar_ticks,
+                index=idx,
             )
             bars.append(hb)
         self.bars = bars
@@ -285,6 +318,7 @@ class GpuPanel:
 
     def add_tick_labels(self):
         """Only add labels to bottom bar."""
+        self.bars[-1].hide_tick_labels = False
         self.bars[-1].add_tick_labels()
 
     def prepare(self):
@@ -360,11 +394,14 @@ class GpuFigure:
             panel.plot_lines()
 
     def plot_other_lines(self):
-        for i_ha, ha in enumerate(self.bars):
-            for i_hb, hb in enumerate(self.bars):
-                if i_ha != i_hb:
-                    ha.plot_data(
-                        y_data=hb.ydata, color="0.5", linewidth=0.5, zorder=-10
+        for main_bar in self.bars:
+            for secondary_bar in self.bars:
+                if main_bar != secondary_bar:
+                    main_bar.plot_data(
+                        y_data=main_bar.normalize_y(secondary_bar.ydata),
+                        color="0.5",
+                        linewidth=0.5,
+                        zorder=-10,
                     )
 
     def render(self):
@@ -397,19 +434,70 @@ def main():
     df = df.loc["2021-02-10 11:28":"2021-02-10 20:24"]
 
     grouped = df.groupby(["short_gpu_uuid"])
-    print(grouped[["used_power_W", "used_gpu_memory_MiB"]].agg(["max", "mean", "std"]))
+    # print(grouped[["used_power_W", "used_gpu_memory_MiB"]].agg(["max", "mean", "std"]))  # TODO uncomment
 
     # ----------------------------------------------------------------------------------
 
     num_data_points = 20
+    y_low = -0.75
+    y_high = 0.5
     X = np.linspace(start=0, stop=2, num=num_data_points, endpoint=True)
     Y = np.random.uniform(low=-0.75, high=0.5, size=(gpus.num_gpus, num_data_points))
+
+
+    # print(
+    #     f"count={count}: {bf}<{bc}>{bt}, new low {bar_y_data_low}, new high {bar_y_data_high}"
+    # )
+
+    # count=0: 7.125<7.5>7.875, new low 7.3125, new high 7.625
+    # count=1: 6.125<6.5>6.875, new low 6.3125, new high 6.625
+    # count=2: 5.125<5.5>5.875, new low 5.3125, new high 5.625
+    # count=3: 4.125<4.5>4.875, new low 4.3125, new high 4.625
+    # count=4: 3.125<3.5>3.875, new low 3.3125, new high 3.625
+    # count=5: 2.125<2.5>2.875, new low 2.3125, new high 2.625
+    # count=6: 1.125<1.5>1.875, new low 1.3125, new high 1.625
+    # count=7: 0.125<0.5>0.875, new low 0.3125, new high 0.625
+
+    # horizontal bar height is 0.75
+    # vertical line height is 0.75: (y_position - 0.75/2, y_position + 0.75/2)
+
+
+
+    # count=0: 7.125<7.5>7.875, new low 7.125, new high 7.875
+    # count=1: 6.125<6.5>6.875, new low 6.125, new high 6.875
+    # count=2: 5.125<5.5>5.875, new low 5.125, new high 5.875
+    # count=3: 4.125<4.5>4.875, new low 4.125, new high 4.875
+    # count=4: 3.125<3.5>3.875, new low 3.125, new high 3.875
+    # count=5: 2.125<2.5>2.875, new low 2.125, new high 2.875
+    # count=6: 1.125<1.5>1.875, new low 1.125, new high 1.875
+    # count=7: 0.125<0.5>0.875, new low 0.125, new high 0.875
 
     # ----------------------------------------------------------------------------------
 
     f = GpuFigure(gpus, X, Y)
     f.render()
     f.save()
+
+    # i uuid   c   low    high
+    # 0 GPU-c5 7.5 7.3125 7.625
+    # 1 GPU-61 6.5 6.3125 6.625
+    # 2 GPU-89 5.5 5.3125 5.625
+    # 3 GPU-cd 4.5 4.3125 4.625
+    # 4 GPU-c7 3.5 3.3125 3.625
+    # 5 GPU-60 2.5 2.3125 2.625
+    # 6 GPU-3c 1.5 1.3125 1.625
+    # 7 GPU-fd 0.5 0.3125 0.625
+
+    # high - low = 0.3125
+
+    # for bar in f.panel_left.bars:
+    # print(
+    #     bar.index,
+    #     bar.label,
+    #     bar.y_position,
+    #     bar.ydata.min(),
+    #     bar.ydata.max(),
+    # )
 
 
 # nvml.py started @ 16:54 on 13 Feb 2021
@@ -431,7 +519,6 @@ def main():
 # Plot all 16 GPUs during that time window on a single figure
 # Separate figures for used power and used memory
 # Generic rougier-style plot which is fed the data
-
 # normalize used power and memory by their MAX values
 
 if __name__ == "__main__":
