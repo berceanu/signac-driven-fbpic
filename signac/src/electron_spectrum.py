@@ -49,11 +49,11 @@ class ElectronSpectrum:
     energy: np.ndarray = field(init=False, repr=False)
     fig: Figure = field(init=False, repr=False)
     ax: Axes = field(init=False, repr=False)
-    xlabel: str = "$E$ (MeV)"
+    xlabel: str = r"$E\, (\mathrm{MeV})$"
     xlim: Tuple[float] = (50.0, 350.0)
     hatch_window: EnergyWindow = EnergyWindow(100.0, 300.0)
     sigma: float = 10.0  # std of Gaussian Kernel
-    ylabel: str = "$\\frac{\\mathrm{d} Q}{\\mathrm{d} E}$ (pC/MeV)"
+    ylabel: str = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
     ylim: Tuple[float] = (0.0, 50.0)
     linewidth: float = 0.5
     linecolor: str = "0.5"
@@ -199,15 +199,12 @@ def main():
 
     proj = signac.get_project(search=False)
     job = random.choice(list(iter(proj)))
-    print(job)
 
     es = ElectronSpectrum(
         job.fn("final_histogram.npz"), iteration=119315, iteration_time_ps=10.141
     )
     es.plot()
     es.savefig()
-
-    print(es)  # FIXME
 
 
 if __name__ == "__main__":
