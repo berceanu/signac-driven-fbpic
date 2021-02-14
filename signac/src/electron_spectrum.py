@@ -65,6 +65,7 @@ class ElectronSpectrum:
     linewidth: float = 0.5
     linecolor: str = "0.5"
     alpha: float = 0.75
+    title: str = "t = 10.14 ps (iteration 119315)"
 
     def __post_init__(self):
         self.differential_charge, energy = self.loadf()
@@ -84,8 +85,8 @@ class ElectronSpectrum:
         f = np.load(self.fname)
         return f["counts"], f["edges"]
 
-    def prepare_figure(self):
-        self.fig, self.ax = pyplot.subplots(figsize=(10, 4), facecolor="white")
+    def prepare_figure(self, figsize=(10, 3)):
+        self.fig, self.ax = pyplot.subplots(figsize=figsize, facecolor="white")
 
         self.ax.set_xlim(self.xlim.low, self.xlim.high)
         self.ax.set_ylim(self.ylim.low, self.ylim.high)
@@ -101,7 +102,6 @@ class ElectronSpectrum:
             histtype="step",
             color=self.linecolor,
             linewidth=self.linewidth,
-            label="original electron spectrum",
         )
 
     def add_gaussian_filter(self, sigma=None):
@@ -111,7 +111,7 @@ class ElectronSpectrum:
         else:
             y = gaussian_filter1d(self.differential_charge, sigma)
 
-        label = f"filtered, $\\sigma={sigma:.0f}$"
+        label = f"Gaussian filter, $\\sigma={sigma:.0f}$"
         self.ax.plot(
             self.energy,
             y,
@@ -186,7 +186,14 @@ class ElectronSpectrum:
         self.add_grid()
         self.add_hatch()
         self.annotate_peak()
-        self.ax.legend()
+        self.ax.legend(
+            bbox_to_anchor=(0, 1, 1, 0.1),
+            ncol=2,
+            mode="expand",
+            loc="lower left",
+            frameon=False,
+        )
+        self.ax.set_title(self.title)
 
     def savefig(self, fname="electron_spectrum.png", dpi=192):
         self.fig.savefig(fname, dpi=dpi)
