@@ -11,6 +11,7 @@ from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 from scipy.ndimage import gaussian_filter1d
 from cycler import cycler
 from collections import defaultdict
+from typing import Tuple
 
 C_LS = cycler(color=["C1", "C2", "C3"]) + cycler(linestyle=["--", ":", "-."])
 C_LS_ITER = C_LS()
@@ -18,14 +19,9 @@ STYLE = defaultdict(lambda: next(C_LS_ITER))
 
 
 @dataclass
-class Window:
-    __slots__ = ["low", "high"]
+class EnergyWindow:
     low: float
     high: float
-
-
-@dataclass
-class EnergyWindow(Window):
     peak_position: float = field(init=False)
     total_charge: float = field(init=False)
     mask: np.ndarray = field(init=False, repr=False)
@@ -42,11 +38,6 @@ class EnergyWindow(Window):
 
 
 @dataclass
-class ChargeWindow(Window):
-    pass
-
-
-@dataclass
 class ElectronSpectrum:
     """Keeps track of the spectrum."""
 
@@ -59,11 +50,11 @@ class ElectronSpectrum:
     fig: Figure = field(init=False, repr=False)
     ax: Axes = field(init=False, repr=False)
     xlabel: str = "$E$ (MeV)"
-    xlim: EnergyWindow = EnergyWindow(50.0, 350.0)
+    xlim: Tuple[float] = (50.0, 350.0)
     hatch_window: EnergyWindow = EnergyWindow(100.0, 300.0)
     sigma: float = 10.0  # std of Gaussian Kernel
     ylabel: str = "$\\frac{\\mathrm{d} Q}{\\mathrm{d} E}$ (pC/MeV)"
-    ylim: ChargeWindow = ChargeWindow(0.0, 50.0)
+    ylim: Tuple[float] = (0.0, 50.0)
     linewidth: float = 0.5
     linecolor: str = "0.5"
     alpha: float = 0.75
@@ -91,8 +82,8 @@ class ElectronSpectrum:
     def prepare_figure(self, figsize=(10, 3.5)):
         self.fig, self.ax = pyplot.subplots(figsize=figsize, facecolor="white")
 
-        self.ax.set_xlim(self.xlim.low, self.xlim.high)
-        self.ax.set_ylim(self.ylim.low, self.ylim.high)
+        self.ax.set_xlim(*self.xlim)
+        self.ax.set_ylim(*self.ylim)
 
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
@@ -169,12 +160,10 @@ class ElectronSpectrum:
         )
 
     def annotate_peak(self):
-        self.ax.vlines(
+        self.ax.axvline(
             x=self.hatch_window.peak_position,
-            ymin=self.ylim.low,
-            ymax=self.ylim.high,
-            colors=self.linecolor,
-            linestyles="solid",
+            color=self.linecolor,
+            linestyle="solid",
             linewidth=2 * self.linewidth,
             label=f"{self.hatch_window.peak_position:.0f} MeV, {self.hatch_window.total_charge:.0f} pC",
         )
