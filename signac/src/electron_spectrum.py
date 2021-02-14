@@ -51,6 +51,8 @@ class ElectronSpectrum:
     """Keeps track of the spectrum."""
 
     fname: str
+    iteration: int
+    iteration_time_ps: float
     differential_charge: np.ndarray = field(init=False, repr=False)
     smooth_differential_charge: np.ndarray = field(init=False, repr=False)
     energy: np.ndarray = field(init=False, repr=False)
@@ -65,7 +67,7 @@ class ElectronSpectrum:
     linewidth: float = 0.5
     linecolor: str = "0.5"
     alpha: float = 0.75
-    title: str = "t = 10.14 ps (iteration 119315)"
+    title: str = field(init=False, repr=False)
 
     def __post_init__(self):
         self.differential_charge, energy = self.loadf()
@@ -80,12 +82,13 @@ class ElectronSpectrum:
         self.hatch_window.peak_position = self.hatch_window.find_peak_position(
             self.energy, self.smooth_differential_charge
         )
+        self.title = f"t = {self.iteration_time_ps:.2f} ps (iteration {self.iteration})"
 
     def loadf(self):
         f = np.load(self.fname)
         return f["counts"], f["edges"]
 
-    def prepare_figure(self, figsize=(10, 3)):
+    def prepare_figure(self, figsize=(10, 3.5)):
         self.fig, self.ax = pyplot.subplots(figsize=figsize, facecolor="white")
 
         self.ax.set_xlim(self.xlim.low, self.xlim.high)
@@ -209,11 +212,13 @@ def main():
     job = random.choice(list(iter(proj)))
     print(job)
 
-    es = ElectronSpectrum(job.fn("final_histogram.npz"))
+    es = ElectronSpectrum(
+        job.fn("final_histogram.npz"), iteration=119315, iteration_time_ps=10.141
+    )
     es.plot()
     es.savefig()
 
-    # print(es)  # FIXME
+    print(es)  # FIXME
 
 
 if __name__ == "__main__":
