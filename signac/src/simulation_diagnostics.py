@@ -260,9 +260,14 @@ def main():
     it = random.choice(time_series.iterations.tolist())
     print(f"job {job.id}, iteration {it}")
 
-    _, _, _ = particle_energy_histogram(
-        tseries=time_series, iteration=it, species="electrons"
+    # compute 1D histogram
+    energy_hist, bin_edges, _ = particle_energy_histogram(
+        tseries=time_series,
+        iteration=it,
+        species="electrons",
+        cutoff=np.inf,  # no cutoff
     )
+    np.savez("final_histogram.npz", edges=bin_edges, counts=energy_hist)
 
     laser_density_plot(iteration=it, tseries=time_series)
     phase_space_plot(iteration=it, tseries=time_series)
