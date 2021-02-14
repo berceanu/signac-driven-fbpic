@@ -179,8 +179,6 @@ class ElectronSpectrum:
     def plot(self):
         self.prepare_figure()
         self.add_histogram()
-        # for sigma in 3, 6, 10:
-        #     self.add_gaussian_filter(sigma=sigma)
         self.add_gaussian_filter()
         self.add_ticks()
         self.add_grid()
