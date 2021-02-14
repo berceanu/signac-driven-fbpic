@@ -35,6 +35,8 @@ from simulation_diagnostics import (
 from density_functions import plot_density_profile, make_gaussian_dens_func
 from laser_profiles import make_flat_laser_profile, plot_laser_intensity
 from render_lwfa_script import write_lwfa_script
+from electron_spectrum import ElectronSpectrum
+
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -391,6 +393,7 @@ def save_final_histogram(job):
     energy_hist, bin_edges, _ = particle_energy_histogram(
         tseries=time_series,
         iteration=last_iteration,
+        species="electrons",
         cutoff=np.inf,  # no cutoff
     )
     np.savez(job.fn("final_histogram.npz"), edges=bin_edges, counts=energy_hist)
@@ -462,6 +465,7 @@ def save_histograms(job):
     _, _, nrbins = particle_energy_histogram(
         tseries=time_series,
         iteration=0,
+        species="electrons",
     )
     all_hist = np.empty(shape=(number_of_iterations, nrbins), dtype=np.float64)
     hist_edges = np.empty(shape=(nrbins + 1,), dtype=np.float64)
@@ -472,6 +476,7 @@ def save_histograms(job):
         energy_hist, bin_edges, _ = particle_energy_histogram(
             tseries=time_series,
             iteration=it,
+            species="electrons",
         )
         # build up arrays for 2D energy histogram
         all_hist[idx, :] = energy_hist
