@@ -267,7 +267,7 @@ def main():
         species="electrons",
         cutoff=np.inf,  # no cutoff
     )
-    np.savez("final_histogram.npz", edges=bin_edges, counts=energy_hist)
+    np.savez("final_histogram.npz", edges=bin_edges, counts=energy_hist, iteration=it)
 
     laser_density_plot(iteration=it, tseries=time_series)
     phase_space_plot(iteration=it, tseries=time_series)
