@@ -9,6 +9,12 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 from scipy.ndimage import gaussian_filter1d
+from cycler import cycler
+from collections import defaultdict
+
+C_LS = cycler(color=["C1", "C2", "C3"]) + cycler(linestyle=["--", ":", "-."])
+C_LS_ITER = C_LS()
+STYLE = defaultdict(lambda: next(C_LS_ITER))
 
 
 @dataclass
@@ -34,6 +40,7 @@ class ElectronSpectrum:
 
     fname: str
     differential_charge: np.ndarray = field(init=False, repr=False)
+    smooth_differential_charge: np.ndarray = field(init=False, repr=False)
     energy: np.ndarray = field(init=False, repr=False)
     fig: Figure = field(init=False, repr=False)
     ax: Axes = field(init=False, repr=False)
@@ -70,17 +77,31 @@ class ElectronSpectrum:
             histtype="step",
             color=self.linecolor,
             linewidth=self.linewidth,
+            label="original electron spectrum",
         )
 
-    def add_ticks(self):
+    def add_gaussian_filter(self, sigma=3.0):
+        y = gaussian_filter1d(self.differential_charge, sigma)
+        label = f"filtered, $\\sigma={sigma}$"
+        self.ax.plot(
+            self.energy,
+            y,
+            label=label,
+            color=STYLE[label]["color"],
+            linestyle=STYLE[label]["linestyle"],
+            linewidth=2 * self.linewidth,
+        )
+        return y
+
+    def add_ticks(self, major_x_every=25.0, major_y_every=10.0):
 
         self.ax.yaxis.set_ticks_position("both")
         self.ax.xaxis.set_ticks_position("both")
 
-        self.ax.xaxis.set_major_locator(MultipleLocator(25.0))
-        self.ax.xaxis.set_minor_locator(MultipleLocator(5.0))
-        self.ax.yaxis.set_major_locator(MultipleLocator(10.0))
-        self.ax.yaxis.set_minor_locator(MultipleLocator(2.0))
+        self.ax.xaxis.set_major_locator(MultipleLocator(major_x_every))
+        self.ax.yaxis.set_major_locator(MultipleLocator(major_y_every))
+        self.ax.xaxis.set_minor_locator(AutoMinorLocator())
+        self.ax.yaxis.set_minor_locator(AutoMinorLocator())
 
         for ticks, length, width in zip(("major", "minor"), (6, 3), (2, 1)):
             self.ax.tick_params(
@@ -119,9 +140,13 @@ class ElectronSpectrum:
     def plot(self):
         self.prepare_figure()
         self.add_histogram()
+        for sigma in 3, 6, 10:
+            self.add_gaussian_filter(sigma=sigma)
+        self.smooth_differential_charge = self.add_gaussian_filter(sigma=10)
         self.add_ticks()
         self.add_grid()
         self.add_hatch()
+        self.ax.legend()
 
     def save(self, fname="electron_spectrum.png", dpi=192):
         self.fig.savefig(fname, dpi=dpi)
