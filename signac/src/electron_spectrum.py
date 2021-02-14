@@ -26,7 +26,19 @@ class Window:
 
 @dataclass
 class EnergyWindow(Window):
-    pass
+    peak_position: float = field(init=False)
+    total_charge: float = field(init=False)
+    mask: np.ndarray = field(init=False, repr=False)
+
+    def create_boolean_mask(self, energy):
+        return (energy >= self.low) & (energy <= self.high)
+
+    def find_peak_position(self, energy, charge):
+        return energy[self.mask][np.argmax(charge[self.mask])]
+
+    def integrate_charge(self, energy, charge):
+        delta_energy = np.diff(energy)
+        return np.sum(delta_energy[self.mask] * charge[self.mask])
 
 
 @dataclass
@@ -47,7 +59,6 @@ class ElectronSpectrum:
     xlabel: str = "$E$ (MeV)"
     xlim: EnergyWindow = EnergyWindow(50.0, 350.0)
     hatch_window: EnergyWindow = EnergyWindow(100.0, 300.0)
-    peak_position: float = field(init=False)
     sigma: float = 10.0  # std of Gaussian Kernel
     ylabel: str = "$\\frac{\\mathrm{d} Q}{\\mathrm{d} E}$ (pC/MeV)"
     ylim: ChargeWindow = ChargeWindow(0.0, 50.0)
@@ -56,15 +67,22 @@ class ElectronSpectrum:
     alpha: float = 0.75
 
     def __post_init__(self):
-        self.differential_charge, self.energy = self.loadf()
+        self.differential_charge, energy = self.loadf()
+        self.hatch_window.mask = self.hatch_window.create_boolean_mask(energy[:-1])
+        self.hatch_window.total_charge = self.hatch_window.integrate_charge(
+            energy, self.differential_charge
+        )
+        self.energy = energy[:-1]
         self.smooth_differential_charge = gaussian_filter1d(
             self.differential_charge, self.sigma
         )
-        self.peak_position = self.find_peak_in_window()
+        self.hatch_window.peak_position = self.hatch_window.find_peak_position(
+            self.energy, self.smooth_differential_charge
+        )
 
     def loadf(self):
         f = np.load(self.fname)
-        return f["counts"], f["edges"][:-1]
+        return f["counts"], f["edges"]
 
     def prepare_figure(self):
         self.fig, self.ax = pyplot.subplots(figsize=(10, 4), facecolor="white")
@@ -148,23 +166,21 @@ class ElectronSpectrum:
         )
 
     def annotate_peak(self):
-        self.peak_position
-        self.ax
         self.ax.vlines(
-            x=self.peak_position,
+            x=self.hatch_window.peak_position,
             ymin=self.ylim.low,
             ymax=self.ylim.high,
             colors=self.linecolor,
-            linestyles="dashed",
-            linewidth=self.linewidth,
-            label=f"{self.peak_position:.0f} MeV",
+            linestyles="solid",
+            linewidth=2 * self.linewidth,
+            label=f"{self.hatch_window.peak_position:.0f} MeV, {self.hatch_window.total_charge:.0f} pC",
         )
 
     def plot(self):
         self.prepare_figure()
         self.add_histogram()
         # for sigma in 3, 6, 10:
-        # self.add_gaussian_filter(sigma=sigma)
+        #     self.add_gaussian_filter(sigma=sigma)
         self.add_gaussian_filter()
         self.add_ticks()
         self.add_grid()
@@ -175,14 +191,6 @@ class ElectronSpectrum:
     def savefig(self, fname="electron_spectrum.png", dpi=192):
         self.fig.savefig(fname, dpi=dpi)
         pyplot.close(self.fig)
-
-    def find_peak_in_window(self):
-        mask = (self.energy >= self.hatch_window.low) & (
-            self.energy <= self.hatch_window.high
-        )
-        energy = self.energy[mask]
-        charge = self.smooth_differential_charge[mask]
-        return energy[np.argmax(charge)]
 
 
 def main():
