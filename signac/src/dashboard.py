@@ -41,7 +41,7 @@ modules = [
     ImageViewer(name="Spectrum", img_globs=["final_histogram.png"], enabled=False),
     ImageViewer(name="All Plots", enabled=True),
     FileList(name="All Files", enabled=False),
-    # Notes(name="Notes", enabled=False),
+    Notes(name="Notes", enabled=False),
 ]
 
 dashboard = MyDashboard(config=config, modules=modules)

@@ -16,7 +16,7 @@ import pathlib
 
 import numpy as np
 import sliceplots
-from flow import FlowProject, directives
+from flow import FlowProject
 from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot
 from openpmd_viewer.addons import LpaDiagnostics

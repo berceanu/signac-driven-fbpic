@@ -1,11 +1,9 @@
 """Repository of `fbpic` density functions."""
 from itertools import cycle
-import math
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot
 from matplotlib.gridspec import GridSpec
-from scipy import interpolate
 
 
 def read_density(txt_file, every_nth=20, offset=0.0):
