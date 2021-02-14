@@ -5,7 +5,7 @@ Usage: python nvml_reader.py filename.csv
 """
 import pathlib
 from dataclasses import dataclass, field
-from typing import List, ClassVar
+from typing import List, ClassVar, Tuple
 
 import numpy as np
 import pandas as pd
@@ -141,8 +141,6 @@ class Tick:
     position: float
     label: str
 
-# for count, (bf, bc, bt) in enumerate(zip(bar_from, bar_center, bar_to)):
-# print(f"count={count}: {bf}<{bc}>{bt}, new low {d.min()}, new high {d.max()}")
 
 @dataclass
 class HorizontalBar:
@@ -158,8 +156,13 @@ class HorizontalBar:
     background_color: ClassVar[str] = "0.95"
     hide_tick_labels: bool = True
     ydata_normalized: np.ndarray = field(init=False, repr=False)
+    y_extent: Tuple[float] = field(init=False, repr=False)
 
     def __post_init__(self):
+        self.y_extent = (
+            self.y_position - self.height / 2,
+            self.y_position + self.height / 2,
+        )
         self.ydata_normalized = self.normalize_y()
 
     def __eq__(self, other):
@@ -167,14 +170,15 @@ class HorizontalBar:
             return NotImplemented
         return self.index == other.index
 
+    def __str__(self):
+        return f"{self.index} {self.label}: {self.y_extent[0]}<{self.y_position}>{self.y_extent[1]}"
+
     def normalize_y(self, y_data=None):
         if y_data is None:
             y_data = self.ydata
 
-        h_2 = self.height / 2
-        return normalize_to_interval(
-            self.y_position - h_2, self.y_position + h_2, y_data
-        )
+        a, b = self.y_extent
+        return normalize_to_interval(a, b, y_data)
 
     def draw_solid_background(self):
         self.ax.barh(
@@ -245,7 +249,7 @@ class HorizontalBar:
     def plot_data(self, y_data=None, color="black", linewidth=2, zorder=2):
         if y_data is None:
             y_data = self.ydata_normalized
-        
+
         self.ax.plot(
             self.xdata, y_data, color=color, linewidth=linewidth, zorder=zorder
         )
@@ -416,7 +420,8 @@ class GpuFigure:
 
 def main():
     """Main entry point."""
-    gpus = get_all_gpus()
+    gpus = GpuList(get_all_gpus()[:4])
+    # TODO implement slicing
 
     # ----------------------------------------------------------------------------------
 
@@ -434,43 +439,13 @@ def main():
     df = df.loc["2021-02-10 11:28":"2021-02-10 20:24"]
 
     grouped = df.groupby(["short_gpu_uuid"])
-    # print(grouped[["used_power_W", "used_gpu_memory_MiB"]].agg(["max", "mean", "std"]))  # TODO uncomment
+    print(grouped[["used_power_W", "used_gpu_memory_MiB"]].agg(["max", "mean", "std"]))
 
     # ----------------------------------------------------------------------------------
 
     num_data_points = 20
-    y_low = -0.75
-    y_high = 0.5
     X = np.linspace(start=0, stop=2, num=num_data_points, endpoint=True)
     Y = np.random.uniform(low=-0.75, high=0.5, size=(gpus.num_gpus, num_data_points))
-
-
-    # print(
-    #     f"count={count}: {bf}<{bc}>{bt}, new low {bar_y_data_low}, new high {bar_y_data_high}"
-    # )
-
-    # count=0: 7.125<7.5>7.875, new low 7.3125, new high 7.625
-    # count=1: 6.125<6.5>6.875, new low 6.3125, new high 6.625
-    # count=2: 5.125<5.5>5.875, new low 5.3125, new high 5.625
-    # count=3: 4.125<4.5>4.875, new low 4.3125, new high 4.625
-    # count=4: 3.125<3.5>3.875, new low 3.3125, new high 3.625
-    # count=5: 2.125<2.5>2.875, new low 2.3125, new high 2.625
-    # count=6: 1.125<1.5>1.875, new low 1.3125, new high 1.625
-    # count=7: 0.125<0.5>0.875, new low 0.3125, new high 0.625
-
-    # horizontal bar height is 0.75
-    # vertical line height is 0.75: (y_position - 0.75/2, y_position + 0.75/2)
-
-
-
-    # count=0: 7.125<7.5>7.875, new low 7.125, new high 7.875
-    # count=1: 6.125<6.5>6.875, new low 6.125, new high 6.875
-    # count=2: 5.125<5.5>5.875, new low 5.125, new high 5.875
-    # count=3: 4.125<4.5>4.875, new low 4.125, new high 4.875
-    # count=4: 3.125<3.5>3.875, new low 3.125, new high 3.875
-    # count=5: 2.125<2.5>2.875, new low 2.125, new high 2.875
-    # count=6: 1.125<1.5>1.875, new low 1.125, new high 1.875
-    # count=7: 0.125<0.5>0.875, new low 0.125, new high 0.875
 
     # ----------------------------------------------------------------------------------
 
@@ -488,16 +463,19 @@ def main():
     # 6 GPU-3c 1.5 1.3125 1.625
     # 7 GPU-fd 0.5 0.3125 0.625
 
-    # high - low = 0.3125
+    # TODO: add extra padding ^^
+    
+    for bar in f.panel_right.bars:
+        print(bar)
 
-    # for bar in f.panel_left.bars:
-    # print(
-    #     bar.index,
-    #     bar.label,
-    #     bar.y_position,
-    #     bar.ydata.min(),
-    #     bar.ydata.max(),
-    # )
+    # 8 GPU-ce: 7.125<7.5>7.875
+    # 9 GPU-db: 6.125<6.5>6.875
+    # 10 GPU-d0: 5.125<5.5>5.875
+    # 11 GPU-91: 4.125<4.5>4.875
+    # 12 GPU-28: 3.125<3.5>3.875
+    # 13 GPU-1e: 2.125<2.5>2.875
+    # 14 GPU-1d: 1.125<1.5>1.875
+    # 15 GPU-04: 0.125<0.5>0.875
 
 
 # nvml.py started @ 16:54 on 13 Feb 2021
