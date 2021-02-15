@@ -7,9 +7,10 @@ import datetime
 
 logger = logging.getLogger(__name__)
 
+
 def du(path):
     """Disk usage in human readable format (e.g. '2,1GB')"""
-    return subprocess.check_output(['du','-shx', path]).split()[0].decode('utf-8')
+    return subprocess.check_output(["du", "-shx", path]).split()[0].decode("utf-8")
 
 
 def seconds_to_hms(seconds):
@@ -112,6 +113,7 @@ def main():
     print(f"Elapsed time: {seconds_to_hms(runtime)}")
 
     print(f"Size of current working directory: {du('.')}")
+
 
 if __name__ == "__main__":
     main()
