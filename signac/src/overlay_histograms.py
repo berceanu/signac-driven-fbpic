@@ -47,6 +47,7 @@ def main():
         energy = energy[mask]
         charge = np.clip(charge, 0, 60)[mask]  # FIXME
 
+        # TODO replace with code from electron_spectrum.py
         ax.step(
             energy,
             charge,
