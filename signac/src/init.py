@@ -31,7 +31,7 @@ def main():
     for _ in range(1):
         sp = dict(
             # TODO: move to job document
-            nranks=4,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
+            nranks=2,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
             # The simulation box
             z_rezolution_factor=24,  # Δz = lambda0 / z_rezolution_factor (default 24)
             dr_over_dz=10,  # Δr = dr_over_dz * Δz (default 10)

@@ -376,7 +376,6 @@ def generate_phasespace_movie(job):
 @Project.post.isfile("final_histogram.png")
 @Project.post.true("peak_charge")
 @Project.post.true("peak_position")
-@Project.post.never  # TODO: Remove after debugging
 def save_final_spectrum(job):
     """
     Save the histogram corresponding to the last iteration.
