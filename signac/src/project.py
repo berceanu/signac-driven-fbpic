@@ -152,7 +152,7 @@ def are_phasespace_pngs(job):
 @ex
 @Project.operation
 @Project.post.true("macroparticle_count")
-def add_document_keys(job):
+def add_macroparticle_count(job):
     count = job.sp.p_nt * job.sp.p_nr * job.sp.p_nz * job.sp.Nz * job.sp.Nr
     job.doc.setdefault("macroparticle_count", f"{count:.2e}")
 
@@ -297,7 +297,7 @@ def run_fbpic(job):
     runtime = t.stop()
     job.doc.setdefault("runtime", str(seconds_to_hms(runtime)).split(".")[0])
     time_per_iteration = (runtime * u.second / job.sp.N_step).to(u.ms)
-    job.doc.setdefault("time_per_iteration", f"{time_per_iteration:.1f}")
+    job.doc.setdefault("time_per_iteration", f"{time_per_iteration:.0f}")
 
     # redirect stdout back and close "stdout.txt"
     sys.stdout = orig_stdout
