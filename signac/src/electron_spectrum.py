@@ -11,14 +11,11 @@ from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 from scipy.ndimage import gaussian_filter1d
 from cycler import cycler
 from collections import defaultdict
-from typing import Tuple
+from typing import Tuple, ClassVar
 import pathlib
 from openpmd_viewer.addons import LpaDiagnostics
 from simulation_diagnostics import particle_energy_histogram
-
-C_LS = cycler(color=["C1", "C2", "C3"]) + cycler(linestyle=["--", ":", "-."])
-C_LS_ITER = C_LS()
-STYLE = defaultdict(lambda: next(C_LS_ITER))
+from scipy.constants import c
 
 
 def get_time_series_from(job):
@@ -47,6 +44,7 @@ def get_iteration_time_from(time_series, iteration=None):
 
     return time_in_s, final_iteration
     # TODO add z position, see project.py L460
+
 
 def get_time_series_and_iteration_time_from(job, iteration=None):
     time_series = get_time_series_from(job)
@@ -123,6 +121,8 @@ class ElectronSpectrum:
     fig_fname: str
     iteration: int = field(init=False)
     iteration_time_ps: float = field(init=False)
+    z_position: float = field(init=False)
+    c_um_per_ps: ClassVar[float] = c * 1.0e-6
     jobid: str = field(init=False)
     differential_charge: np.ndarray = field(init=False, repr=False)
     smooth_differential_charge: np.ndarray = field(init=False, repr=False)
@@ -132,13 +132,12 @@ class ElectronSpectrum:
     xlabel: str = r"$E\, (\mathrm{MeV})$"
     xlim: Tuple[float] = (50.0, 350.0)
     hatch_window: EnergyWindow = EnergyWindow(100.0, 300.0)
-    sigma: float = 12.0  # std of Gaussian Kernel
+    sigma: int = 12  # std of Gaussian Kernel
     ylabel: str = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
     ylim: Tuple[float] = (0.0, 50.0)
     linewidth: float = 0.5
     linecolor: str = "0.5"
     alpha: float = 0.75
-    title: str = field(init=False, repr=False)
 
     def __post_init__(self):
         (
@@ -159,7 +158,7 @@ class ElectronSpectrum:
         self.hatch_window.peak_position = self.hatch_window.find_peak_position(
             self.energy, self.smooth_differential_charge
         )
-        self.title = f"t = {self.iteration_time_ps:.2f} ps (iteration {self.iteration})"
+        self.z_position = self.iteration_time_ps * self.c_um_per_ps
 
     def loadf(self):
         f = np.load(self.fname)
@@ -174,11 +173,14 @@ class ElectronSpectrum:
     def prepare_figure(self, figsize=(10, 3.5)):
         self.fig, self.ax = pyplot.subplots(figsize=figsize, facecolor="white")
 
-        self.ax.set_xlim(*self.xlim)
-        self.ax.set_ylim(*self.ylim)
+        title = f"t = {self.iteration_time_ps:.2f} ps, z = {self.z_position:.0f} $\mathrm{{\mu m}}$ (iteration {self.iteration})"
+        self.ax.set_title(title, fontsize=10)
 
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
+
+        self.ax.set_xlim(*self.xlim)
+        self.ax.set_ylim(*self.ylim)
 
     def add_histogram(self):
         self.ax.hist(
@@ -190,22 +192,31 @@ class ElectronSpectrum:
             linewidth=self.linewidth,
         )
 
-    def add_gaussian_filter(self, sigma=None):
-        if sigma is None:
-            y = self.smooth_differential_charge
-            sigma = self.sigma
-        else:
-            y = gaussian_filter1d(self.differential_charge, sigma)
-
-        label = f"Gaussian filter, $\\sigma={sigma:.0f}$"
-        self.ax.plot(
-            self.energy,
-            y,
-            label=label,
-            color=STYLE[label]["color"],
-            linestyle=STYLE[label]["linestyle"],
-            linewidth=2 * self.linewidth,
+    def gaussian_filter(self):
+        combined_cycler = cycler(color=["C1", "C2", "C3"]) + cycler(
+            linestyle=["--", ":", "-."]
         )
+        combined_cycler_iterator = combined_cycler()
+        cycler_dict = defaultdict(lambda: next(combined_cycler_iterator))
+
+        def add_gaussian_filter(sigma=None):
+            if sigma is None:
+                y = self.smooth_differential_charge
+                sigma = self.sigma
+            else:
+                y = gaussian_filter1d(self.differential_charge, sigma)
+
+            label = f"Gaussian filter, $\\sigma={sigma:.0f}$"
+            self.ax.plot(
+                self.energy,
+                y,
+                label=label,
+                color=cycler_dict[label]["color"],
+                linestyle=cycler_dict[label]["linestyle"],
+                linewidth=2 * self.linewidth,
+            )
+
+        return add_gaussian_filter
 
     def add_ticks(self, major_x_every=25.0, major_y_every=10.0):
 
@@ -273,15 +284,7 @@ class ElectronSpectrum:
             va="baseline",
         )
 
-    def plot(self):
-        self.prepare_figure()
-        self.add_histogram()
-        self.add_gaussian_filter()
-        self.add_ticks()
-        self.add_grid()
-        self.add_hatch()
-        self.annotate_peak()
-        self.add_job_id()
+    def add_legend(self):
         self.ax.legend(
             bbox_to_anchor=(0, 1, 1, 0.1),
             ncol=2,
@@ -289,7 +292,19 @@ class ElectronSpectrum:
             loc="lower left",
             frameon=False,
         )
-        self.ax.set_title(self.title)
+
+    def plot(self):
+        self.prepare_figure()
+        self.add_histogram()
+        add_gaussian_filter = self.gaussian_filter()
+        for σ in range(self.sigma, self.sigma + 6, 2):
+            add_gaussian_filter(sigma=σ)
+        self.add_ticks()
+        self.add_grid()
+        self.add_hatch()
+        self.annotate_peak()
+        self.add_job_id()
+        self.add_legend()
 
     def savefig(self, fname=None, dpi=192):
         if fname is None:
@@ -314,9 +329,6 @@ def main():
 
     print(f"Read {es.fname}")
     print(f"Wrote {es.fig_fname}")
-
-    print(f"Peak position at {es.hatch_window.peak_position:.1f} MeV")
-    print(f"Total integrated charge {es.hatch_window.total_charge:.1f}  pC")
 
 
 if __name__ == "__main__":
