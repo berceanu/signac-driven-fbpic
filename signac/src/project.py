@@ -68,6 +68,8 @@ class OdinEnvironment(DefaultSlurmEnvironment):
             default=72,
             help="The wallclock time in hours. (default=72)",
         )
+
+
 # TODO: add --mem-per-cpu argument
 
 
@@ -366,6 +368,7 @@ def generate_rho_movie(job):
 def generate_phasespace_movie(job):
     generate_movie(job, stem="phasespace")
 
+
 @ex
 @Project.operation
 @Project.pre.after(run_fbpic)
@@ -492,6 +495,7 @@ def plot_2d_hist(job):
 def store_disk_usage(job):
     usage = du(job.ws)
     job.doc.setdefault("disk_usage", usage)
+
 
 # TODO (possibly) integrate `nvml.py` via `schedule` as background thread
 
