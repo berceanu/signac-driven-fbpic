@@ -70,8 +70,6 @@ class OdinEnvironment(DefaultSlurmEnvironment):
         )
 # TODO: add --mem-per-cpu argument
 
-__all__ = ["OdinEnvironment"]
-
 
 class Project(FlowProject):
     """
