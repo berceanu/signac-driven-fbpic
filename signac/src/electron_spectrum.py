@@ -91,7 +91,7 @@ def construct_electron_spectrum(job, iteration=None):
     fn_hist = save_energy_histogram(job, iteration)
     fig_fname = fn_hist.with_suffix(".png")
 
-    return ElectronSpectrum(fn_hist, fig_fname)
+    return ElectronSpectrum(fn_hist, fig_fname, job.sp.N_step)
 
 
 @dataclass
@@ -178,7 +178,7 @@ class ElectronSpectrum:
 
         if total_iterations is not None:
             percentage = self.iteration / total_iterations
-            title = title[:-1] + f", {percentage:%})"
+            title = title[:-1] + f", {percentage:.0%})"
 
         return title
 
