@@ -250,11 +250,11 @@ class ElectronSpectrum:
 
     def add_grid(self):
         lw = dict(major=self.linewidth, minor=self.linewidth / 2)
-        for ax in "x", "y":
+        for xy in "x", "y":
             for ticks in "major", "minor":
                 self.ax.grid(
                     which=ticks,
-                    axis=ax,
+                    axis=xy,
                     linewidth=lw[ticks],
                     linestyle="dotted",
                     color=self.linecolor,
