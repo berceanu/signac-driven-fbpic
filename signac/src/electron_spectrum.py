@@ -16,12 +16,8 @@ import pathlib
 from openpmd_viewer.addons import LpaDiagnostics
 from simulation_diagnostics import particle_energy_histogram
 from scipy.constants import c
+from job_util import get_time_series_from
 
-
-def get_time_series_from(job):
-    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    time_series = LpaDiagnostics(h5_path)
-    return time_series
 
 
 def get_iteration_time_from(time_series, iteration=None):
