@@ -84,6 +84,7 @@ def save_energy_histogram(job, iteration=None):
         edges=bins,
         iteration=iteration,
         iteration_time_ps=iteration_time_ps,
+        jobid=job.id,
     )
     return fn_hist
 
@@ -122,6 +123,7 @@ class ElectronSpectrum:
     fig_fname: str
     iteration: int = field(init=False)
     iteration_time_ps: float = field(init=False)
+    jobid: str = field(init=False)
     differential_charge: np.ndarray = field(init=False, repr=False)
     smooth_differential_charge: np.ndarray = field(init=False, repr=False)
     energy: np.ndarray = field(init=False, repr=False)
@@ -144,6 +146,7 @@ class ElectronSpectrum:
             energy,
             self.iteration,
             self.iteration_time_ps,
+            self.jobid,
         ) = self.loadf()
         self.hatch_window.mask = self.hatch_window.create_boolean_mask(energy[:-1])
         self.hatch_window.total_charge = self.hatch_window.integrate_charge(
@@ -160,7 +163,13 @@ class ElectronSpectrum:
 
     def loadf(self):
         f = np.load(self.fname)
-        return f["counts"], f["edges"], f["iteration"], f["iteration_time_ps"]
+        return (
+            f["counts"],
+            f["edges"],
+            f["iteration"],
+            f["iteration_time_ps"],
+            np.array_str(f["jobid"]),
+        )
 
     def prepare_figure(self, figsize=(10, 3.5)):
         self.fig, self.ax = pyplot.subplots(figsize=figsize, facecolor="white")
@@ -251,6 +260,19 @@ class ElectronSpectrum:
             label=f"{self.hatch_window.peak_position:.0f} MeV, {self.hatch_window.total_charge:.0f} pC",
         )
 
+    def add_job_id(self):
+        self.ax.annotate(
+            text=f"{self.jobid}",
+            xycoords="axes fraction",
+            xy=(0.9, 0.9),
+            color=self.linecolor,
+            xytext=(10, 0),
+            textcoords="offset points",
+            size="small",
+            ha="right",
+            va="baseline",
+        )
+
     def plot(self):
         self.prepare_figure()
         self.add_histogram()
@@ -259,6 +281,7 @@ class ElectronSpectrum:
         self.add_grid()
         self.add_hatch()
         self.annotate_peak()
+        self.add_job_id()
         self.ax.legend(
             bbox_to_anchor=(0, 1, 1, 0.1),
             ncol=2,
@@ -284,7 +307,6 @@ def main():
 
     proj = signac.get_project(search=False)
     job = random.choice(list(iter(proj)))
-    print(f"Job {job.ws}")
 
     es = construct_electron_spectrum(job)
     es.plot()
