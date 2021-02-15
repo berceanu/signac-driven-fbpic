@@ -13,7 +13,6 @@ from cycler import cycler
 from collections import defaultdict
 from typing import Tuple, ClassVar
 import pathlib
-from openpmd_viewer.addons import LpaDiagnostics
 from simulation_diagnostics import particle_energy_histogram
 from scipy.constants import c
 from job_util import get_time_series_from
