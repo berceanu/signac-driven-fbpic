@@ -29,7 +29,7 @@ def main():
     scratch_pr_path = pathlib.Path(project.workspace())
 
     # copy the workspace to current dir, excluding large files
-    rsync_scratch_to_here = rf"rsync -amvP --exclude='initial_density_profile.png' --exclude='laser_intensity.png' --exclude='*.h5' --exclude='*.txt' --exclude='*.npz' --exclude='*/rhos' --exclude='*/phasespaces' {scratch_pr_path}/ workspace"
+    rsync_scratch_to_here = rf"rsync -amvP --exclude='initial_density_profile.png' --exclude='laser_intensity.png' --exclude='*.h5' --exclude='*.txt' --exclude='*/rhos' --exclude='*/phasespaces' {scratch_pr_path}/ workspace"
     print(rsync_scratch_to_here)
     shell_run(rsync_scratch_to_here, shell=True)
 
