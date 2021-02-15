@@ -267,16 +267,6 @@ def main():
         species="electrons",
         cutoff=np.inf,  # no cutoff
     )
-    it_time = (time_series.t[time_series.iterations == it]).item() * (
-        1.0 * u.second
-    ).to(u.picosecond)
-    np.savez(
-        "final_histogram.npz",
-        edges=bin_edges,
-        counts=energy_hist,
-        iteration=it,
-        iteration_time_ps=it_time,
-    )
 
     laser_density_plot(iteration=it, tseries=time_series)
     phase_space_plot(iteration=it, tseries=time_series)
