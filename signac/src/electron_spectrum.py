@@ -134,7 +134,7 @@ class ElectronSpectrum:
     xlabel: str = r"$E\, (\mathrm{MeV})$"
     xlim: Tuple[float] = (50.0, 350.0)
     hatch_window: EnergyWindow = EnergyWindow(100.0, 300.0)
-    sigma: int = 12  # std of Gaussian Kernel
+    sigma: int = 16  # std of Gaussian Kernel
     ylabel: str = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
     ylim: Tuple[float] = (0.0, 50.0)
     linewidth: float = 0.5
@@ -307,9 +307,7 @@ class ElectronSpectrum:
     def plot(self):
         self.prepare_figure()
         self.add_histogram()
-        add_gaussian_filter = self.gaussian_filter()
-        for σ in range(self.sigma, self.sigma + 6, 2):
-            add_gaussian_filter(sigma=σ)
+        self.gaussian_filter()()
         self.add_ticks()
         self.add_grid()
         self.add_hatch()

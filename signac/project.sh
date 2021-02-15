@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Submit SLURM job for running the project operations
-# Usage: ./project.sh N
-# The number of bundles N should be set as follows:
+# Usage: ./project.sh [N]
+# The number of bundles N can be added via `--bundle=$1` and should be chosen as follows:
 # - without MPI: ngpu = 1 always, so N should be set to min(num of runnable signac GPU jobs, num of GPUs on machine)
 #                N signac jobs will run in parallel, using 1 GPU each
 #                max N is the number of GPUs on the machine, eg 16
@@ -10,4 +10,4 @@
 #             2 signac jobs will run in parallel, using 4 GPUs each
 #             max N is the number of GPUs on the machine / nranks, eg 16 / 4 = 4
 
-python src/project.py submit -o ex --bundle=1 --parallel
+python src/project.py run -o ex --parallel
