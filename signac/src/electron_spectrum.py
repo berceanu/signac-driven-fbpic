@@ -315,6 +315,9 @@ def main():
     print(f"Read {es.fname}")
     print(f"Wrote {es.fig_fname}")
 
+    print(f"Peak position at {es.hatch_window.peak_position:.1f} MeV")
+    print(f"Total integrated charge {es.hatch_window.total_charge:.1f}  pC")
+
 
 if __name__ == "__main__":
     main()
