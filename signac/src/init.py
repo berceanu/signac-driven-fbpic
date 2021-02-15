@@ -31,22 +31,22 @@ def main():
     for _ in range(1):
         sp = dict(
             # TODO: move to job document
-            nranks=1,  # number of MPI ranks (default 16); it's also the number of GPUs used per job
+            nranks=4,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
             # The simulation box
-            z_rezolution_factor=32,  # Δz = lambda0 / z_rezolution_factor (default 24)
-            dr_over_dz=5,  # Δr = dr_over_dz * Δz (default 10)
+            z_rezolution_factor=24,  # Δz = lambda0 / z_rezolution_factor (default 24)
+            dr_over_dz=10,  # Δr = dr_over_dz * Δz (default 10)
             zmin=-100.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
-            rmax=70.0e-6,  # Length of the box along r (meters)
+            rmax=70.0e-6,  # Length of the box along r (meters) (default 70.0e-6)
             r_boundary_conditions="reflective",  #  'reflective' (default) / 'open' more expensive
-            n_order=32,  # Order of the stencil for z derivatives in the Maxwell solver
-            Nm=3,  # Number of modes used
+            n_order=8,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 8)
+            Nm=3,  # Number of modes used (default 3)
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
             n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
-            p_nz=2,  # Number of particles per cell along z
-            p_nr=2,  # Number of particles per cell along r
+            p_nz=2,  # Number of particles per cell along z (default 2)
+            p_nr=2,  # Number of particles per cell along r (default 2)
             # The laser
             a0=2.4,  # Laser amplitude
             w0=22.0e-6
@@ -55,8 +55,8 @@ def main():
             / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
             z0=-10.0e-6,  # Laser centroid
             zfoc=nozzle_center_offset(1400e-6),  # Focal position
-            lambda0=0.815e-6,  # Laser wavelength
-            profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter)
+            lambda0=0.815e-6,  # Laser wavelength (default 0.815e-6)
+            profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
             # The density profile
             flat_top_dist=1000.0e-6,  # plasma flat top distance
             sigma_right=500.0e-6,
