@@ -20,6 +20,7 @@ C_LS = cycler(color=["C1", "C2", "C3"]) + cycler(linestyle=["--", ":", "-."])
 C_LS_ITER = C_LS()
 STYLE = defaultdict(lambda: next(C_LS_ITER))
 
+
 def get_iteration_time_from(time_series, iteration=None):
     if iteration is None:  # use final iteration
         index = -1
@@ -29,50 +30,62 @@ def get_iteration_time_from(time_series, iteration=None):
     final_iteration = time_series.iterations[-1]
 
     iteration_time_in_s = time_series.t[index]
-    
+
     # extract single element
     return iteration_time_in_s.item(), final_iteration
+
 
 def get_time_series_from(job):
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     time_series = LpaDiagnostics(h5_path)
     return time_series
 
-def foo(job, iteration=None):
+
+def get_time_series_and_iteration_time_from(job, iteration=None):
     time_series = get_time_series_from(job)
-    iteration_time_in_s, final_iteration = get_iteration_time_from(time_series, iteration)
+    iteration_time_in_s, final_iteration = get_iteration_time_from(
+        time_series, iteration
+    )
 
     if iteration is None:
         iteration = final_iteration
 
-    iteration_time_ps = iteration_time_in_s * 1.0e+12
+    iteration_time_ps = iteration_time_in_s * 1.0e12
     return time_series, iteration, iteration_time_ps
 
 
 def save_energy_histogram(job, iteration=None):
     if iteration is None:
-        fn_out = "final_histogram.npz"
+        fn_hist = pathlib.Path(job.fn("final_histogram.npz"))
     else:
-        fn_out = f"histogram{iteration:06d}.npz"
-    
-    time_series, iteration, iteration_time_ps = foo(job, iteration)
+        fn_hist = pathlib.Path(job.fn(f"histogram{iteration:06d}.npz"))
+
+    time_series, iteration, iteration_time_ps = get_time_series_and_iteration_time_from(
+        job, iteration
+    )
 
     # no cutoff
     hist, bins, nbins = particle_energy_histogram(
         tseries=time_series,
         iteration=iteration,
         species="electrons",
-        cutoff=np.inf,  
+        cutoff=np.inf,
     )
     np.savez(
-        fn_out,
-        edges=bins,
+        fn_hist,
         counts=hist,
+        edges=bins,
         iteration=iteration,
         iteration_time_ps=iteration_time_ps,
     )
+    return fn_hist
 
-    
+
+def construct_electron_spectrum(job, iteration=None):
+    fn_hist = save_energy_histogram(job, iteration)
+    fig_fname = fn_hist.rename(fn_hist.with_suffix(".png"))
+
+    return ElectronSpectrum(fn_hist, fig_fname)
 
 
 @dataclass
@@ -99,6 +112,7 @@ class ElectronSpectrum:
     """Keeps track of the spectrum."""
 
     fname: str
+    fig_fname: str
     iteration: int = field(init=False)
     iteration_time_ps: float = field(init=False)
     differential_charge: np.ndarray = field(init=False, repr=False)
@@ -247,7 +261,9 @@ class ElectronSpectrum:
         )
         self.ax.set_title(self.title)
 
-    def savefig(self, fname="electron_spectrum.png", dpi=192):
+    def savefig(self, fname=None, dpi=192):
+        if fname is None:
+            fname = self.fig_fname
         self.fig.savefig(fname, dpi=dpi)
         pyplot.close(self.fig)
 
@@ -262,7 +278,7 @@ def main():
     proj = signac.get_project(search=False)
     job = random.choice(list(iter(proj)))
 
-    es = ElectronSpectrum("final_histogram.npz")
+    es = construct_electron_spectrum(job)
     es.plot()
     es.savefig()
 
