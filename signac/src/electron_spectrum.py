@@ -21,6 +21,12 @@ C_LS_ITER = C_LS()
 STYLE = defaultdict(lambda: next(C_LS_ITER))
 
 
+def get_time_series_from(job):
+    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
+    time_series = LpaDiagnostics(h5_path)
+    return time_series
+
+
 def get_iteration_time_from(time_series, iteration=None):
     if iteration is None:  # use final iteration
         index = -1
@@ -33,12 +39,6 @@ def get_iteration_time_from(time_series, iteration=None):
 
     # extract single element
     return iteration_time_in_s.item(), final_iteration
-
-
-def get_time_series_from(job):
-    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    time_series = LpaDiagnostics(h5_path)
-    return time_series
 
 
 def get_time_series_and_iteration_time_from(job, iteration=None):
@@ -83,7 +83,7 @@ def save_energy_histogram(job, iteration=None):
 
 def construct_electron_spectrum(job, iteration=None):
     fn_hist = save_energy_histogram(job, iteration)
-    fig_fname = fn_hist.rename(fn_hist.with_suffix(".png"))
+    fig_fname = fn_hist.with_suffix(".png")
 
     return ElectronSpectrum(fn_hist, fig_fname)
 
@@ -279,8 +279,10 @@ def main():
     job = random.choice(list(iter(proj)))
 
     es = construct_electron_spectrum(job)
+    print(f"Read {es.fname}")
     es.plot()
     es.savefig()
+    print(f"Wrote {es.fig_fname}")
 
 
 if __name__ == "__main__":
