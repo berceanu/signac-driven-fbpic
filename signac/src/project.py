@@ -21,11 +21,6 @@ from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot
 from openpmd_viewer.addons import LpaDiagnostics
 import unyt as u
-from peak_detection import (
-    plot_electron_energy_spectrum,
-    integrated_charge,
-    peak_position,
-)
 from util import du, ffmpeg_command, seconds_to_hms, shell_run, Timer
 from simulation_diagnostics import (
     particle_energy_histogram,
@@ -35,7 +30,7 @@ from simulation_diagnostics import (
 from density_functions import plot_density_profile, make_gaussian_dens_func
 from laser_profiles import make_flat_laser_profile, plot_laser_intensity
 from render_lwfa_script import write_lwfa_script
-from electron_spectrum import ElectronSpectrum
+from electron_spectrum import construct_electron_spectrum
 
 
 logger = logging.getLogger(__name__)
@@ -373,74 +368,25 @@ def generate_rho_movie(job):
 def generate_phasespace_movie(job):
     generate_movie(job, stem="phasespace")
 
-
 @ex
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.isfile("final_histogram.npz")
-def save_final_histogram(job):
-    """Save the histogram corresponding to the last iteration."""
-
-    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    time_series = LpaDiagnostics(h5_path)
-    last_iteration = time_series.iterations[-1]
-
-    current_time = (time_series.t[-1] * u.second).to(u.picosecond)
-    ax_title = f"t = {current_time:.2f} (iteration {last_iteration:,g})"
-    job.doc.setdefault("ax_title", ax_title)
-
-    # compute 1D histogram
-    energy_hist, bin_edges, _ = particle_energy_histogram(
-        tseries=time_series,
-        iteration=last_iteration,
-        species="electrons",
-        cutoff=np.inf,  # no cutoff
-    )
-    np.savez(job.fn("final_histogram.npz"), edges=bin_edges, counts=energy_hist)
-
-
-@ex
-@Project.operation
-@Project.pre.after(save_final_histogram)
 @Project.post.isfile("final_histogram.png")
-def plot_final_histogram(job):
-    """Plot the electron spectrum corresponding to the last iteration."""
-
-    plot_electron_energy_spectrum(
-        job.fn("final_histogram.npz"),
-        job.fn("final_histogram.png"),
-        ax_title=job.doc.ax_title,
-    )
-
-
-# TODO replace ax_title hack with propper code
-@ex
-@Project.operation
-@Project.pre.after(plot_final_histogram)
-@Project.post(lambda job: "ax_title" not in job.doc)
-def remove_ax_title(job):
-    """Remove the `ax_title` key form the job's document."""
-    del job.doc["ax_title"]
-
-
-@ex
-@Project.operation
-@Project.pre.after(save_final_histogram)
 @Project.post.true("peak_charge")
 @Project.post.true("peak_position")
-def get_peak_charge_and_position(job):
-    energy_low = 100
-    energy_high = 300
+@Project.post.never  # TODO: Remove after debugging
+def save_final_spectrum(job):
+    """
+    Save the histogram corresponding to the last iteration.
+    Plot the electron spectrum corresponding to the last iteration.
+    """
+    es = construct_electron_spectrum(job)
+    es.plot()
+    es.savefig()
 
-    int_charge = integrated_charge(
-        job.fn("final_histogram.npz"), from_energy=energy_low, to_energy=energy_high
-    )
-    peak_pos = peak_position(
-        job.fn("final_histogram.npz"), from_energy=energy_low, to_energy=energy_high
-    )
-
-    job.doc["peak_position"] = float("{:.1f}".format(peak_pos))  # MeV
-    job.doc["peak_charge"] = float("{:.1f}".format(int_charge))  # pC
+    job.doc["peak_position"] = int(es.hatch_window.peak_position)  # MeV
+    job.doc["peak_charge"] = int(es.hatch_window.total_charge)  # pC
 
 
 @ex
@@ -549,8 +495,6 @@ def store_disk_usage(job):
     usage = du(job.ws)
     job.doc.setdefault("disk_usage", usage)
 
-
-# TODO (possibly) delete the job's `diags/` folder
 # TODO (possibly) integrate `nvml.py` via `schedule` as background thread
 
 if __name__ == "__main__":
