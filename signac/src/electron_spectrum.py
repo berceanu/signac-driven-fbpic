@@ -12,10 +12,67 @@ from scipy.ndimage import gaussian_filter1d
 from cycler import cycler
 from collections import defaultdict
 from typing import Tuple
+import pathlib
+from openpmd_viewer.addons import LpaDiagnostics
+from simulation_diagnostics import particle_energy_histogram
 
 C_LS = cycler(color=["C1", "C2", "C3"]) + cycler(linestyle=["--", ":", "-."])
 C_LS_ITER = C_LS()
 STYLE = defaultdict(lambda: next(C_LS_ITER))
+
+def get_iteration_time_from(time_series, iteration=None):
+    if iteration is None:  # use final iteration
+        index = -1
+    else:
+        index = np.where(time_series.iterations == iteration)
+
+    final_iteration = time_series.iterations[-1]
+
+    iteration_time_in_s = time_series.t[index]
+    
+    # extract single element
+    return iteration_time_in_s.item(), final_iteration
+
+def get_time_series_from(job):
+    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
+    time_series = LpaDiagnostics(h5_path)
+    return time_series
+
+def foo(job, iteration=None):
+    time_series = get_time_series_from(job)
+    iteration_time_in_s, final_iteration = get_iteration_time_from(time_series, iteration)
+
+    if iteration is None:
+        iteration = final_iteration
+
+    iteration_time_ps = iteration_time_in_s * 1.0e+12
+    return time_series, iteration, iteration_time_ps
+
+
+def save_energy_histogram(job, iteration=None):
+    if iteration is None:
+        fn_out = "final_histogram.npz"
+    else:
+        fn_out = f"histogram{iteration:06d}.npz"
+    
+    time_series, iteration, iteration_time_ps = foo(job, iteration)
+
+    # no cutoff
+    hist, bins, nbins = particle_energy_histogram(
+        tseries=time_series,
+        iteration=iteration,
+        species="electrons",
+        cutoff=np.inf,  
+    )
+    np.savez(
+        fn_out,
+        edges=bins,
+        counts=hist,
+        iteration=iteration,
+        iteration_time_ps=iteration_time_ps,
+    )
+
+    
 
 
 @dataclass
