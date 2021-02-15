@@ -132,7 +132,7 @@ class ElectronSpectrum:
     xlabel: str = r"$E\, (\mathrm{MeV})$"
     xlim: Tuple[float] = (50.0, 350.0)
     hatch_window: EnergyWindow = EnergyWindow(100.0, 300.0)
-    sigma: float = 11.0  # std of Gaussian Kernel
+    sigma: float = 12.0  # std of Gaussian Kernel
     ylabel: str = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
     ylim: Tuple[float] = (0.0, 50.0)
     linewidth: float = 0.5
