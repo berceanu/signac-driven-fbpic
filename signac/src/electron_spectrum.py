@@ -2,7 +2,7 @@
 Module for analysis and visualization of electron spectra.
 All energies are expressed in MeV, and charges in pC.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, InitVar
 import numpy as np
 from matplotlib import pyplot
 from matplotlib.axes import Axes
@@ -122,6 +122,7 @@ class ElectronSpectrum:
     iteration: int = field(init=False)
     iteration_time_ps: float = field(init=False)
     z_position: float = field(init=False)
+    total_iterations: InitVar[int] = None
     c_um_per_ps: ClassVar[float] = c * 1.0e-6
     jobid: str = field(init=False)
     differential_charge: np.ndarray = field(init=False, repr=False)
@@ -129,6 +130,7 @@ class ElectronSpectrum:
     energy: np.ndarray = field(init=False, repr=False)
     fig: Figure = field(init=False, repr=False)
     ax: Axes = field(init=False, repr=False)
+    title: str = field(init=False, repr=False)
     xlabel: str = r"$E\, (\mathrm{MeV})$"
     xlim: Tuple[float] = (50.0, 350.0)
     hatch_window: EnergyWindow = EnergyWindow(100.0, 300.0)
@@ -139,7 +141,7 @@ class ElectronSpectrum:
     linecolor: str = "0.5"
     alpha: float = 0.75
 
-    def __post_init__(self):
+    def __post_init__(self, total_iterations):
         (
             self.differential_charge,
             energy,
@@ -159,6 +161,7 @@ class ElectronSpectrum:
             self.energy, self.smooth_differential_charge
         )
         self.z_position = self.iteration_time_ps * self.c_um_per_ps
+        self.title = self.generate_title(total_iterations)
 
     def loadf(self):
         f = np.load(self.fname)
@@ -170,11 +173,19 @@ class ElectronSpectrum:
             np.array_str(f["jobid"]),
         )
 
+    def generate_title(self, total_iterations):
+        title = f"t = {self.iteration_time_ps:.2f} ps, z = {self.z_position:.0f} $\mathrm{{\mu m}}$ (iteration {self.iteration})"
+
+        if total_iterations is not None:
+            percentage = self.iteration / total_iterations
+            title = title[:-1] + f", {percentage:%})"
+
+        return title
+
     def prepare_figure(self, figsize=(10, 3.5)):
         self.fig, self.ax = pyplot.subplots(figsize=figsize, facecolor="white")
 
-        title = f"t = {self.iteration_time_ps:.2f} ps, z = {self.z_position:.0f} $\mathrm{{\mu m}}$ (iteration {self.iteration})"
-        self.ax.set_title(title, fontsize=10)
+        self.ax.set_title(self.title, fontsize=10)
 
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
