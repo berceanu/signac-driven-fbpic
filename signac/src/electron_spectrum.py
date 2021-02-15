@@ -37,8 +37,15 @@ def get_iteration_time_from(time_series, iteration=None):
 
     iteration_time_in_s = time_series.t[index]
 
-    # extract single element
-    return iteration_time_in_s.item(), final_iteration
+    try:
+        time_in_s = iteration_time_in_s.item()
+    except ValueError:
+        print(
+            f"Iteration {iteration:d} not found, available iterations: {time_series.iterations.tolist()}"
+        )
+        raise
+
+    return time_in_s, final_iteration
 
 
 def get_time_series_and_iteration_time_from(job, iteration=None):
@@ -273,15 +280,17 @@ def main():
     import random
     import signac
 
-    random.seed(42)
+    random.seed(24)
 
     proj = signac.get_project(search=False)
     job = random.choice(list(iter(proj)))
+    print(f"Job {job.ws}")
 
     es = construct_electron_spectrum(job)
-    print(f"Read {es.fname}")
     es.plot()
     es.savefig()
+
+    print(f"Read {es.fname}")
     print(f"Wrote {es.fig_fname}")
 
 
