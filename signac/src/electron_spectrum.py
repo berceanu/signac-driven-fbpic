@@ -297,6 +297,7 @@ class ElectronSpectrum:
             mode="expand",
             loc="lower left",
             frameon=False,
+            handlelength=1,
         )
 
     def plot(self):
