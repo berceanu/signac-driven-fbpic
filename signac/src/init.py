@@ -14,7 +14,7 @@ from util import nozzle_center_offset
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
-NUMBER_OF_H5 = 50
+NUMBER_OF_H5 = 50  # FIXME chose such that percentage is 100%
 SQRT_FACTOR = math.sqrt(2 * math.log(2))
 
 def get_dz(zmax, zmin, Nz):
@@ -30,6 +30,7 @@ def main():
 
     for _ in range(1):
         sp = dict(
+            # TODO: move to job document
             nranks=1,  # number of MPI ranks (default 16); it's also the number of GPUs used per job
             # The simulation box
             z_rezolution_factor=32,  # Δz = lambda0 / z_rezolution_factor (default 24)
