@@ -38,7 +38,6 @@ def get_iteration_time_from(time_series, iteration=None):
         raise
 
     return time_in_s, final_iteration
-    # TODO add z position, see project.py L460
 
 
 def get_time_series_and_iteration_time_from(job, iteration=None):
@@ -86,7 +85,7 @@ def construct_electron_spectrum(job, iteration=None):
     fn_hist = save_energy_histogram(job, iteration)
     fig_fname = fn_hist.with_suffix(".png")
 
-    return ElectronSpectrum(fn_hist, fig_fname, job.sp.N_step)
+    return ElectronSpectrum(fn_hist, fig_fname, job.sp.N_step - 1)
 
 
 @dataclass

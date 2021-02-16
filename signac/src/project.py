@@ -81,6 +81,7 @@ class Project(FlowProject):
 
 ex = Project.make_group(name="ex")
 
+# TODO use job_util.py
 
 @Project.label
 def progress(job):
@@ -111,6 +112,7 @@ def fbpic_ran(job):
         did_it_run = False
         return did_it_run
 
+    # FIXME replace LpaDiagnostics with a filesystem based approach which simply checks the files in /diags/hdf5
     time_series = LpaDiagnostics(h5_path)
     iterations: np.ndarray = time_series.iterations
 
@@ -235,6 +237,7 @@ def run_fbpic(job):
             "r": job.sp.r_boundary_conditions,
         },
         n_order=job.sp.n_order,
+        current_correction=job.sp.current_correction,
         use_cuda=True,
         verbose_level=2,
     )

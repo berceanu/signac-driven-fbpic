@@ -113,7 +113,7 @@ def main():
         ) / u.clight.to_value("m/s")
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
         sp["N_step"] = round_to_nearest(sp["N_step"], base=NUMBER_OF_H5) + 1
-        sp["diag_period"] = (sp["N_step"] - 1) / NUMBER_OF_H5
+        sp["diag_period"] = (sp["N_step"] - 1) // NUMBER_OF_H5
         project.open_job(sp).init()
 
     for job in project:

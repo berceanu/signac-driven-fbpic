@@ -2,15 +2,26 @@
 from openpmd_viewer.addons import LpaDiagnostics
 import pathlib
 import math
+import numpy as np
+from util import round_to_nearest
 
 def get_time_series_from(job):
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     time_series = LpaDiagnostics(h5_path)
     return time_series
 
+def num_saved_iterations(N_step, diag_period):
+    return math.ceil((N_step - 0) / diag_period)
 
 def number_of_saved_iterations(job):
-    return math.ceil((job.sp.N_step - 0) / job.sp.diag_period)
+    return num_saved_iterations(job.sp.N_step, job.sp.diag_period)
+
+def saved_iterations(N_step, diag_period):
+    return np.arange(0, N_step, diag_period, dtype=int)
+
+def estimate_saved_iterations(job):
+    return saved_iterations(job.sp.N_step, job.sp.diag_period)
+
 
 
 def main():
@@ -25,8 +36,7 @@ def main():
     print(job)    
 
     ts = get_time_series_from(job)
-    print(ts.iterations.size)
-    print(number_of_saved_iterations(job))
+
 
 if __name__ == '__main__':
     main()

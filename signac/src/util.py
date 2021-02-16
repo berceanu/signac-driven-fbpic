@@ -7,6 +7,8 @@ import datetime
 
 logger = logging.getLogger(__name__)
 
+def round_to_nearest(x, base=50):
+    return base * round(x/base)
 
 def du(path):
     """Disk usage in human readable format (e.g. '2,1GB')"""
