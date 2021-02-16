@@ -99,7 +99,9 @@ def progress(job):
     # FIXME what if list is empty?
 
     return f"{len(h5_files)}/{number_of_iterations}"
+
 # TODO estimate completion time based on hdf5 timestamps
+# add as label and use status --detailed to see it
 
 def fbpic_ran(job):
     """
@@ -364,7 +366,7 @@ def generate_movie(job, stem):
 @Project.post.isfile("rho.mp4")
 def generate_rho_movie(job):
     generate_movie(job, stem="rho")
-
+# TODO make smaller box size and decrease number of FPS
 
 @ex
 @Project.operation
