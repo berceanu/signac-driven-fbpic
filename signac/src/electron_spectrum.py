@@ -2,20 +2,22 @@
 Module for analysis and visualization of electron spectra.
 All energies are expressed in MeV, and charges in pC.
 """
-from dataclasses import dataclass, field, InitVar
+import pathlib
+from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import ClassVar, Tuple
+
 import numpy as np
+from cycler import cycler
 from matplotlib import pyplot
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.ticker import AutoMinorLocator, MultipleLocator
-from scipy.ndimage import gaussian_filter1d
-from cycler import cycler
-from collections import defaultdict
-from typing import Tuple, ClassVar
-import pathlib
-from simulation_diagnostics import particle_energy_histogram
 from scipy.constants import c
+from scipy.ndimage import gaussian_filter1d
+
 from job_util import get_time_series_from
+from simulation_diagnostics import particle_energy_histogram
 
 
 def get_iteration_time_from(time_series, iteration=None):
@@ -76,6 +78,7 @@ def save_energy_histogram(job, iteration=None):
         iteration=iteration,
         iteration_time_ps=iteration_time_ps,
         jobid=job.id,
+        total_iterations=job.sp.N_step - 1,
     )
     return fn_hist
 
@@ -84,7 +87,7 @@ def construct_electron_spectrum(job, iteration=None):
     fn_hist = save_energy_histogram(job, iteration)
     fig_fname = fn_hist.with_suffix(".png")
 
-    return ElectronSpectrum(fn_hist, fig_fname, job.sp.N_step - 1)
+    return ElectronSpectrum(fn_hist, fig_fname)
 
 
 @dataclass
@@ -115,7 +118,7 @@ class ElectronSpectrum:
     iteration: int = field(init=False)
     iteration_time_ps: float = field(init=False)
     z_position: float = field(init=False)
-    total_iterations: InitVar[int] = None
+    total_iterations: int = field(init=False)
     c_um_per_ps: ClassVar[float] = c * 1.0e-6
     jobid: str = field(init=False)
     differential_charge: np.ndarray = field(init=False, repr=False)
@@ -134,13 +137,14 @@ class ElectronSpectrum:
     linecolor: str = "0.5"
     alpha: float = 0.75
 
-    def __post_init__(self, total_iterations):
+    def __post_init__(self):
         (
             self.differential_charge,
             energy,
             self.iteration,
             self.iteration_time_ps,
             self.jobid,
+            self.total_iterations,
         ) = self.loadf()
         self.hatch_window.mask = self.hatch_window.create_boolean_mask(energy[:-1])
         self.hatch_window.total_charge = self.hatch_window.integrate_charge(
@@ -154,7 +158,7 @@ class ElectronSpectrum:
             self.energy, self.smooth_differential_charge
         )
         self.z_position = self.iteration_time_ps * self.c_um_per_ps
-        self.title = self.generate_title(total_iterations)
+        self.title = self.generate_title()
 
     def loadf(self):
         f = np.load(self.fname)
@@ -164,15 +168,15 @@ class ElectronSpectrum:
             f["iteration"],
             f["iteration_time_ps"],
             np.array_str(f["jobid"]),
+            f["total_iterations"],
         )
 
-    def generate_title(self, total_iterations):
-        title = f"t = {self.iteration_time_ps:.2f} ps, z = {self.z_position:.0f} $\mathrm{{\mu m}}$ (iteration {self.iteration})"
-
-        if total_iterations is not None:
-            percentage = self.iteration / total_iterations
-            title = title[:-1] + f", {percentage:.0%})"
-
+    def generate_title(self):
+        percentage = self.iteration / self.total_iterations
+        title = (
+            f"t = {self.iteration_time_ps:.2f} ps, z = {self.z_position:.0f} $\mathrm{{\mu m}}$"
+            f"(iteration {self.iteration}, {percentage:.0%})"
+        )
         return title
 
     def prepare_figure(self, figsize=(10, 3.5)):
@@ -319,6 +323,7 @@ class ElectronSpectrum:
 def main():
     """Main entry point."""
     import random
+
     import signac
 
     random.seed(24)
