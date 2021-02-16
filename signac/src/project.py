@@ -99,7 +99,7 @@ def progress(job):
     # FIXME what if list is empty?
 
     return f"{len(h5_files)}/{number_of_iterations}"
-
+# TODO estimate completion time based on hdf5 timestamps
 
 def fbpic_ran(job):
     """

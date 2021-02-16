@@ -35,8 +35,9 @@ def main():
             # TODO: move to job document
             nranks=4,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
             # The simulation box
-            lambda0=0.815e-6,  # Laser wavelength (default 0.815e-6)
-            z_rezolution_factor=32,  # Δz = lambda0 / z_rezolution_factor (default 41) # TODO try 41
+            lambda0=0.8e-6,  # Laser wavelength (default 0.815e-6)
+            z_rezolution_factor=32,  # Δz = lambda0 / z_rezolution_factor (default 40)
+            # TODO try 40 with n_order=8
             dr_over_dz=5,  # Δr = dr_over_dz * Δz (default 5)
             zmin=-60.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
