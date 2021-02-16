@@ -14,7 +14,7 @@ from util import nozzle_center_offset, round_to_nearest
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
-NUMBER_OF_H5 = 50  # FIXME chose such that percentage is 100%
+NUMBER_OF_H5 = 50
 SQRT_FACTOR = math.sqrt(2 * math.log(2))
 
 

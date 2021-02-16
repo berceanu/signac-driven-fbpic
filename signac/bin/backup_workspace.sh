@@ -11,7 +11,6 @@ echo "${BACKUP_DIR}/${BACKUP_FILE}-${DATE}.tar"
 
 tar -cpvf ${BACKUP_DIR}/${BACKUP_FILE}-${DATE}.tar ${SOURCE} > /dev/null 2>&1 &
 
-# TODO copy backup to HDD partition
-
 # Usage ./backup_workspace.sh (runs in background)
 # To extract, tar xvf ...
+
