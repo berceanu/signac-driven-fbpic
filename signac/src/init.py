@@ -10,7 +10,7 @@ from itertools import product
 import unyt as u
 from prepic import Plasma, lwfa
 import signac
-from util import nozzle_center_offset
+from util import nozzle_center_offset, round_to_nearest
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
@@ -31,16 +31,17 @@ def main():
     for _ in range(1):
         sp = dict(
             # TODO: move to job document
-            nranks=2,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
+            nranks=4,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
             # The simulation box
-            z_rezolution_factor=24,  # Δz = lambda0 / z_rezolution_factor (default 24)
-            dr_over_dz=10,  # Δr = dr_over_dz * Δz (default 10)
-            zmin=-100.0e-6,  # Left end of the simulation box (meters)
+            lambda0=0.815e-6,  # Laser wavelength (default 0.815e-6)
+            z_rezolution_factor=32,  # Δz = lambda0 / z_rezolution_factor (default 41) # TODO try 41
+            dr_over_dz=5,  # Δr = dr_over_dz * Δz (default 5)
+            zmin=-60.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             rmax=70.0e-6,  # Length of the box along r (meters) (default 70.0e-6)
             r_boundary_conditions="reflective",  #  'reflective' (default) / 'open' more expensive
-            n_order=8,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 8)
-            Nm=3,  # Number of modes used (default 3)
+            n_order=32,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 8)
+            Nm=5,  # Number of modes used (default 3)
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
@@ -55,7 +56,6 @@ def main():
             / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
             z0=-10.0e-6,  # Laser centroid
             zfoc=nozzle_center_offset(1400e-6),  # Focal position
-            lambda0=0.815e-6,  # Laser wavelength (default 0.815e-6)
             profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
             # The density profile
             flat_top_dist=1000.0e-6,  # plasma flat top distance
@@ -63,6 +63,7 @@ def main():
             center_left=1000.0e-6,
             sigma_left=500.0e-6,
             power=2.0,
+            current_correction="curl-free",  # "curl-free" (default, faster) or "cross-deposition" (more local)
             # do not change below this line ##############
             Nz=None,  # Number of gridpoints along z
             Nr=None,  # Number of gridpoints along r
@@ -111,8 +112,8 @@ def main():
             sp["L_interact"] + (sp["zmax"] - sp["zmin"])
         ) / u.clight.to_value("m/s")
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
-        sp["diag_period"] = math.ceil(sp["N_step"] / NUMBER_OF_H5)
-
+        sp["N_step"] = round_to_nearest(sp["N_step"], base=NUMBER_OF_H5) + 1
+        sp["diag_period"] = (sp["N_step"] - 1) / NUMBER_OF_H5
         project.open_job(sp).init()
 
     for job in project:
