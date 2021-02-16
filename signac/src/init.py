@@ -17,9 +17,11 @@ from util import nozzle_center_offset, round_to_nearest
 NUMBER_OF_H5 = 50  # FIXME chose such that percentage is 100%
 SQRT_FACTOR = math.sqrt(2 * math.log(2))
 
+
 def get_dz(zmax, zmin, Nz):
     """Longitudinal resolution (meters)."""
     return (zmax - zmin) / Nz
+
 
 def main():
     """Main function, for defining the parameter(s) to be varied in the simulations."""

@@ -42,8 +42,10 @@ def job(gpu_count, out_file):
                     f"{time_stamp},{uuid},{p.pid},{mem_MiB:.0f},{pow_draw_watt:.0f},{gpu_util_percentage},{throtttle_state['sw_power_cap']},{throtttle_state['hw_slowdown']}\n"
                 )
 
+
 # TODO (possibly) spawn a separate background process and run together with signac project
 # see https://schedule.readthedocs.io/en/stable/background-execution.html
+
 
 def main():
     """Main entry point."""

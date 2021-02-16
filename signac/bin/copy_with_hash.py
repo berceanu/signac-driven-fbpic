@@ -5,6 +5,7 @@ import unyt as u
 project = signac.get_project()
 project.write_statepoints()
 
+
 def copy_with_hash(path_to_fname, dst_dir, signac_job):
     fname = path_to_fname.stem
     ext = path_to_fname.suffix

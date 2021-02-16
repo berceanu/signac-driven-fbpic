@@ -5,23 +5,27 @@ import math
 import numpy as np
 from util import round_to_nearest
 
+
 def get_time_series_from(job):
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     time_series = LpaDiagnostics(h5_path)
     return time_series
 
+
 def num_saved_iterations(N_step, diag_period):
     return math.ceil((N_step - 0) / diag_period)
+
 
 def number_of_saved_iterations(job):
     return num_saved_iterations(job.sp.N_step, job.sp.diag_period)
 
+
 def saved_iterations(N_step, diag_period):
     return np.arange(0, N_step, diag_period, dtype=int)
 
+
 def estimate_saved_iterations(job):
     return saved_iterations(job.sp.N_step, job.sp.diag_period)
-
 
 
 def main():
@@ -33,10 +37,10 @@ def main():
 
     proj = signac.get_project(search=False)
     job = random.choice(list(iter(proj)))
-    print(job)    
+    print(job)
 
     ts = get_time_series_from(job)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

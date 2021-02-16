@@ -83,6 +83,7 @@ ex = Project.make_group(name="ex")
 
 # TODO use job_util.py
 
+
 @Project.label
 def progress(job):
     """Show progress of fbpic simulation, based on completed/total .h5 files."""
@@ -95,6 +96,7 @@ def progress(job):
         return "0/%s" % number_of_iterations
 
     h5_files = list(h5_path.glob("*.h5"))
+    # FIXME what if list is empty?
 
     return f"{len(h5_files)}/{number_of_iterations}"
 

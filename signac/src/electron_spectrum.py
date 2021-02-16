@@ -18,7 +18,6 @@ from scipy.constants import c
 from job_util import get_time_series_from
 
 
-
 def get_iteration_time_from(time_series, iteration=None):
     if iteration is None:  # use final iteration
         index = -1
