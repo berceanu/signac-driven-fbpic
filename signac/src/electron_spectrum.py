@@ -23,6 +23,7 @@ from simulation_diagnostics import particle_energy_histogram
 import mpl_util
 import util
 
+
 def get_iteration_time_from(time_series, iteration=None):
     if iteration is None:  # use final iteration
         index = -1
@@ -92,13 +93,22 @@ def construct_electron_spectrum(job, iteration=None):
 
     return ElectronSpectrum(fn_hist, fig_fname)
 
+
 # TODO: plot multiple spectra of the same graph
 # 1. construct spectra from jobs / npz files
 
-def plot_multiple_spectra(jobs, iteration=None):
+
+def multiple_jobs_single_iteration(jobs, iteration=None):
     spectra = list()
     for job in jobs:
-        pass
+        spectrum = construct_electron_spectrum(job, iteration)
+        spectra.append(spectrum)
+
+    return MultipleSpectra(spectra=spectra, fig_fname="out.png")
+
+
+def multiple_iterations_single_job(job, iterations):
+    pass
 
 
 @dataclass
@@ -121,7 +131,7 @@ class EnergyWindow:
 
 
 @dataclass
-class ElectronSpectrum:
+class ElectronSpectrum(collections.abc.Hashable):
     """Keeps track of the spectrum."""
 
     fname: str
@@ -146,6 +156,7 @@ class ElectronSpectrum:
     ylim: Tuple[float] = (0.0, 50.0)
     linewidth: float = 0.5
     linecolor: str = "0.5"
+    linestyle: str = "solid"
     alpha: float = 0.75
 
     def __post_init__(self):
@@ -171,15 +182,20 @@ class ElectronSpectrum:
         self.z_position = self.iteration_time_ps * self.c_um_per_ps
         self.title = self.generate_title()
 
+    def __hash__(self):
+        return hash(
+            (self.fname, self.iteration, self.total_iterations, self.jobid, self.title)
+        )
+
     def loadf(self):
         f = np.load(self.fname)
         return (
             f["counts"],
             f["edges"],
-            f["iteration"],
-            f["iteration_time_ps"],
+            f["iteration"].item(),
+            f["iteration_time_ps"].item(),
             np.array_str(f["jobid"]),
-            f["total_iterations"],
+            f["total_iterations"].item(),
         )
 
     def generate_title(self):
@@ -201,21 +217,32 @@ class ElectronSpectrum:
         self.ax.set_xlim(*self.xlim)
         self.ax.set_ylim(*self.ylim)
 
-    def add_histogram(self, ax):
+    def add_histogram(
+        self, ax=None, linecolor=None, linestyle=None, linewidth=None, label=None
+    ):
         if ax is None:
             ax = self.ax
+        if linecolor is None:
+            linecolor = self.linecolor
+        if linestyle is None:
+            linestyle = self.linestyle
+        if linewidth is None:
+            linewidth = self.linewidth
+
         ax.hist(
             x=self.energy,
             bins=self.energy,
             weights=self.differential_charge,
             histtype="step",
-            color=self.linecolor,
-            linewidth=self.linewidth,
+            color=linecolor,
+            linewidth=linewidth,
+            linestyle=linestyle,
+            label=label,
         )
 
     def gaussian_filter(self):
         combined_cycler = cycler(color=["C1", "C2", "C3"]) + cycler(
-            linestyle=["--", ":", "-."]
+            linestyle=["dashed", "dotted", "dashdot"]
         )
         combined_cycler_iterator = combined_cycler()
         cycler_dict = defaultdict(lambda: next(combined_cycler_iterator))
@@ -240,7 +267,12 @@ class ElectronSpectrum:
         return add_gaussian_filter
 
     def add_ticks(self, major_x_every=25.0, major_y_every=10.0):
-        mpl_util.add_ticks(self.ax, major_x_every=major_x_every, major_y_every=major_y_every, alpha=self.alpha)
+        mpl_util.add_ticks(
+            self.ax,
+            major_x_every=major_x_every,
+            major_y_every=major_y_every,
+            alpha=self.alpha,
+        )
 
     def add_grid(self):
         mpl_util.add_grid(self.ax, linewidth=self.linewidth, linecolor=self.linecolor)
@@ -307,6 +339,7 @@ class ElectronSpectrum:
         self.fig.savefig(fname, dpi=dpi)
         pyplot.close(self.fig)
 
+
 # two possible cases: multiple iterations of same job
 # vs same iteration in multiple jobs
 # approach: base class + inheritance
@@ -316,7 +349,7 @@ class ElectronSpectrum:
 class MultipleSpectra(collections.abc.Sequence):
     """Base class for list of ElectronSpectrum objects."""
 
-    spectra = List[ElectronSpectrum]
+    spectra: List[ElectronSpectrum]
     fig_fname: str
     energy: np.ndarray = field(init=False, repr=False)
 
@@ -333,9 +366,11 @@ class MultipleSpectra(collections.abc.Sequence):
     alpha: float = 0.75
 
     def __post_init__(self):
-        assert util.all_equal((spectrum.energy for spectrum in self)), "Spectra have different energy ranges."
+        assert util.all_equal(
+            (spectrum.energy for spectrum in self)
+        ), "Spectra have different energy ranges."
         self.energy = self[0].energy
-    
+
     def __getitem__(self, key):
         return self.spectra.__getitem__(key)
 
@@ -351,22 +386,43 @@ class MultipleSpectra(collections.abc.Sequence):
         self.ax.set_ylabel(self.ylabel)
         self.ax.set_ylim(*self.ylim)
 
+    def add_histograms(self):
+        combined_cycler = cycler(color=["C0", "C1", "C2", "C3"]) + cycler(
+            linestyle=["solid", "dashed", "dotted", "dashdot"]
+        )
+        combined_cycler_iterator = combined_cycler()
+        cycler_dict = defaultdict(lambda: next(combined_cycler_iterator))
+
+        for spectrum in self:
+            label = str(hash(spectrum))
+            spectrum.add_histogram(
+                self.ax,
+                linecolor=cycler_dict[label]["color"],
+                linestyle=cycler_dict[label]["linestyle"],
+                linewidth=1.0,
+                label=label,
+            )
+        self.ax.legend(
+            frameon=False,
+            handlelength=1,
+        )
+
     def add_grid(self):
         mpl_util.add_grid(self.ax, linewidth=self.linewidth, linecolor=self.linecolor)
 
     def add_ticks(self, major_x_every=25.0, major_y_every=10.0):
-        mpl_util.add_ticks(self.ax, major_x_every=major_x_every, major_y_every=major_y_every, alpha=self.alpha)
-
+        mpl_util.add_ticks(
+            self.ax,
+            major_x_every=major_x_every,
+            major_y_every=major_y_every,
+            alpha=self.alpha,
+        )
 
     def plot(self):
         self.prepare_figure()
-
-        for spectrum in self:
-            spectrum.add_histogram(self.ax)
-
+        self.add_histograms()
         self.add_grid()
         self.add_ticks()
-
 
     def savefig(self, fname=None, dpi=192):
         if fname is None:
@@ -384,16 +440,17 @@ def main():
     random.seed(24)
 
     proj = signac.get_project(search=False)
-    job = random.choice(list(iter(proj)))
 
-    es = construct_electron_spectrum(job)
-    es.plot()
-    es.savefig()
+    # job = random.choice(list(iter(proj)))
+    # es = construct_electron_spectrum(job)
+    # es.plot()
+    # es.savefig()
+    # print(f"Read {es.fname}")
+    # print(f"Wrote {es.fig_fname}")
 
-    print(f"Read {es.fname}")
-    print(f"Wrote {es.fig_fname}")
-
-
+    spectra = multiple_jobs_single_iteration(proj.find_jobs())
+    spectra.plot()
+    spectra.savefig()
 
 
 if __name__ == "__main__":
