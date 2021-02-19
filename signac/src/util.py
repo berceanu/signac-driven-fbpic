@@ -7,6 +7,14 @@ import datetime
 
 logger = logging.getLogger(__name__)
 
+def all_equal(iterator):
+    """Checks all np.ndarrays in iterator are equal."""
+    try:
+        iterator = iter(iterator)
+        first = next(iterator)
+        return all(np.array_equal(first, rest) for rest in iterator)
+    except StopIteration:
+        return True
 
 def round_to_nearest(x, base=50):
     return base * round(x / base)
