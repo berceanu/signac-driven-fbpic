@@ -18,10 +18,9 @@ from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 from scipy.constants import c
 from scipy.ndimage import gaussian_filter1d
 
-from job_util import get_time_series_from
 from simulation_diagnostics import particle_energy_histogram
 import mpl_util
-import util
+import util, job_util
 
 
 def get_iteration_time_from(time_series, iteration=None):
@@ -46,7 +45,7 @@ def get_iteration_time_from(time_series, iteration=None):
 
 
 def get_time_series_and_iteration_time_from(job, iteration=None):
-    time_series = get_time_series_from(job)
+    time_series = job_util.get_time_series_from(job)
     iteration_time_in_s, final_iteration = get_iteration_time_from(
         time_series, iteration
     )
@@ -108,7 +107,13 @@ def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
 
 
 def multiple_iterations_single_job(job, iterations):
-    pass
+    spectra = list()
+    for iteration in sorted(iterations):
+        spectrum = construct_electron_spectrum(job, iteration)
+        spectrum.label = f"iteration = {iteration}"
+        spectra.append(spectrum)
+
+    return SingleJobMultipleSpectra(spectra=spectra)
 
 
 @dataclass
@@ -429,7 +434,28 @@ class MultipleSpectra(collections.abc.Sequence):
 
 @dataclass
 class SingleJobMultipleSpectra(MultipleSpectra):
-    pass
+    jobid: str = field(init=False)
+    title: str = field(init=False, repr=False)
+
+    def __post_init__(self):
+        assert util.all_equal(
+            (spectrum.jobid for spectrum in self)
+        ), "Spectra belong to different jobs."
+        self.jobid = self[0].jobid
+
+        self.title = self.jobid
+        self.fig_fname = self.create_fig_fname()
+
+    def create_fig_fname(self):
+        fig_fname = f"{self.jobid:.6}_"
+
+        its = sorted(f"{spectrum.iteration}" for spectrum in self)
+        fig_fname += "_".join(its) + ".png"
+        return fig_fname
+
+    def prepare_figure(self, figsize=(10, 3.5)):
+        super().prepare_figure(figsize=figsize)
+        self.ax.set_title(self.title, fontsize=10)
 
 
 @dataclass
@@ -443,16 +469,18 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
             (spectrum.iteration for spectrum in self)
         ), "Spectra have different iteration numbers."
         self.iteration = self[0].iteration
-        self.fig_fname = self.create_fig_fname()
         self.title = f"iteration {self.iteration}"
         self.create_labels()
+        self.fig_fname = self.create_fig_fname()
 
     def create_labels(self):
         for spectrum in self:
             if not self.label:
                 spectrum.label = spectrum.jobid
             else:
-                spectrum.label = f"{self.label} = {spectrum.label} — {spectrum.jobid:.8}"
+                spectrum.label = (
+                    f"{self.label} = {spectrum.label} — {spectrum.jobid:.8}"
+                )
 
     def create_fig_fname(self):
         ids = sorted(f"{spectrum.jobid:.6}" for spectrum in self)
@@ -467,14 +495,13 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
 def main():
     """Main entry point."""
     import random
-
     import signac
 
     random.seed(24)
 
     proj = signac.get_project(search=False)
 
-    # job = random.choice(list(iter(proj)))
+    job = random.choice(list(iter(proj)))
     # es = construct_electron_spectrum(job)
     # es.plot()
     # es.savefig()
@@ -484,6 +511,14 @@ def main():
     spectra = multiple_jobs_single_iteration(proj.find_jobs(), label="Nm")
     spectra.plot()
     spectra.savefig()
+
+    time_series = job_util.get_time_series_from(job)
+    print("Available iterations:")
+    print(time_series.iterations)
+
+    per_job_spectra = multiple_iterations_single_job(job, (52844, 79266, 105688))
+    per_job_spectra.plot()
+    per_job_spectra.savefig()
 
 
 if __name__ == "__main__":
