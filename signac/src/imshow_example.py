@@ -28,10 +28,10 @@ def main():
         img,
         cax=cax,
     )
-    cbar.set_label(r"data ($\mathrm{\#}$)")
+    cbar.set_label(r"E ($\mathrm{MeV}$)")
 
-    ax.set_xlabel(r"$x$ ($\mathrm{\#}$)")
-    ax.set_ylabel(r"$y$ ($\mathrm{\#}$)")
+    ax.set_xlabel(r"$n_e$ ($10^{18}\,\mathrm{electrons\,cm^{-3}}$)")
+    ax.set_ylabel(r"$a_0$")
 
     fig.savefig("imshow.png")
     pyplot.close(fig)
