@@ -449,7 +449,8 @@ class SingleJobMultipleSpectra(MultipleSpectra):
     def create_fig_fname(self):
         fig_fname = f"{self.jobid:.6}_"
 
-        its = sorted(f"{spectrum.iteration}" for spectrum in self)
+        its = sorted(spectrum.iteration for spectrum in self)
+        its = (str(it) for it in its)
         fig_fname += "_".join(its) + ".png"
         return fig_fname
 
