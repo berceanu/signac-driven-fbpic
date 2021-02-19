@@ -215,10 +215,10 @@ class ElectronSpectrum(collections.abc.Hashable):
         )
         return title
 
-    def prepare_figure(self, figsize=(10, 3.5)):
-        self.fig, self.ax = pyplot.subplots(figsize=figsize, facecolor="white")
+    def prepare_figure(self):
+        self.fig, self.ax = pyplot.subplots(facecolor="white")
 
-        self.ax.set_title(self.title, fontsize=10)
+        self.ax.set_title(self.title)
 
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
@@ -316,7 +316,6 @@ class ElectronSpectrum(collections.abc.Hashable):
             color=self.linecolor,
             xytext=(10, 0),
             textcoords="offset points",
-            size="small",
             ha="right",
             va="baseline",
         )
@@ -382,8 +381,8 @@ class MultipleSpectra(collections.abc.Sequence):
     def __len__(self):
         return self.spectra.__len__()
 
-    def prepare_figure(self, figsize=(10, 3.5)):
-        self.fig, self.ax = pyplot.subplots(figsize=figsize, facecolor="white")
+    def prepare_figure(self):
+        self.fig, self.ax = pyplot.subplots(facecolor="white")
 
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_xlim(*self.xlim)
@@ -459,9 +458,9 @@ class SingleJobMultipleSpectra(MultipleSpectra):
         fig_fname += "_".join(its) + ".pdf"
         return fig_fname
 
-    def prepare_figure(self, figsize=(10, 3.5)):
-        super().prepare_figure(figsize=figsize)
-        self.ax.set_title(self.title, fontsize=10)
+    def prepare_figure(self):
+        super().prepare_figure()
+        self.ax.set_title(self.title)
 
 
 @dataclass
@@ -493,9 +492,9 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
         fig_fname = "_".join(ids) + ".pdf"
         return fig_fname
 
-    def prepare_figure(self, figsize=(10, 3.5)):
-        super().prepare_figure(figsize=figsize)
-        self.ax.set_title(self.title, fontsize=10)
+    def prepare_figure(self):
+        super().prepare_figure()
+        self.ax.set_title(self.title)
 
 
 def main():
