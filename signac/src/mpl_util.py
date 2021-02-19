@@ -65,6 +65,7 @@ def mpl_publication_style():
     matplotlib.rcParams["figure.titlesize"] = 6
     matplotlib.rcParams["axes.titlesize"] = 6
 
+    # Margins / spacing
     matplotlib.rcParams["figure.subplot.bottom"] = 0.15
 
 
