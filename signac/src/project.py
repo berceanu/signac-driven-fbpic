@@ -11,26 +11,28 @@ Note: All the lines marked with the CHANGEME comment contain customizable parame
 """
 import logging
 import math
-import sys
 import pathlib
+import sys
 
 import numpy as np
 import sliceplots
+import unyt as u
 from flow import FlowProject
 from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot
 from openpmd_viewer.addons import LpaDiagnostics
-import unyt as u
-from util import du, ffmpeg_command, seconds_to_hms, shell_run, Timer
-from simulation_diagnostics import (
-    particle_energy_histogram,
-    laser_density_plot,
-    phase_space_plot,
-)
-from density_functions import plot_density_profile, make_gaussian_dens_func
+
+from density_functions import make_gaussian_dens_func, plot_density_profile
+from electron_spectrum import construct_electron_spectrum
 from laser_profiles import make_flat_laser_profile, plot_laser_intensity
 from render_lwfa_script import write_lwfa_script
-from electron_spectrum import construct_electron_spectrum
+from simulation_diagnostics import (
+    laser_density_plot,
+    particle_energy_histogram,
+    phase_space_plot,
+)
+from util import Timer, du, ffmpeg_command, seconds_to_hms, shell_run
+import job_util
 
 
 logger = logging.getLogger(__name__)
@@ -81,27 +83,19 @@ class Project(FlowProject):
 
 ex = Project.make_group(name="ex")
 
-# TODO use job_util.py
-
 
 @Project.label
 def progress(job):
     """Show progress of fbpic simulation, based on completed/total .h5 files."""
     # get last iteration based on input parameters
-    number_of_iterations = math.ceil((job.sp.N_step - 0) / job.sp.diag_period)
+    number_of_iterations = job_util.number_of_saved_iterations(job)
+    h5_files = job_util.get_diags_fnames(job)
+    return f"{len(list(h5_files))}/{number_of_iterations}"
 
-    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    if not h5_path.is_dir():
-        # {job_dir}/diags/hdf5 not present, ``fbpic`` didn't run
-        return "0/%s" % number_of_iterations
-
-    h5_files = list(h5_path.glob("*.h5"))
-    # FIXME what if list is empty?
-
-    return f"{len(h5_files)}/{number_of_iterations}"
 
 # TODO estimate completion time based on hdf5 timestamps
 # add as label and use status --detailed to see it
+
 
 def fbpic_ran(job):
     """
@@ -110,21 +104,13 @@ def fbpic_ran(job):
     :param job: the job instance is a handle to the data of a unique statepoint
     :return: True if all output files are in {job_dir}/diags/hdf5, False otherwise
     """
-    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    if not h5_path.is_dir():
-        # {job_dir}/diags/hdf5 not present, ``fbpic`` didn't run
-        did_it_run = False
-        return did_it_run
-
-    # FIXME replace LpaDiagnostics with a filesystem based approach which simply checks the files in /diags/hdf5
-    time_series = LpaDiagnostics(h5_path)
-    iterations: np.ndarray = time_series.iterations
+    iterations = job_util.get_diags_fnames(job)
 
     # estimate iteration array based on input parameters
-    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=int)
+    estimated_iterations = job_util.estimate_diags_fnames(job)
 
     # check if iterations array corresponds to input params
-    did_it_run = np.array_equal(estimated_iterations, iterations)
+    did_it_run = set(estimated_iterations) == set(iterations)
 
     return did_it_run
 
@@ -140,7 +126,7 @@ def are_pngs(job, stem):
     files = [fn.name for fn in p.glob("*.png")]
 
     # estimate iteration array based on input parameters
-    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=int)
+    iterations = job_util.estimate_saved_iterations(job)
 
     pngs = (f"{stem}{it:06d}.png" for it in iterations)
 
@@ -214,12 +200,12 @@ def run_fbpic(job):
 
     :param job: the job instance is a handle to the data of a unique statepoint
     """
-    from fbpic.main import Simulation
     from fbpic.lpa_utils.laser import add_laser_pulse
+    from fbpic.main import Simulation
     from fbpic.openpmd_diag import (
         FieldDiagnostic,
-        ParticleDiagnostic,
         ParticleChargeDensityDiagnostic,
+        ParticleDiagnostic,
     )
 
     # redirect stdout to "stdout.txt"
@@ -316,6 +302,7 @@ def run_fbpic(job):
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
 @Project.post(are_phasespace_pngs)
+@Project.post.never  # TODO remove
 def save_pngs(job):
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
@@ -338,6 +325,7 @@ def save_pngs(job):
             save_path=rho_path,
             n_c=job.sp.n_c,
             E0=job.sp.E0,
+            ylim=(-15.0, 15.0),  # um
         )
         phase_space_plot(
             iteration=ts_it,
@@ -356,6 +344,7 @@ def generate_movie(job, stem):
     command = ffmpeg_command(
         input_files=pathlib.Path(job.ws) / f"{stem}s" / f"{stem}*.png",
         output_file=job.fn(f"{stem}.mp4"),
+        frame_rate=2.0,
     )
     shell_run(command, shell=True)
 
@@ -364,14 +353,19 @@ def generate_movie(job, stem):
 @Project.operation
 @Project.pre.after(save_pngs)
 @Project.post.isfile("rho.mp4")
+@Project.post.never  # TODO remove
 def generate_rho_movie(job):
     generate_movie(job, stem="rho")
+
+
 # TODO make smaller box size and decrease number of FPS
+
 
 @ex
 @Project.operation
 @Project.pre.after(save_pngs)
 @Project.post.isfile("phasespace.mp4")
+@Project.post.never  # TODO remove
 def generate_phasespace_movie(job):
     generate_movie(job, stem="phasespace")
 
