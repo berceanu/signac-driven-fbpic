@@ -92,6 +92,7 @@ def laser_density_plot(
     save_path=pathlib.Path.cwd(),
     n_c=1.7419595910637713e27,  # 1/m^3
     E0=4013376052599.5396,  # V/m
+    ylim=None
 ):
     """
     Plot on the same figure the laser pulse envelope and the electron density.
@@ -123,10 +124,7 @@ def laser_density_plot(
     fig, ax = pyplot.subplots(figsize=(10, 6))
 
     R = rho / (u.electron_charge.to_value("C") * n_c)
-    # print(f"{R.min():.2f}, {R.max():.2f}")
-
     E = envelope / E0
-    # print(f"{E.min():.2f}, {E.max():.2f}")
 
     im_rho = ax.imshow(
         R,
@@ -182,6 +180,9 @@ def laser_density_plot(
 
     ax.set_ylabel(r"${} \;(\mu m)$".format(rho_info.axes[0]))
     ax.set_xlabel(r"${} \;(\mu m)$".format(rho_info.axes[1]))
+
+    if ylim is not None:
+        ax.set_ylim(*ylim)
 
     current_time = (tseries.current_t * u.second).to(u.picosecond)
     ax.set_title(f"t = {current_time:.2f} (iteration {iteration:,g})")
