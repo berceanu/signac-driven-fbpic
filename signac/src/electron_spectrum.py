@@ -5,7 +5,9 @@ All energies are expressed in MeV, and charges in pC.
 import pathlib
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import ClassVar, Tuple
+from typing import ClassVar, Tuple, List
+import collections.abc
+
 
 import numpy as np
 from cycler import cycler
@@ -18,7 +20,8 @@ from scipy.ndimage import gaussian_filter1d
 
 from job_util import get_time_series_from
 from simulation_diagnostics import particle_energy_histogram
-
+import mpl_util
+import util
 
 def get_iteration_time_from(time_series, iteration=None):
     if iteration is None:  # use final iteration
@@ -88,6 +91,14 @@ def construct_electron_spectrum(job, iteration=None):
     fig_fname = fn_hist.with_suffix(".png")
 
     return ElectronSpectrum(fn_hist, fig_fname)
+
+# TODO: plot multiple spectra of the same graph
+# 1. construct spectra from jobs / npz files
+
+def plot_multiple_spectra(jobs, iteration=None):
+    spectra = list()
+    for job in jobs:
+        pass
 
 
 @dataclass
@@ -190,8 +201,10 @@ class ElectronSpectrum:
         self.ax.set_xlim(*self.xlim)
         self.ax.set_ylim(*self.ylim)
 
-    def add_histogram(self):
-        self.ax.hist(
+    def add_histogram(self, ax):
+        if ax is None:
+            ax = self.ax
+        ax.hist(
             x=self.energy,
             bins=self.energy,
             weights=self.differential_charge,
@@ -227,35 +240,10 @@ class ElectronSpectrum:
         return add_gaussian_filter
 
     def add_ticks(self, major_x_every=25.0, major_y_every=10.0):
-
-        self.ax.yaxis.set_ticks_position("both")
-        self.ax.xaxis.set_ticks_position("both")
-
-        self.ax.xaxis.set_major_locator(MultipleLocator(major_x_every))
-        self.ax.yaxis.set_major_locator(MultipleLocator(major_y_every))
-        self.ax.xaxis.set_minor_locator(AutoMinorLocator())
-        self.ax.yaxis.set_minor_locator(AutoMinorLocator())
-
-        for ticks, length, width in zip(("major", "minor"), (6, 3), (2, 1)):
-            self.ax.tick_params(
-                which=ticks,
-                direction="in",
-                length=length,
-                width=width,
-                grid_alpha=self.alpha,
-            )
+        mpl_util.add_ticks(self.ax, major_x_every=major_x_every, major_y_every=major_y_every, alpha=self.alpha)
 
     def add_grid(self):
-        lw = dict(major=self.linewidth, minor=self.linewidth / 2)
-        for xy in "x", "y":
-            for ticks in "major", "minor":
-                self.ax.grid(
-                    which=ticks,
-                    axis=xy,
-                    linewidth=lw[ticks],
-                    linestyle="dotted",
-                    color=self.linecolor,
-                )
+        mpl_util.add_grid(self.ax, linewidth=self.linewidth, linecolor=self.linecolor)
 
     def add_hatch(self):
         self.ax.fill_between(
@@ -319,6 +307,73 @@ class ElectronSpectrum:
         self.fig.savefig(fname, dpi=dpi)
         pyplot.close(self.fig)
 
+# two possible cases: multiple iterations of same job
+# vs same iteration in multiple jobs
+# approach: base class + inheritance
+
+
+@dataclass
+class MultipleSpectra(collections.abc.Sequence):
+    """Base class for list of ElectronSpectrum objects."""
+
+    spectra = List[ElectronSpectrum]
+    fig_fname: str
+    energy: np.ndarray = field(init=False, repr=False)
+
+    fig: Figure = field(init=False, repr=False)
+    ax: Axes = field(init=False, repr=False)
+
+    xlabel: str = r"$E\, (\mathrm{MeV})$"
+    xlim: Tuple[float] = (50.0, 350.0)
+    ylabel: str = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
+    ylim: Tuple[float] = (0.0, 50.0)
+
+    linewidth: float = 0.5
+    linecolor: str = "0.5"
+    alpha: float = 0.75
+
+    def __post_init__(self):
+        assert util.all_equal((spectrum.energy for spectrum in self)), "Spectra have different energy ranges."
+        self.energy = self[0].energy
+    
+    def __getitem__(self, key):
+        return self.spectra.__getitem__(key)
+
+    def __len__(self):
+        return self.spectra.__len__()
+
+    def prepare_figure(self, figsize=(10, 3.5)):
+        self.fig, self.ax = pyplot.subplots(figsize=figsize, facecolor="white")
+
+        self.ax.set_xlabel(self.xlabel)
+        self.ax.set_xlim(*self.xlim)
+
+        self.ax.set_ylabel(self.ylabel)
+        self.ax.set_ylim(*self.ylim)
+
+    def add_grid(self):
+        mpl_util.add_grid(self.ax, linewidth=self.linewidth, linecolor=self.linecolor)
+
+    def add_ticks(self, major_x_every=25.0, major_y_every=10.0):
+        mpl_util.add_ticks(self.ax, major_x_every=major_x_every, major_y_every=major_y_every, alpha=self.alpha)
+
+
+    def plot(self):
+        self.prepare_figure()
+
+        for spectrum in self:
+            spectrum.add_histogram(self.ax)
+
+        self.add_grid()
+        self.add_ticks()
+
+
+    def savefig(self, fname=None, dpi=192):
+        if fname is None:
+            fname = self.fig_fname
+        self.fig.savefig(fname, dpi=dpi)
+        pyplot.close(self.fig)
+
 
 def main():
     """Main entry point."""
@@ -337,6 +392,8 @@ def main():
 
     print(f"Read {es.fname}")
     print(f"Wrote {es.fig_fname}")
+
+
 
 
 if __name__ == "__main__":
