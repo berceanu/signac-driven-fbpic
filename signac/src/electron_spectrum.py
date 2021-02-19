@@ -414,7 +414,6 @@ class MultipleSpectra(collections.abc.Sequence):
                 Line2D(
                     [0],
                     [0],
-                    linewidth=linewidth,
                     color=cycler_dict[label]["color"],
                     linestyle=cycler_dict[label]["linestyle"],
                 )
