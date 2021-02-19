@@ -452,10 +452,10 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
             if not self.label:
                 spectrum.label = spectrum.jobid
             else:
-                spectrum.label = f"{self.label} = {spectrum.label}"
+                spectrum.label = f"{self.label} = {spectrum.label} — {spectrum.jobid:.8}"
 
     def create_fig_fname(self):
-        ids = [f"{spectrum.jobid:.6}" for spectrum in self]
+        ids = sorted(f"{spectrum.jobid:.6}" for spectrum in self)
         fig_fname = "_".join(ids) + ".png"
         return fig_fname
 
