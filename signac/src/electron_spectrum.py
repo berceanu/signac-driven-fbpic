@@ -456,7 +456,7 @@ class SingleJobMultipleSpectra(MultipleSpectra):
 
         its = sorted(spectrum.iteration for spectrum in self)
         its = (str(it) for it in its)
-        fig_fname += "_".join(its) + ".pfd"
+        fig_fname += "_".join(its) + ".pdf"
         return fig_fname
 
     def prepare_figure(self, figsize=(10, 3.5)):
