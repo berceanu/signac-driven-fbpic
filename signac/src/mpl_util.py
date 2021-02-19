@@ -79,10 +79,6 @@ def add_grid(ax, linewidth=0.5, linecolor="0.5"):
 
 
 def add_ticks(ax, major_x_every=25.0, major_y_every=10.0, alpha=0.75):
-
-    ax.yaxis.set_ticks_position("both")
-    ax.xaxis.set_ticks_position("both")
-
     ax.xaxis.set_major_locator(ticker.MultipleLocator(major_x_every))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(major_y_every))
     ax.xaxis.set_minor_locator(ticker.AutoMinorLocator())

@@ -335,7 +335,7 @@ class ElectronSpectrum(collections.abc.Hashable):
         self.prepare_figure()
         self.add_histogram()
         self.gaussian_filter()()
-        self.add_ticks()
+        # self.add_ticks()
         self.add_grid()
         self.add_hatch()
         self.annotate_peak()
@@ -428,7 +428,7 @@ class MultipleSpectra(collections.abc.Sequence):
         self.prepare_figure()
         self.add_histograms()
         self.add_grid()
-        self.add_ticks()
+        # self.add_ticks()
 
     def savefig(self, fname=None, dpi=192):
         if fname is None:
