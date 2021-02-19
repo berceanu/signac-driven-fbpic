@@ -2,7 +2,6 @@
 import matplotlib
 from matplotlib import pyplot, ticker
 
-
 def mpl_publication_style():
     """https://turnermoni.ca/python3.html"""
     # Increase the default DPI, and change the file type from png to pdf
@@ -58,11 +57,15 @@ def mpl_publication_style():
     matplotlib.rcParams["legend.frameon"] = False
 
     # Font size
-    matplotlib.rcParams["legend.fontsize"] = 8
+    matplotlib.rcParams["legend.fontsize"] = 6
     matplotlib.rcParams["xtick.labelsize"] = 8
     matplotlib.rcParams["ytick.labelsize"] = 8
     matplotlib.rcParams["axes.labelsize"] = 8
     matplotlib.rcParams["font.size"] = 8
+    matplotlib.rcParams["figure.titlesize"] = 6
+    matplotlib.rcParams["axes.titlesize"] = 6
+
+    matplotlib.rcParams["figure.subplot.bottom"] = 0.15
 
 
 def add_grid(ax, linewidth=0.5, linecolor="0.5"):

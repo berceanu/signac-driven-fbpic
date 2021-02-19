@@ -15,6 +15,7 @@ from matplotlib import pyplot
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.ticker import AutoMinorLocator, MultipleLocator
+from matplotlib.lines import Line2D
 from scipy.constants import c
 from scipy.ndimage import gaussian_filter1d
 
@@ -114,7 +115,7 @@ def multiple_iterations_single_job(job, iterations):
         spectrum = construct_electron_spectrum(job, iteration)
         spectrum.label = f"iteration = {iteration}"
         spectra.append(spectrum)
-    
+
     # TODO check required iterations exist
     # TODO if no iterations passed, choose 3 of them, equidistantly spaced from the second half of time_series.iterations
 
@@ -326,7 +327,6 @@ class ElectronSpectrum(collections.abc.Hashable):
             ncol=2,
             mode="expand",
             loc="lower left",
-            frameon=False,
             handlelength=1,
         )
 
@@ -335,7 +335,7 @@ class ElectronSpectrum(collections.abc.Hashable):
         self.add_histogram()
         self.gaussian_filter()()
         # self.add_ticks()
-        self.add_grid()
+        # self.add_grid()
         self.add_hatch()
         self.annotate_peak()
         self.add_job_id()
@@ -397,19 +397,33 @@ class MultipleSpectra(collections.abc.Sequence):
         combined_cycler_iterator = combined_cycler()
         cycler_dict = defaultdict(lambda: next(combined_cycler_iterator))
 
+        legend_handles = list()
+        legend_labels = list()
         for spectrum in self:
             label = spectrum.label
+            legend_labels.append(label)
             spectrum.add_histogram(
                 self.ax,
                 linecolor=cycler_dict[label]["color"],
                 linestyle=cycler_dict[label]["linestyle"],
-                linewidth=2 * self.linewidth,
+                linewidth=self.linewidth,
                 label=label,
+            )
+            legend_handles.append(
+                Line2D(
+                    [0],
+                    [0],
+                    color=cycler_dict[label]["color"],
+                    linewidth=self.linewidth,
+                    linestyle=cycler_dict[label]["linestyle"],
+                )
             )
 
         self.ax.legend(
-            frameon=False,
+            handles=legend_handles,
+            labels=legend_labels,
             handlelength=1,
+            loc="upper left",
         )
 
     def add_grid(self):
@@ -426,7 +440,7 @@ class MultipleSpectra(collections.abc.Sequence):
     def plot(self):
         self.prepare_figure()
         self.add_histograms()
-        self.add_grid()
+        # self.add_grid()
         # self.add_ticks()
 
     def savefig(self, fname=None, dpi=192):
