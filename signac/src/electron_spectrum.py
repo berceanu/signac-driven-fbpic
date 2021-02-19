@@ -94,17 +94,17 @@ def construct_electron_spectrum(job, iteration=None):
     return ElectronSpectrum(fn_hist, fig_fname)
 
 
-# TODO: plot multiple spectra of the same graph
-# 1. construct spectra from jobs / npz files
-
-
 def multiple_jobs_single_iteration(jobs, iteration=None):
+    fig_fname = str()
     spectra = list()
     for job in jobs:
         spectrum = construct_electron_spectrum(job, iteration)
         spectra.append(spectrum)
+        fig_fname += f"_{job.id:.6}"
 
-    return MultipleSpectra(spectra=spectra, fig_fname="out.png")
+    fig_fname = fig_fname[1:] + ".png"
+
+    return MultipleJobsMultipleSpectra(spectra=spectra, fig_fname=fig_fname)
 
 
 def multiple_iterations_single_job(job, iterations):
@@ -429,6 +429,16 @@ class MultipleSpectra(collections.abc.Sequence):
             fname = self.fig_fname
         self.fig.savefig(fname, dpi=dpi)
         pyplot.close(self.fig)
+
+
+@dataclass
+class SingleJobMultipleSpectra(MultipleSpectra):
+    pass
+
+
+@dataclass
+class MultipleJobsMultipleSpectra(MultipleSpectra):
+    pass
 
 
 def main():
