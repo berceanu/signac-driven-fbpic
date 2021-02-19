@@ -22,6 +22,8 @@ from simulation_diagnostics import particle_energy_histogram
 import mpl_util
 import util, job_util
 
+mpl_util.mpl_publication_style()
+
 
 def get_iteration_time_from(time_series, iteration=None):
     if iteration is None:  # use final iteration
