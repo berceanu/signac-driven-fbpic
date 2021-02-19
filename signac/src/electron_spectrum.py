@@ -400,7 +400,7 @@ class MultipleSpectra(collections.abc.Sequence):
         legend_handles = list()
         legend_labels = list()
         for spectrum in self:
-            linewidth = self.linewidth / 2
+            linewidth = 0.2
             label = spectrum.label
             legend_labels.append(label)
             spectrum.add_histogram(
