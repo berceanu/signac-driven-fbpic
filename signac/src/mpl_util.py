@@ -5,8 +5,6 @@ from matplotlib import pyplot, ticker
 
 def mpl_publication_style():
     """https://turnermoni.ca/python3.html"""
-    matplotlib.rcParams["axes.facecolor"] = "red"
-
     # Increase the default DPI, and change the file type from png to pdf
     matplotlib.rcParams["savefig.dpi"] = 1200
     matplotlib.rcParams["savefig.format"] = "pdf"

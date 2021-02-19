@@ -90,7 +90,7 @@ def save_energy_histogram(job, iteration=None):
 
 def construct_electron_spectrum(job, iteration=None):
     fn_hist = save_energy_histogram(job, iteration)
-    fig_fname = fn_hist.with_suffix(".png")
+    fig_fname = fn_hist.with_suffix(".pdf")
 
     return ElectronSpectrum(fn_hist, fig_fname)
 
@@ -114,6 +114,9 @@ def multiple_iterations_single_job(job, iterations):
         spectrum = construct_electron_spectrum(job, iteration)
         spectrum.label = f"iteration = {iteration}"
         spectra.append(spectrum)
+    
+    # TODO check required iterations exist
+    # TODO if no iterations passed, choose 3 of them, equidistantly spaced from the second half of time_series.iterations
 
     return SingleJobMultipleSpectra(spectra=spectra)
 
@@ -453,7 +456,7 @@ class SingleJobMultipleSpectra(MultipleSpectra):
 
         its = sorted(spectrum.iteration for spectrum in self)
         its = (str(it) for it in its)
-        fig_fname += "_".join(its) + ".png"
+        fig_fname += "_".join(its) + ".pfd"
         return fig_fname
 
     def prepare_figure(self, figsize=(10, 3.5)):
@@ -487,7 +490,7 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
 
     def create_fig_fname(self):
         ids = sorted(f"{spectrum.jobid:.6}" for spectrum in self)
-        fig_fname = "_".join(ids) + ".png"
+        fig_fname = "_".join(ids) + ".pdf"
         return fig_fname
 
     def prepare_figure(self, figsize=(10, 3.5)):
