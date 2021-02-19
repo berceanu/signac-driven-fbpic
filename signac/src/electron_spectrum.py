@@ -327,7 +327,6 @@ class ElectronSpectrum(collections.abc.Hashable):
             ncol=2,
             mode="expand",
             loc="lower left",
-            handlelength=1,
         )
 
     def plot(self):
@@ -422,7 +421,6 @@ class MultipleSpectra(collections.abc.Sequence):
         self.ax.legend(
             handles=legend_handles,
             labels=legend_labels,
-            handlelength=1,
             loc="upper left",
         )
 
