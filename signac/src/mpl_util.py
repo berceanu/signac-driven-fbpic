@@ -2,6 +2,21 @@
 import matplotlib
 from matplotlib import pyplot, ticker
 
+
+class Labeloffset:
+    def __init__(self, ax, label="", axis="y"):
+        self.axis = {"y": ax.yaxis, "x": ax.xaxis}[axis]
+        self.label = label
+        ax.callbacks.connect(axis + "lim_changed", self.update)
+        ax.figure.canvas.draw()
+        self.update(None)
+
+    def update(self, lim):
+        fmt = self.axis.get_major_formatter()
+        self.axis.offsetText.set_visible(False)
+        self.axis.set_label_text(self.label + " " + fmt.get_offset())
+
+
 def mpl_publication_style():
     """https://turnermoni.ca/python3.html"""
     # Increase the default DPI, and change the file type from png to pdf
