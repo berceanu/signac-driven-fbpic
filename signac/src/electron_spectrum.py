@@ -6,7 +6,7 @@ import collections.abc
 import pathlib
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import ClassVar, List, Tuple
+from typing import ClassVar, List, Tuple, Callable
 
 import numpy as np
 from cycler import cycler
@@ -18,6 +18,7 @@ import job_util
 import mpl_util
 import simulation_diagnostics
 import util
+from signac.contrib.job import Job
 
 mpl_util.mpl_publication_style()
 
@@ -92,19 +93,22 @@ def construct_electron_spectrum(job, iteration=None):
     return ElectronSpectrum(fn_hist, fig_fname)
 
 
-def multiple_jobs_single_iteration(jobs, iteration=None, key=None, label=None):
+def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
     spectra = list()
-    for job in sorted(jobs, key=lambda job: job.sp[key] if key is not None else job.id):
+    for job in sorted(jobs, key=lambda job: job.sp[label.key] if label.key else job.id):
         spectrum = construct_electron_spectrum(job, iteration)
 
-        if (label is not None) and (key is not None):
-            spectrum.label = label(job, key) + f" — {spectrum.jobid:.8}"
+        if label is not None:
+            label.value = label.get_value(job, label.key)
+            label.create_label()
+            label.label += f" — {spectrum.jobid:.8}"
         else:
-            spectrum.label = f"{spectrum.jobid:.8}"
+            label = SpectrumLabel(label=f"{spectrum.jobid:.8}")
 
+        spectrum.label = label
         spectra.append(spectrum)
 
-    out = MultipleJobsMultipleSpectra(spectra=spectra, key=key)
+    out = MultipleJobsMultipleSpectra(spectra=spectra)
 
     if iteration is None:
         print(f"No iteration specified. Using {out.iteration}.")
@@ -135,10 +139,35 @@ def multiple_iterations_single_job(job, iterations=None):
     spectra = list()
     for iteration in sorted(iterations):
         spectrum = construct_electron_spectrum(job, iteration)
-        spectrum.label = f"iteration = {iteration}"
+        spectrum.label = SpectrumLabel(label=f"iteration = {iteration}")
+        print(spectrum.label)  # FIXME
         spectra.append(spectrum)
 
     return SingleJobMultipleSpectra(spectra=spectra)
+
+
+@dataclass
+class SpectrumLabel:
+    key: str = field(default_factory=str)
+    name: str = field(default_factory=str)
+    unit: str = field(default_factory=str)
+    label: str = field(default_factory=str)
+    conversion_factor: float = 1.0
+    precision: int = 0
+    get_value: Callable[[Job], float] = lambda job, key: job.sp[key]
+    value: float = field(default_factory=float)
+
+    def __post_init__(self):
+        if not self.name:
+            self.name = self.key
+
+    def create_label(self):
+        self.label = (
+            f"{self.name} = {self.value * self.conversion_factor:.{self.precision}f}"
+        )
+
+        if self.unit:
+            self.label += f" {self.unit}"
 
 
 @dataclass
@@ -161,11 +190,12 @@ class EnergyWindow:
 
 
 @dataclass
-class ElectronSpectrum(collections.abc.Hashable):
+class ElectronSpectrum:
     """Keeps track of the spectrum."""
 
     fname: str
     fig_fname: str
+    label: SpectrumLabel = field(init=False)
     iteration: int = field(init=False)
     iteration_time_ps: float = field(init=False)
     z_position: float = field(init=False)
@@ -178,7 +208,6 @@ class ElectronSpectrum(collections.abc.Hashable):
     fig: figure.Figure = field(init=False, repr=False)
     ax: axes.Axes = field(init=False, repr=False)
     title: str = field(init=False, repr=False)
-    label: str = field(init=False)
     xlabel: str = r"$E\, (\mathrm{MeV})$"
     xlim: Tuple[float] = (50.0, 350.0)
     hatch_window: EnergyWindow = EnergyWindow(100.0, 300.0)
@@ -212,9 +241,6 @@ class ElectronSpectrum(collections.abc.Hashable):
         )
         self.z_position = self.iteration_time_ps * self.c_um_per_ps
         self.title = self.generate_title()
-
-    def __hash__(self):
-        return hash((self.iteration, self.total_iterations, self.jobid))
 
     def loadf(self):
         f = np.load(self.fname)
@@ -495,12 +521,11 @@ class SingleJobMultipleSpectra(MultipleSpectra):
 class MultipleJobsMultipleSpectra(MultipleSpectra):
     iteration: int = field(init=False)
     title: str = field(init=False, repr=False)
-    key: str = field(default_factory=str)
 
     def __post_init__(self):
-        assert util.all_equal(
-            (spectrum.iteration for spectrum in self)
-        ), "Spectra have different iteration numbers."
+        # assert util.all_equal(
+        #     (spectrum.iteration for spectrum in self)
+        # ), "Spectra have different iteration numbers."
         self.iteration = self[0].iteration
         self.title = f"iteration {self.iteration}"
         self.fig_fname = self.create_fig_fname()
@@ -513,6 +538,16 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
     def prepare_figure(self):
         super().prepare_figure()
         self.ax.set_title(self.title)
+
+    def plot_peak_position(self):
+        for spectrum in self:
+            spectrum.hatch_window.peak_position
+            spectrum.key * 1.0e6
+
+    def plot_total_charge(self):
+        for spectrum in self:
+            spectrum.hatch_window.total_charge
+            spectrum.key * 1.0e6
 
 
 def main():
@@ -532,14 +567,14 @@ def main():
     print(f"Read {es.fname}")
 
     # spectra = multiple_jobs_single_iteration(
-    #     jobs=proj.find_jobs(), key="Nm", label=lambda job, key: f"{key} = {job.sp[key]}"
+    #     jobs=proj.find_jobs(), label=SpectrumLabel(key="Nm")
     # )
     # spectra.plot()
     # spectra.savefig()
 
-    # per_job_spectra = multiple_iterations_single_job(job)
-    # per_job_spectra.plot()
-    # per_job_spectra.savefig()
+    per_job_spectra = multiple_iterations_single_job(job)
+    per_job_spectra.plot()
+    per_job_spectra.savefig()
 
 
 if __name__ == "__main__":
