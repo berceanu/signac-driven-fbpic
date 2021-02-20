@@ -6,11 +6,12 @@ import logging
 import pathlib
 import math
 from itertools import product
+import numpy as np
 
 import unyt as u
 from prepic import Plasma, lwfa
 import signac
-from util import nozzle_center_offset, round_to_nearest
+import util
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
@@ -30,35 +31,37 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    for _ in range(1):
+    for zfoc_from_nozzle_center in np.array([600, 1000, 1400, 1800]) * 1.0e-6:
         sp = dict(
             # TODO: move to job document
             nranks=4,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
             # The simulation box
             lambda0=0.8e-6,  # Laser wavelength (default 0.815e-6)
-            z_rezolution_factor=32,  # Δz = lambda0 / z_rezolution_factor (default 40)
-            # TODO try 40 with n_order=8
+            lambda0_over_dz=32,  # Δz = lambda0 / lambda0_over_dz (default 40)
+            # TODO try 40 with n_order=16
             dr_over_dz=5,  # Δr = dr_over_dz * Δz (default 5)
             zmin=-60.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             rmax=70.0e-6,  # Length of the box along r (meters) (default 70.0e-6)
             r_boundary_conditions="reflective",  #  'reflective' (default) / 'open' more expensive
             n_order=32,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 8)
-            Nm=5,  # Number of modes used (default 3)
+            Nm=3,  # Number of modes used (default 3)
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
-            n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
+            n_e=8.0e+18 * 1.0e+6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z (default 2)
             p_nr=2,  # Number of particles per cell along r (default 2)
             # The laser
             a0=2.4,  # Laser amplitude
+            # Laser waist, converted from experimental FWHM@intensity
             w0=22.0e-6
-            / SQRT_FACTOR,  # Laser waist, converted from experimental FWHM@intensity
+            / SQRT_FACTOR,
+            # Laser duration, converted from experimental FWHM@intensity
             tau=25.0e-15
-            / SQRT_FACTOR,  # Laser duration, converted from experimental FWHM@intensity
+            / SQRT_FACTOR,
             z0=-10.0e-6,  # Laser centroid
-            zfoc=nozzle_center_offset(1400e-6),  # Focal position
+            zfoc_from_nozzle_center=zfoc_from_nozzle_center,  # Laser focal position, measured from the center of the gas jet
             profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
             # The density profile
             flat_top_dist=1000.0e-6,  # plasma flat top distance
@@ -71,14 +74,13 @@ def main():
             Nz=None,  # Number of gridpoints along z
             Nr=None,  # Number of gridpoints along r
             p_rmax=None,  # Maximal radial position of the plasma (meters)
-            p_nt=None,  # Number of particles per cell along theta, should be 4*Nm
+            p_nt=None,  # Number of particles per cell along theta (default 4*Nm)
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
             center_right=None,
             p_zmax=None,  # Position of the end of the plasma (meters)
             L_interact=None,
             # Period in number of timesteps
             diag_period=None,
-            # TODO add electron tracking period
             # Timestep (seconds)
             dt=None,
             # Interaction time (seconds) (to calculate number of PIC iterations)
@@ -97,14 +99,16 @@ def main():
         sp["zR"] = laser.beam.zR.to_value("m")
 
         sp["Nz"] = int(
-            (sp["zmax"] - sp["zmin"]) * sp["z_rezolution_factor"] / sp["lambda0"]
+            (sp["zmax"] - sp["zmin"]) * sp["lambda0_over_dz"] / sp["lambda0"]
         )
         dz = get_dz(sp["zmax"], sp["zmin"], sp["Nz"])
         dr = sp["dr_over_dz"] * dz
         sp["Nr"] = int(sp["rmax"] / dr)
 
         sp["p_nt"] = 4 * sp["Nm"]
-        sp["p_rmax"] = sp["rmax"]
+        sp["p_rmax"] = 0.9 * sp["rmax"]
+        # Laser focal position
+        sp["zfoc"] = util.nozzle_center_offset(sp["zfoc_from_nozzle_center"])
 
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
         sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
@@ -115,7 +119,7 @@ def main():
             sp["L_interact"] + (sp["zmax"] - sp["zmin"])
         ) / u.clight.to_value("m/s")
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
-        sp["N_step"] = round_to_nearest(sp["N_step"], base=NUMBER_OF_H5) + 1
+        sp["N_step"] = util.round_to_nearest(sp["N_step"], base=NUMBER_OF_H5) + 1
         sp["diag_period"] = (sp["N_step"] - 1) // NUMBER_OF_H5
         project.open_job(sp).init()
 
@@ -128,8 +132,6 @@ def main():
 
         plasma = Plasma(n_pe=job.sp.n_e * u.meter ** (-3))
         job.doc.setdefault("λp", f"{plasma.λp:.3f}")
-
-        job.doc.setdefault("x", nozzle_center_offset(job.sp.zfoc))
 
         p = pathlib.Path(job.ws)
         for folder in ("rhos", "phasespaces"):
