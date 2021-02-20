@@ -3,7 +3,7 @@ import matplotlib
 from matplotlib import pyplot, ticker
 
 
-class Labeloffset:
+class LabelOffset:
     def __init__(self, ax, label="", axis="y"):
         self.axis = {"y": ax.yaxis, "x": ax.xaxis}[axis]
         self.label = label
