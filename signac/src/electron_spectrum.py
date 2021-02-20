@@ -534,17 +534,17 @@ def main():
     proj = signac.get_project(search=False)
 
     job = random.choice(list(iter(proj)))
-    # es = construct_electron_spectrum(job)
-    # es.plot()
-    # es.savefig()
-    # print(f"Read {es.fname}")
-    # print(f"Wrote {es.fig_fname}")
+    es = construct_electron_spectrum(job)
+    es.plot()
+    es.savefig()
+    print(f"Read {es.fname}")
+    print(f"Wrote {es.fig_fname}")
 
-    # spectra = multiple_jobs_single_iteration(proj.find_jobs(), label="Nm")
-    # spectra.plot()
-    # spectra.savefig()
+    spectra = multiple_jobs_single_iteration(jobs=proj.find_jobs(), label="Nm")
+    spectra.plot()
+    spectra.savefig()
 
-    per_job_spectra = multiple_iterations_single_job(job, (52844, 79266, 105688))
+    per_job_spectra = multiple_iterations_single_job(job)
     per_job_spectra.plot()
     per_job_spectra.savefig()
 
