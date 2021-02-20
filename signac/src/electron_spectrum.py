@@ -529,7 +529,6 @@ def main():
     es.plot()
     es.savefig()
     print(f"Read {es.fname}")
-    print(f"Wrote {es.fig_fname}\n")
 
     spectra = multiple_jobs_single_iteration(
         jobs=proj.find_jobs(), key="Nm", label=lambda job, key: f"{key} = {job.sp[key]}"
