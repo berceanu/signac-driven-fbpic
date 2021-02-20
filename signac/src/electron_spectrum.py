@@ -98,8 +98,10 @@ def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
         jobs, key=lambda job: job.sp[label] if label is not None else job.id
     ):
         spectrum = construct_electron_spectrum(job, iteration)
+
         if label is not None:
             spectrum.label = job.sp[label]
+            
         spectra.append(spectrum)
 
     return MultipleJobsMultipleSpectra(spectra=spectra, label=label)
