@@ -100,7 +100,7 @@ def multiple_jobs_single_iteration(jobs, iteration=None, key=None, label=None):
         if (label is not None) and (key is not None):
             spectrum.label = label(job, key) + f" — {spectrum.jobid:.8}"
         else:
-            spectrum.label = spectrum.jobid
+            spectrum.label = f"{spectrum.jobid:.8}"
 
         spectra.append(spectrum)
 
@@ -325,7 +325,7 @@ class ElectronSpectrum(collections.abc.Hashable):
 
     def add_job_id(self):
         self.ax.annotate(
-            text=f"{self.jobid}",
+            text=f"{self.jobid:.8}",
             xycoords="axes fraction",
             xy=(0.9, 0.9),
             color=self.linecolor,
@@ -336,12 +336,7 @@ class ElectronSpectrum(collections.abc.Hashable):
         )
 
     def add_legend(self):
-        self.ax.legend(
-            bbox_to_anchor=(0, 1, 1, 0.1),
-            ncol=2,
-            mode="expand",
-            loc="lower left",
-        )
+        self.ax.legend()
 
     def plot(self):
         self.prepare_figure()
@@ -474,11 +469,11 @@ class SingleJobMultipleSpectra(MultipleSpectra):
         ), "Spectra belong to different jobs."
         self.jobid = self[0].jobid
 
-        self.title = self.jobid
+        self.title = f"{self.jobid:.8}"
         self.fig_fname = self.create_fig_fname()
 
     def create_fig_fname(self):
-        fig_fname = f"{self.jobid:.6}_"
+        fig_fname = f"{self.jobid:.8}_"
 
         its = sorted(spectrum.iteration for spectrum in self)
         its = (str(it) for it in its)
@@ -505,7 +500,7 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
         self.fig_fname = self.create_fig_fname()
 
     def create_fig_fname(self):
-        ids = sorted(f"{spectrum.jobid:.6}" for spectrum in self)
+        ids = sorted(f"{spectrum.jobid:.8}" for spectrum in self)
         fig_fname = "_".join(ids)
         return fig_fname
 
