@@ -2,26 +2,22 @@
 Module for analysis and visualization of electron spectra.
 All energies are expressed in MeV, and charges in pC.
 """
+import collections.abc
 import pathlib
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import ClassVar, Tuple, List
-import collections.abc
-
+from typing import ClassVar, List, Tuple
 
 import numpy as np
 from cycler import cycler
-from matplotlib import pyplot
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-from matplotlib.ticker import AutoMinorLocator, MultipleLocator
-from matplotlib.lines import Line2D
+from matplotlib import axes, figure, lines, pyplot
 from scipy.constants import c
 from scipy.ndimage import gaussian_filter1d
 
-from simulation_diagnostics import particle_energy_histogram
+import job_util
 import mpl_util
-import util, job_util
+import simulation_diagnostics
+import util
 
 mpl_util.mpl_publication_style()
 
@@ -71,7 +67,7 @@ def save_energy_histogram(job, iteration=None):
     )
 
     # no cutoff
-    hist, bins, nbins = particle_energy_histogram(
+    hist, bins, nbins = simulation_diagnostics.particle_energy_histogram(
         tseries=time_series,
         iteration=iteration,
         species="electrons",
@@ -170,8 +166,8 @@ class ElectronSpectrum(collections.abc.Hashable):
     differential_charge: np.ndarray = field(init=False, repr=False)
     smooth_differential_charge: np.ndarray = field(init=False, repr=False)
     energy: np.ndarray = field(init=False, repr=False)
-    fig: Figure = field(init=False, repr=False)
-    ax: Axes = field(init=False, repr=False)
+    fig: figure.Figure = field(init=False, repr=False)
+    ax: axes.Axes = field(init=False, repr=False)
     title: str = field(init=False, repr=False)
     label: str = field(init=False)
     xlabel: str = r"$E\, (\mathrm{MeV})$"
@@ -370,8 +366,8 @@ class MultipleSpectra(collections.abc.Sequence):
 
     energy: np.ndarray = field(init=False, repr=False)
 
-    fig: Figure = field(init=False, repr=False)
-    ax: Axes = field(init=False, repr=False)
+    fig: figure.Figure = field(init=False, repr=False)
+    ax: axes.Axes = field(init=False, repr=False)
 
     xlabel: str = r"$E\, (\mathrm{MeV})$"
     xlim: Tuple[float] = (50.0, 500.0)
@@ -424,7 +420,7 @@ class MultipleSpectra(collections.abc.Sequence):
                 label=label,
             )
             legend_handles.append(
-                Line2D(
+                lines.Line2D(
                     [0],
                     [0],
                     color=cycler_dict[label]["color"],
@@ -527,6 +523,7 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
 def main():
     """Main entry point."""
     import random
+
     import signac
 
     random.seed(24)
