@@ -11,9 +11,15 @@ def main():
 
     spectra = es.multiple_jobs_single_iteration(
         jobs=proj.find_jobs(),
-        key="zfoc_from_nozzle_center",
-        label=lambda job, key: f"{key} = {job.sp[key] * 1.0e+6:.0f}",
+        label=es.SpectrumLabel(
+            key="zfoc_from_nozzle_center",
+            name=r"$x$",
+            conversion_factor=1.0e6,
+            unit=r"$\mathrm{\mu m}$",
+        ),
     )
+    spectra.plot()
+    spectra.savefig()
 
     # peak_position_charge = list()
     # for _, jobs in proj.groupbydoc(key="x"):
