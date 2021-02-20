@@ -1,36 +1,21 @@
-from collections import defaultdict
 import numpy as np
 from matplotlib import pyplot
 from matplotlib.ticker import MultipleLocator
-from cycler import cycler
-from scipy.constants import golden
 import unyt as u
 import signac
+import electron_spectrum as es
 
-
-line_colors = ["C1", "C2", "C3", "C4", "C5"]
-line_styles = ["-", "--", ":", "-.", "-"]
-cyl = cycler(color=line_colors) + cycler(linestyle=line_styles)
-loop_cy_iter = cyl()
-STYLE = defaultdict(lambda: next(loop_cy_iter))
 
 
 def main():
     proj = signac.get_project(search=False)
 
+    spectra = es.multiple_jobs_single_iteration(jobs=proj.find_jobs(), label="zfoc_from_nozzle_center")
+    label = lambda job: f"$x$ = {job.sp.zfoc_from_nozzle_center * 1.0e+6:.0f}"
+
     peak_position_charge = list()
-
-    fig, ax = pyplot.subplots(figsize=(golden * 8, 8))
-
-    ax.set_xlabel("E (MeV)")
-    ax.set_ylabel("dQ/dE (pC/MeV)")
-
     for _, jobs in proj.groupbydoc(key="x"):
         job = next(jobs)  # assuming single job per group
-
-        x = (job.doc.x * u.meter).to(u.micrometer)
-        label = f"$x$ = {x:.0f}"
-
         peak_position_charge.append(
             (
                 float(f"{x.to_value():.0f}"),
@@ -38,33 +23,14 @@ def main():
                 job.doc.peak_charge,
             )
         )
-
-        npzfile = np.load(job.fn("final_histogram.npz"))
-        energy = npzfile["edges"][1:]
-        charge = npzfile["counts"]
-
-        mask = (energy > 100) & (energy < 300)  # MeV
-        energy = energy[mask]
-        charge = np.clip(charge, 0, 60)[mask]  # FIXME
-
         # TODO replace with code from electron_spectrum.py
-        ax.step(
-            energy,
-            charge,
-            label=label,
-            color=STYLE[label]["color"],
-            linestyle=STYLE[label]["linestyle"],
-            linewidth=0.5,
-        )
 
-    ax.legend(frameon=False)
-    ax.axvline(x=250, linewidth=0.75, linestyle="dashed", color="0.75")
-
-    fig.savefig("histograms.png", dpi=192)
+    # job.doc.peak_charge: 1496
+    # job.doc.peak_position: 212
 
     x, peak_position, peak_charge = zip(*peak_position_charge)
 
-    fig, ax1 = pyplot.subplots(figsize=(golden * 8, 8))
+    fig, ax1 = pyplot.subplots()
     ax2 = ax1.twinx()
 
     ax1.hlines(
