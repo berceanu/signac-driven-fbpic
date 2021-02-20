@@ -130,6 +130,9 @@ def main():
         job.doc.setdefault("Δz", f"{Δz:.3f}")
         job.doc.setdefault("Δr", f"{Δr:.3f}")
 
+        count = job.sp.p_nt * job.sp.p_nr * job.sp.p_nz * job.sp.Nz * job.sp.Nr
+        job.doc.setdefault("macroparticle_count", f"{count:.2e}")
+
         plasma = Plasma(n_pe=job.sp.n_e * u.meter ** (-3))
         job.doc.setdefault("λp", f"{plasma.λp:.3f}")
 
