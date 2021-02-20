@@ -109,15 +109,29 @@ def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
     return MultipleJobsMultipleSpectra(spectra=spectra, label=label)
 
 
-def multiple_iterations_single_job(job, iterations):
+def multiple_iterations_single_job(job, iterations=None):
+    time_series = job_util.get_time_series_from(job)
+    avail_iter = time_series.iterations
+
+    if iterations is None:
+        print("No iterations specified. Available iterations:\n")
+        print(avail_iter)
+
+        center = np.take(avail_iter, avail_iter.size // 2)
+        middle = np.take(avail_iter, avail_iter.size * 3 // 4)
+        end = np.take(avail_iter, avail_iter.size - 1)
+        iterations = np.array([center, middle, end])
+        print()
+        print(f"Automatically chose {iterations}.")
+    else:
+        iterations = np.array(iterations)
+        assert np.all(np.isin(iterations, avail_iter)), "Specified non-existing iteration(s)."
+
     spectra = list()
     for iteration in sorted(iterations):
         spectrum = construct_electron_spectrum(job, iteration)
         spectrum.label = f"iteration = {iteration}"
         spectra.append(spectrum)
-
-    # TODO check required iterations exist
-    # TODO if no iterations passed, choose 3 of them, equidistantly spaced from the second half of time_series.iterations
 
     return SingleJobMultipleSpectra(spectra=spectra)
 
@@ -526,13 +540,9 @@ def main():
     # print(f"Read {es.fname}")
     # print(f"Wrote {es.fig_fname}")
 
-    spectra = multiple_jobs_single_iteration(proj.find_jobs(), label="Nm")
-    spectra.plot()
-    spectra.savefig()
-
-    time_series = job_util.get_time_series_from(job)
-    print("Available iterations:")
-    print(time_series.iterations)
+    # spectra = multiple_jobs_single_iteration(proj.find_jobs(), label="Nm")
+    # spectra.plot()
+    # spectra.savefig()
 
     per_job_spectra = multiple_iterations_single_job(job, (52844, 79266, 105688))
     per_job_spectra.plot()
