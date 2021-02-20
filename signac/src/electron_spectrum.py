@@ -443,7 +443,6 @@ class MultipleSpectra(collections.abc.Sequence):
         for spectrum in self:
             linewidth = 0.2
             label = spectrum.label.label
-            print(label)
             legend_labels.append(label)
             spectrum.add_histogram(
                 self.ax,
@@ -542,14 +541,20 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
         self.ax.set_title(self.title)
 
     def plot_peak_position(self):
+        data = list()
         for spectrum in self:
-            spectrum.hatch_window.peak_position
-            spectrum.key * 1.0e6
+            peak_pos = spectrum.hatch_window.peak_position
+            key_value = spectrum.label.value * spectrum.label.conversion_factor
+            data.append((key_value, peak_pos))
+        xdata, ydata = zip(*data)
+        fig, ax = pyplot.subplots()
+        ax.plot(xdata, ydata)
+        fig.savefig("out.png")
 
     def plot_total_charge(self):
         for spectrum in self:
             spectrum.hatch_window.total_charge
-            spectrum.key * 1.0e6
+            spectrum.label.value * spectrum.label.conversion_factor
 
 
 def main():
@@ -574,9 +579,9 @@ def main():
     spectra.plot()
     spectra.savefig()
 
-    # per_job_spectra = multiple_iterations_single_job(job)
-    # per_job_spectra.plot()
-    # per_job_spectra.savefig()
+    per_job_spectra = multiple_iterations_single_job(job)
+    per_job_spectra.plot()
+    per_job_spectra.savefig()
 
 
 if __name__ == "__main__":

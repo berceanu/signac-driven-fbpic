@@ -19,6 +19,7 @@ def main():
         ),
     )
     spectra.plot()
+    spectra.plot_peak_position()
     spectra.savefig()
 
     # peak_position_charge = list()
