@@ -18,7 +18,15 @@ class LabelOffset:
 
 
 def mpl_publication_style():
-    """https://turnermoni.ca/python3.html"""
+    """
+    https://turnermoni.ca/python3.html
+    
+    Usage:
+    >>> from matplotlib import rc_context
+    >>> with rc_context():
+    >>>     mpl_publication_style()
+    >>>     <plot your figure>
+    """
     # Increase the default DPI, and change the file type from png to pdf
     matplotlib.rcParams["savefig.dpi"] = 192  # default 1200
     matplotlib.rcParams["savefig.format"] = "png"  # default pdf

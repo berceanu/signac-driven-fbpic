@@ -104,7 +104,12 @@ def multiple_jobs_single_iteration(jobs, iteration=None, key=None, label=None):
 
         spectra.append(spectrum)
 
-    return MultipleJobsMultipleSpectra(spectra=spectra, key=key)
+    out = MultipleJobsMultipleSpectra(spectra=spectra, key=key)
+
+    if iteration is None:
+        print(f"No iteration specified. Using {out.iteration}.")
+
+    return out
 
 
 def multiple_iterations_single_job(job, iterations=None):
@@ -120,7 +125,7 @@ def multiple_iterations_single_job(job, iterations=None):
         end = np.take(avail_iter, avail_iter.size - 1)
         iterations = np.array([center, middle, end])
         print()
-        print(f"Automatically chose {iterations}.")
+        print(f"Using {iterations}.")
     else:
         iterations = np.array(iterations)
         assert np.all(
@@ -327,12 +332,13 @@ class ElectronSpectrum(collections.abc.Hashable):
         self.ax.annotate(
             text=f"{self.jobid:.8}",
             xycoords="axes fraction",
-            xy=(0.9, 0.9),
+            xy=(0.15, 0.9),
             color=self.linecolor,
             xytext=(10, 0),
             textcoords="offset points",
             ha="right",
             va="baseline",
+            fontsize=6,  # FIXME
         )
 
     def add_legend(self):
@@ -525,15 +531,15 @@ def main():
     es.savefig()
     print(f"Read {es.fname}")
 
-    spectra = multiple_jobs_single_iteration(
-        jobs=proj.find_jobs(), key="Nm", label=lambda job, key: f"{key} = {job.sp[key]}"
-    )
-    spectra.plot()
-    spectra.savefig()
+    # spectra = multiple_jobs_single_iteration(
+    #     jobs=proj.find_jobs(), key="Nm", label=lambda job, key: f"{key} = {job.sp[key]}"
+    # )
+    # spectra.plot()
+    # spectra.savefig()
 
-    per_job_spectra = multiple_iterations_single_job(job)
-    per_job_spectra.plot()
-    per_job_spectra.savefig()
+    # per_job_spectra = multiple_iterations_single_job(job)
+    # per_job_spectra.plot()
+    # per_job_spectra.savefig()
 
 
 if __name__ == "__main__":
