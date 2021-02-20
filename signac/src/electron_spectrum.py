@@ -360,9 +360,9 @@ class MultipleSpectra(collections.abc.Sequence):
     ax: Axes = field(init=False, repr=False)
 
     xlabel: str = r"$E\, (\mathrm{MeV})$"
-    xlim: Tuple[float] = (50.0, 350.0)
+    xlim: Tuple[float] = (50.0, 500.0)
     ylabel: str = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
-    ylim: Tuple[float] = (0.0, 50.0)
+    ylim: Tuple[float] = (0.0, 40.0)
 
     linewidth: float = 0.5
     linecolor: str = "0.5"
@@ -415,13 +415,14 @@ class MultipleSpectra(collections.abc.Sequence):
                     [0],
                     color=cycler_dict[label]["color"],
                     linestyle=cycler_dict[label]["linestyle"],
+                    linewidth=self.linewidth,
                 )
             )
 
         self.ax.legend(
             handles=legend_handles,
             labels=legend_labels,
-            loc="upper left",
+            loc="upper right",
         )
 
     def add_grid(self):
