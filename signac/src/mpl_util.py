@@ -20,14 +20,14 @@ class LabelOffset:
 def mpl_publication_style():
     """https://turnermoni.ca/python3.html"""
     # Increase the default DPI, and change the file type from png to pdf
-    matplotlib.rcParams["savefig.dpi"] = 1200
-    matplotlib.rcParams["savefig.format"] = "pdf"
+    matplotlib.rcParams["savefig.dpi"] = 192  # default 1200
+    matplotlib.rcParams["savefig.format"] = "png"  # default pdf
 
     # Instead of individually increasing font sizes, point sizes, and line
     # thicknesses, I found it easier to just decrease the figure size so
     # that the line weights of various components still agree
     matplotlib.rcParams["figure.figsize"] = (3.404, 2.104)
-    matplotlib.rcParams["figure.dpi"] = 123
+    matplotlib.rcParams["figure.dpi"] = 192
 
     # Turn on minor ticks, top and right axis ticks, and change the direction to "in"
     matplotlib.rcParams["xtick.top"] = True
@@ -55,11 +55,11 @@ def mpl_publication_style():
     matplotlib.rcParams["lines.markersize"] = 3
 
     # The magic sauce
-    matplotlib.rcParams["text.usetex"] = True
-    matplotlib.rcParams["pgf.texsystem"] = "pdflatex"
-    matplotlib.rcParams[
-        "pgf.preamble"
-    ] = r"\usepackage[utf8x]{inputenc} \usepackage[T1]{fontenc} \usepackage{cmbright}"
+    matplotlib.rcParams["text.usetex"] = False  # default True
+    # matplotlib.rcParams["pgf.texsystem"] = "pdflatex"
+    # matplotlib.rcParams[
+    #     "pgf.preamble"
+    # ] = r"\usepackage[utf8x]{inputenc} \usepackage[T1]{fontenc} \usepackage{cmbright}"
 
     # Increase the padding between the ticklabels and the axes, to prevent
     # overlap in the lower left-hand corner
