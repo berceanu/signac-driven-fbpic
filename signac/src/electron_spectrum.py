@@ -7,6 +7,7 @@ import pathlib
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import ClassVar, List, Tuple, Callable
+import copy
 
 import numpy as np
 from cycler import cycler
@@ -95,17 +96,18 @@ def construct_electron_spectrum(job, iteration=None):
 
 def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
     spectra = list()
-    for job in sorted(jobs, key=lambda job: job.sp[label.key] if label.key else job.id):
+    for job in sorted(jobs, key=lambda job: job.sp[label.key] if (label is not None) and (label.key) else job.id):
         spectrum = construct_electron_spectrum(job, iteration)
 
         if label is not None:
-            label.value = label.get_value(job, label.key)
-            label.create_label()
-            label.label += f" — {spectrum.jobid:.8}"
+            my_label = copy.deepcopy(label)
+            my_label.value = my_label.get_value(job, my_label.key)
+            my_label.create_label()
+            my_label.label = my_label.label + f" — {spectrum.jobid:.8}"
         else:
-            label = SpectrumLabel(label=f"{spectrum.jobid:.8}")
+            my_label = SpectrumLabel(label=f"{spectrum.jobid:.8}")
 
-        spectrum.label = label
+        spectrum.label = my_label
         spectra.append(spectrum)
 
     out = MultipleJobsMultipleSpectra(spectra=spectra)
@@ -140,7 +142,6 @@ def multiple_iterations_single_job(job, iterations=None):
     for iteration in sorted(iterations):
         spectrum = construct_electron_spectrum(job, iteration)
         spectrum.label = SpectrumLabel(label=f"iteration = {iteration}")
-        print(spectrum.label)  # FIXME
         spectra.append(spectrum)
 
     return SingleJobMultipleSpectra(spectra=spectra)
@@ -148,14 +149,14 @@ def multiple_iterations_single_job(job, iterations=None):
 
 @dataclass
 class SpectrumLabel:
-    key: str = field(default_factory=str)
-    name: str = field(default_factory=str)
-    unit: str = field(default_factory=str)
-    label: str = field(default_factory=str)
+    key: str = ""
+    name: str = ""
+    unit: str = ""
+    label: str = ""
     conversion_factor: float = 1.0
     precision: int = 0
     get_value: Callable[[Job], float] = lambda job, key: job.sp[key]
-    value: float = field(default_factory=float)
+    value: float = 0.0
 
     def __post_init__(self):
         if not self.name:
@@ -441,7 +442,8 @@ class MultipleSpectra(collections.abc.Sequence):
         legend_labels = list()
         for spectrum in self:
             linewidth = 0.2
-            label = spectrum.label
+            label = spectrum.label.label
+            print(label)
             legend_labels.append(label)
             spectrum.add_histogram(
                 self.ax,
@@ -566,15 +568,15 @@ def main():
     es.savefig()
     print(f"Read {es.fname}")
 
-    # spectra = multiple_jobs_single_iteration(
-    #     jobs=proj.find_jobs(), label=SpectrumLabel(key="Nm")
-    # )
-    # spectra.plot()
-    # spectra.savefig()
+    spectra = multiple_jobs_single_iteration(
+        jobs=proj.find_jobs(), label=SpectrumLabel(key="Nm")
+    )
+    spectra.plot()
+    spectra.savefig()
 
-    per_job_spectra = multiple_iterations_single_job(job)
-    per_job_spectra.plot()
-    per_job_spectra.savefig()
+    # per_job_spectra = multiple_iterations_single_job(job)
+    # per_job_spectra.plot()
+    # per_job_spectra.savefig()
 
 
 if __name__ == "__main__":
