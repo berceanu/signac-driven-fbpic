@@ -535,7 +535,7 @@ def main():
     es.plot()
     es.savefig()
     print(f"Read {es.fname}")
-    print(f"Wrote {es.fig_fname}")
+    print(f"Wrote {es.fig_fname}\n")
 
     spectra = multiple_jobs_single_iteration(jobs=proj.find_jobs(), label="Nm")
     spectra.plot()
