@@ -340,10 +340,10 @@ class ElectronSpectrum(collections.abc.Hashable):
         self.add_job_id()
         self.add_legend()
 
-    def savefig(self, fname=None, dpi=192):
+    def savefig(self, fname=None):
         if fname is None:
             fname = self.fig_fname
-        self.fig.savefig(fname, dpi=dpi)
+        self.fig.savefig(fname)
         pyplot.close(self.fig)
 
 
@@ -441,10 +441,10 @@ class MultipleSpectra(collections.abc.Sequence):
         # self.add_grid()
         # self.add_ticks()
 
-    def savefig(self, fname=None, dpi=192):
+    def savefig(self, fname=None):
         if fname is None:
             fname = self.fig_fname
-        self.fig.savefig(fname, dpi=dpi)
+        self.fig.savefig(fname)
         pyplot.close(self.fig)
 
 
