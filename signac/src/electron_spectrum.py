@@ -87,24 +87,24 @@ def save_energy_histogram(job, iteration=None):
 
 def construct_electron_spectrum(job, iteration=None):
     fn_hist = save_energy_histogram(job, iteration)
-    fig_fname = fn_hist.with_suffix(".pdf")
+    fig_fname = fn_hist.parent / fn_hist.stem
 
     return ElectronSpectrum(fn_hist, fig_fname)
 
 
-def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
+def multiple_jobs_single_iteration(jobs, iteration=None, key=None, label=None):
     spectra = list()
-    for job in sorted(
-        jobs, key=lambda job: job.sp[label] if label is not None else job.id
-    ):
+    for job in sorted(jobs, key=lambda job: job.sp[key] if key is not None else job.id):
         spectrum = construct_electron_spectrum(job, iteration)
 
-        if label is not None:
-            spectrum.label = job.sp[label]
-            
+        if (label is not None) and (key is not None):
+            spectrum.label = label(job, key) + f" — {spectrum.jobid:.8}"
+        else:
+            spectrum.label = spectrum.jobid
+
         spectra.append(spectrum)
 
-    return MultipleJobsMultipleSpectra(spectra=spectra, label=label)
+    return MultipleJobsMultipleSpectra(spectra=spectra, key=key)
 
 
 def multiple_iterations_single_job(job, iterations=None):
@@ -123,7 +123,9 @@ def multiple_iterations_single_job(job, iterations=None):
         print(f"Automatically chose {iterations}.")
     else:
         iterations = np.array(iterations)
-        assert np.all(np.isin(iterations, avail_iter)), "Specified non-existing iteration(s)."
+        assert np.all(
+            np.isin(iterations, avail_iter)
+        ), "Specified non-existing iteration(s)."
 
     spectra = list()
     for iteration in sorted(iterations):
@@ -480,7 +482,7 @@ class SingleJobMultipleSpectra(MultipleSpectra):
 
         its = sorted(spectrum.iteration for spectrum in self)
         its = (str(it) for it in its)
-        fig_fname += "_".join(its) + ".pdf"
+        fig_fname += "_".join(its)
         return fig_fname
 
     def prepare_figure(self):
@@ -492,7 +494,7 @@ class SingleJobMultipleSpectra(MultipleSpectra):
 class MultipleJobsMultipleSpectra(MultipleSpectra):
     iteration: int = field(init=False)
     title: str = field(init=False, repr=False)
-    label: str = field(default_factory=str)
+    key: str = field(default_factory=str)
 
     def __post_init__(self):
         assert util.all_equal(
@@ -500,21 +502,11 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
         ), "Spectra have different iteration numbers."
         self.iteration = self[0].iteration
         self.title = f"iteration {self.iteration}"
-        self.create_labels()
         self.fig_fname = self.create_fig_fname()
-
-    def create_labels(self):
-        for spectrum in self:
-            if not self.label:
-                spectrum.label = spectrum.jobid
-            else:
-                spectrum.label = (
-                    f"{self.label} = {spectrum.label} — {spectrum.jobid:.8}"
-                )
 
     def create_fig_fname(self):
         ids = sorted(f"{spectrum.jobid:.6}" for spectrum in self)
-        fig_fname = "_".join(ids) + ".pdf"
+        fig_fname = "_".join(ids)
         return fig_fname
 
     def prepare_figure(self):
@@ -539,7 +531,9 @@ def main():
     print(f"Read {es.fname}")
     print(f"Wrote {es.fig_fname}\n")
 
-    spectra = multiple_jobs_single_iteration(jobs=proj.find_jobs(), label="Nm")
+    spectra = multiple_jobs_single_iteration(
+        jobs=proj.find_jobs(), key="Nm", label=lambda job, key: f"{key} = {job.sp[key]}"
+    )
     spectra.plot()
     spectra.savefig()
 

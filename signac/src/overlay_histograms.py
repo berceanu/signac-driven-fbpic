@@ -6,12 +6,14 @@ import signac
 import electron_spectrum as es
 
 
-
 def main():
     proj = signac.get_project(search=False)
 
-    spectra = es.multiple_jobs_single_iteration(jobs=proj.find_jobs(), label="zfoc_from_nozzle_center")
-    label = lambda job: f"$x$ = {job.sp.zfoc_from_nozzle_center * 1.0e+6:.0f}"
+    spectra = es.multiple_jobs_single_iteration(
+        jobs=proj.find_jobs(),
+        key="zfoc_from_nozzle_center",
+        label=lambda job, key: f"{key} = {job.sp[key] * 1.0e+6:.0f}",
+    )
 
     peak_position_charge = list()
     for _, jobs in proj.groupbydoc(key="x"):
