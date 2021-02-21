@@ -145,7 +145,7 @@ def multiple_iterations_single_job(job, iterations=None):
     spectra = list()
     for iteration in sorted(iterations):
         spectrum = construct_electron_spectrum(job, iteration)
-        spectrum.label = SpectrumLabel(label=f"iteration = {iteration}")
+        spectrum.label = SpectrumLabel(text=f"iteration = {iteration}")
         spectra.append(spectrum)
 
     return SingleJobMultipleSpectra(spectra=spectra)
@@ -551,7 +551,7 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
         for spectrum in self:
             x = spectrum.label.value
             y = getattr(spectrum.hatch_window, quantity)
-            data.append(x, y)
+            data.append((x, y))
         xdata, ydata = zip(*data)
         return xdata, ydata
 
