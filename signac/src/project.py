@@ -487,6 +487,6 @@ if __name__ == "__main__":
     )
     logger.info("==RUN STARTED==")
 
-    Project().main()  # run the whole signac project workflow
+    # Project().main()  # run the whole signac project workflow
 
     logger.info("==RUN FINISHED==")
