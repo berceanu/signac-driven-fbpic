@@ -526,9 +526,9 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
     title: str = field(init=False, repr=False)
 
     def __post_init__(self):
-        # assert util.all_equal(
-        #     (spectrum.iteration for spectrum in self)
-        # ), "Spectra have different iteration numbers."
+        assert util.all_equal(
+            (spectrum.iteration for spectrum in self)
+        ), "Spectra have different iteration numbers."
         self.iteration = self[0].iteration
         self.title = f"iteration {self.iteration}"
         self.fig_fname = self.create_fig_fname()
@@ -542,21 +542,30 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
         super().prepare_figure()
         self.ax.set_title(self.title)
 
-    def plot_peak_position(self):
+    def get_plot_data(self, quantity):
         data = list()
         for spectrum in self:
-            peak_pos = spectrum.hatch_window.peak_position
-            key_value = spectrum.label.value
-            data.append((key_value, peak_pos))
+            x = spectrum.label.value
+            y = getattr(spectrum.hatch_window, quantity)
+            data.append(x, y)
         xdata, ydata = zip(*data)
-        fig, ax = pyplot.subplots()
-        ax.plot(xdata, ydata)
-        fig.savefig("out.png")
+        return xdata, ydata
 
-    def plot_total_charge(self):
-        for spectrum in self:
-            spectrum.hatch_window.total_charge
-            spectrum.label.value * spectrum.label.conversion_factor
+    def plot_quantity(self, quantity, ylabel):
+        xdata, ydata = self.get_plot_data(quantity)
+
+        fig, ax = pyplot.subplots()
+        ax.plot(xdata, ydata, "o--")
+        ax.set_ylabel(ylabel)
+        ax.set_xlabel(f"{self[0].label.name} ({self[0].label.unit})")
+        fname = f"{quantity}.png"
+        fig.savefig(fname)
+        logger.info("Wrote %s." % fname)
+        pyplot.close(fig)
+
+    def plot(self):
+        super().plot()
+        super().savefig()
 
 
 def main():
