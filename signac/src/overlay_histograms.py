@@ -14,8 +14,8 @@ def main():
         label=es.SpectrumLabel(
             key="zfoc_from_nozzle_center",
             name=r"$x$",
-            conversion_factor=1.0e6,
             unit=r"$\mathrm{\mu m}$",
+            get_value=lambda job, key: job.sp[key] * 1.0e+6,
         ),
     )
     spectra.plot()

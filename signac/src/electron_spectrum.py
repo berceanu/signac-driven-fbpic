@@ -20,6 +20,10 @@ import mpl_util
 import simulation_diagnostics
 import util
 from signac.contrib.job import Job
+import logging
+
+logger = logging.getLogger(__name__)
+log_file_name = "electron_spectrum.log"
 
 mpl_util.mpl_publication_style()
 
@@ -84,6 +88,7 @@ def save_energy_histogram(job, iteration=None):
         jobid=job.id,
         total_iterations=job.sp.N_step - 1,
     )
+    logger.info("Wrote %s." % fn_hist)
     return fn_hist
 
 
@@ -96,16 +101,15 @@ def construct_electron_spectrum(job, iteration=None):
 
 def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
     spectra = list()
-    for job in sorted(jobs, key=lambda job: job.sp[label.key] if (label is not None) and (label.key) else job.id):
+    for job in sorted(jobs, key=lambda job: job.sp[label.key] if ((label is not None) and (label.key)) else job.id):
         spectrum = construct_electron_spectrum(job, iteration)
 
         if label is not None:
             my_label = copy.deepcopy(label)
             my_label.value = my_label.get_value(job, my_label.key)
-            my_label.create_label()
-            my_label.label = my_label.label + f" — {spectrum.jobid:.8}"
+            my_label.text = my_label.create_text() + f" — {spectrum.jobid:.8}"
         else:
-            my_label = SpectrumLabel(label=f"{spectrum.jobid:.8}")
+            my_label = SpectrumLabel(text=f"{spectrum.jobid:.8}")
 
         spectrum.label = my_label
         spectra.append(spectrum)
@@ -113,7 +117,7 @@ def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
     out = MultipleJobsMultipleSpectra(spectra=spectra)
 
     if iteration is None:
-        print(f"No iteration specified. Using {out.iteration}.")
+        logger.info("No iteration specified. Using %s." % out.iteration)
 
     return out
 
@@ -123,15 +127,12 @@ def multiple_iterations_single_job(job, iterations=None):
     avail_iter = time_series.iterations
 
     if iterations is None:
-        print("No iterations specified. Available iterations:\n")
-        print(avail_iter)
-
+        logger.info("No iterations specified. Available iterations %s." % avail_iter)
         center = np.take(avail_iter, avail_iter.size // 2)
         middle = np.take(avail_iter, avail_iter.size * 3 // 4)
         end = np.take(avail_iter, avail_iter.size - 1)
         iterations = np.array([center, middle, end])
-        print()
-        print(f"Using {iterations}.")
+        logger.info(f"Using %s." % iterations)
     else:
         iterations = np.array(iterations)
         assert np.all(
@@ -152,24 +153,22 @@ class SpectrumLabel:
     key: str = ""
     name: str = ""
     unit: str = ""
-    label: str = ""
-    conversion_factor: float = 1.0
+    text: str = ""
     precision: int = 0
-    get_value: Callable[[Job], float] = lambda job, key: job.sp[key]
+    get_value: Callable[[Job, str], float] = lambda job, key: job.sp[key]
     value: float = 0.0
 
     def __post_init__(self):
         if not self.name:
             self.name = self.key
 
-    def create_label(self):
-        self.label = (
-            f"{self.name} = {self.value * self.conversion_factor:.{self.precision}f}"
-        )
+    def create_text(self):
+        text = f"{self.name} = {self.value:.{self.precision}f}"
 
         if self.unit:
-            self.label += f" {self.unit}"
+            text += f" {self.unit}"
 
+        return text
 
 @dataclass
 class EnergyWindow:
@@ -245,6 +244,7 @@ class ElectronSpectrum:
 
     def loadf(self):
         f = np.load(self.fname)
+        logger.info("Read %s." % self.fname)
         return (
             f["counts"],
             f["edges"],
@@ -386,6 +386,7 @@ class ElectronSpectrum:
         if fname is None:
             fname = self.fig_fname
         self.fig.savefig(fname)
+        logger.info("Wrote %s." % fname)
         pyplot.close(self.fig)
 
 
@@ -442,7 +443,7 @@ class MultipleSpectra(collections.abc.Sequence):
         legend_labels = list()
         for spectrum in self:
             linewidth = 0.2
-            label = spectrum.label.label
+            label = spectrum.label.text
             legend_labels.append(label)
             spectrum.add_histogram(
                 self.ax,
@@ -488,6 +489,7 @@ class MultipleSpectra(collections.abc.Sequence):
         if fname is None:
             fname = self.fig_fname
         self.fig.savefig(fname)
+        logger.info("Wrote %s." % fname)
         pyplot.close(self.fig)
 
 
@@ -544,7 +546,7 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
         data = list()
         for spectrum in self:
             peak_pos = spectrum.hatch_window.peak_position
-            key_value = spectrum.label.value * spectrum.label.conversion_factor
+            key_value = spectrum.label.value
             data.append((key_value, peak_pos))
         xdata, ydata = zip(*data)
         fig, ax = pyplot.subplots()
@@ -571,7 +573,6 @@ def main():
     es = construct_electron_spectrum(job)
     es.plot()
     es.savefig()
-    print(f"Read {es.fname}")
 
     spectra = multiple_jobs_single_iteration(
         jobs=proj.find_jobs(), label=SpectrumLabel(key="Nm")
@@ -585,4 +586,10 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        filename=log_file_name,
+        format="%(asctime)s - %(name)s - %(levelname)-8s - %(message)s",
+        level=logging.INFO,
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     main()
