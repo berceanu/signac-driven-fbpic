@@ -266,8 +266,6 @@ def run_fbpic(job):
             write_dir=write_dir,
         ),
     ]
-    # TODO add electron tracking
-
     # set deterministic random seed
     np.random.seed(0)
 
@@ -294,7 +292,6 @@ def run_fbpic(job):
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
 @Project.post(are_phasespace_pngs)
-@Project.post.never  # TODO remove
 def save_pngs(job):
     """
     Loop through a whole simulation and, for *each ``fbpic`` iteration*:
@@ -317,7 +314,7 @@ def save_pngs(job):
             save_path=rho_path,
             n_c=job.sp.n_c,
             E0=job.sp.E0,
-            ylim=(-15.0, 15.0),  # um
+            ylim=(-25.0, 25.0),  # um
         )
         phase_space_plot(
             iteration=ts_it,
@@ -345,19 +342,14 @@ def generate_movie(job, stem):
 @Project.operation
 @Project.pre.after(save_pngs)
 @Project.post.isfile("rho.mp4")
-@Project.post.never  # TODO remove
 def generate_rho_movie(job):
     generate_movie(job, stem="rho")
-
-
-# TODO make smaller box size and decrease number of FPS
 
 
 @ex
 @Project.operation
 @Project.pre.after(save_pngs)
 @Project.post.isfile("phasespace.mp4")
-@Project.post.never  # TODO remove
 def generate_phasespace_movie(job):
     generate_movie(job, stem="phasespace")
 
@@ -375,7 +367,6 @@ def save_final_spectrum(job):
     es = construct_electron_spectrum(job)
     es.plot()
     es.savefig()
-
 
 
 @ex
