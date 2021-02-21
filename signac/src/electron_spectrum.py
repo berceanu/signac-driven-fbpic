@@ -3,24 +3,24 @@ Module for analysis and visualization of electron spectra.
 All energies are expressed in MeV, and charges in pC.
 """
 import collections.abc
+import copy
+import logging
 import pathlib
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import ClassVar, List, Tuple, Callable
-import copy
+from typing import Callable, ClassVar, List, Tuple
 
 import numpy as np
 from cycler import cycler
 from matplotlib import axes, figure, lines, pyplot, rc_context
 from scipy.constants import c
 from scipy.ndimage import gaussian_filter1d
+from signac.contrib.job import Job
 
 import job_util
 import mpl_util
 import simulation_diagnostics
 import util
-from signac.contrib.job import Job
-import logging
 
 logger = logging.getLogger(__name__)
 log_file_name = "electron_spectrum.log"
@@ -575,6 +575,7 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
 def main():
     """Main entry point."""
     import random
+
     import signac
 
     random.seed(42)
@@ -591,9 +592,9 @@ def main():
 
     es.savefig()
 
-    # label=SpectrumLabel(key="Nm")
     spectra = multiple_jobs_single_iteration(
         jobs=proj.find_jobs(),
+        # label=SpectrumLabel(key="Nm"),
         label=SpectrumLabel(
             key="zfoc_from_nozzle_center",
             name=r"$x$",
