@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def get_time_series_from(job):
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
     time_series = LpaDiagnostics(h5_path)
-    logger.info("Read %s from %s." % (time_series, h5_path))
+    logger.info("Read time series from %s." % h5_path)
     return time_series
 
 

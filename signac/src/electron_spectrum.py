@@ -156,10 +156,10 @@ class SpectrumLabel:
     key: str = ""
     name: str = ""
     unit: str = ""
-    text: str = ""
-    precision: int = 0
     get_value: Callable[[Job, str], float] = lambda job, key: job.sp[key]
+    precision: int = 0
     value: float = 0.0
+    text: str = ""
 
     def __post_init__(self):
         if not self.name:
@@ -214,7 +214,9 @@ class ElectronSpectrum:
     title: str = field(init=False, repr=False)
     xlabel: str = r"$E\, (\mathrm{MeV})$"
     xlim: Tuple[float] = (50.0, 350.0)
-    hatch_window: EnergyWindow = EnergyWindow(100.0, 300.0)
+    hatch_window: EnergyWindow = field(
+        init=False, default_factory=lambda: EnergyWindow(100.0, 300.0)
+    )
     sigma: int = 16  # std of Gaussian Kernel
     ylabel: str = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
     ylim: Tuple[float] = (0.0, 50.0)
@@ -575,22 +577,21 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
 def main():
     """Main entry point."""
     import random
-
     import signac
 
     random.seed(42)
 
     proj = signac.get_project(search=False)
 
-    job = random.choice(list(iter(proj)))
-    es = construct_electron_spectrum(job)
+    # job = random.choice(list(iter(proj)))
+    # es = construct_electron_spectrum(job)
 
-    with rc_context():
-        mpl_util.mpl_publication_style()
+    # with rc_context():
+    #     mpl_util.mpl_publication_style()
 
-        es.plot()
+    #     es.plot()
 
-    es.savefig()
+    # es.savefig()
 
     spectra = multiple_jobs_single_iteration(
         jobs=proj.find_jobs(),
@@ -609,12 +610,12 @@ def main():
         spectra.plot_quantity("peak_position", ylabel="E (MeV)")
         spectra.plot_quantity("total_charge", ylabel="Q (pC)")
 
-    per_job_spectra = multiple_iterations_single_job(job)
+    # per_job_spectra = multiple_iterations_single_job(job)
 
-    with rc_context():
-        mpl_util.mpl_publication_style()
+    # with rc_context():
+    #     mpl_util.mpl_publication_style()
 
-        per_job_spectra.plot_spectra()
+    #     per_job_spectra.plot_spectra()
 
 
 if __name__ == "__main__":

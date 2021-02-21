@@ -27,8 +27,7 @@ def mpl_publication_style():
     >>>     mpl_publication_style()
     >>>     <plot your figure>
     """
-    # Increase the default DPI, and change the file type from png to pdf
-    matplotlib.rcParams["savefig.dpi"] = 192  # default 1200
+    matplotlib.rcParams["savefig.dpi"] = 1200  # default 1200
     matplotlib.rcParams["savefig.format"] = "png"  # default pdf
 
     # Instead of individually increasing font sizes, point sizes, and line
@@ -63,11 +62,11 @@ def mpl_publication_style():
     matplotlib.rcParams["lines.markersize"] = 3
 
     # The magic sauce
-    matplotlib.rcParams["text.usetex"] = False  # default True
-    # matplotlib.rcParams["pgf.texsystem"] = "pdflatex"
-    # matplotlib.rcParams[
-    #     "pgf.preamble"
-    # ] = r"\usepackage[utf8x]{inputenc} \usepackage[T1]{fontenc} \usepackage{cmbright}"
+    matplotlib.rcParams["text.usetex"] = True  # default True
+    matplotlib.rcParams["pgf.texsystem"] = "pdflatex"
+    matplotlib.rcParams[
+        "pgf.preamble"
+    ] = r"\usepackage[utf8x]{inputenc} \usepackage[T1]{fontenc} \usepackage{cmbright}"
 
     # Increase the padding between the ticklabels and the axes, to prevent
     # overlap in the lower left-hand corner
