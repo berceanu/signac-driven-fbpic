@@ -11,7 +11,7 @@ import copy
 
 import numpy as np
 from cycler import cycler
-from matplotlib import axes, figure, lines, pyplot
+from matplotlib import axes, figure, lines, pyplot, rc_context
 from scipy.constants import c
 from scipy.ndimage import gaussian_filter1d
 
@@ -24,8 +24,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 log_file_name = "electron_spectrum.log"
-
-mpl_util.mpl_publication_style()
 
 
 def get_iteration_time_from(time_series, iteration=None):
@@ -101,7 +99,12 @@ def construct_electron_spectrum(job, iteration=None):
 
 def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
     spectra = list()
-    for job in sorted(jobs, key=lambda job: job.sp[label.key] if ((label is not None) and (label.key)) else job.id):
+    for job in sorted(
+        jobs,
+        key=lambda job: job.sp[label.key]
+        if ((label is not None) and (label.key))
+        else job.id,
+    ):
         spectrum = construct_electron_spectrum(job, iteration)
 
         if label is not None:
@@ -169,6 +172,7 @@ class SpectrumLabel:
             text += f" {self.unit}"
 
         return text
+
 
 @dataclass
 class EnergyWindow:
@@ -365,7 +369,7 @@ class ElectronSpectrum:
             textcoords="offset points",
             ha="right",
             va="baseline",
-            fontsize=6,  # FIXME
+            fontsize=6,
         )
 
     def add_legend(self):
@@ -382,11 +386,9 @@ class ElectronSpectrum:
         self.add_job_id()
         self.add_legend()
 
-    def savefig(self, fname=None):
-        if fname is None:
-            fname = self.fig_fname
-        self.fig.savefig(fname)
-        logger.info("Wrote %s." % fname)
+    def savefig(self):
+        self.fig.savefig(self.fig_fname)
+        logger.info("Wrote %s." % self.fig_fname)
         pyplot.close(self.fig)
 
 
@@ -485,11 +487,9 @@ class MultipleSpectra(collections.abc.Sequence):
         # self.add_grid()
         # self.add_ticks()
 
-    def savefig(self, fname=None):
-        if fname is None:
-            fname = self.fig_fname
-        self.fig.savefig(fname)
-        logger.info("Wrote %s." % fname)
+    def savefig(self):
+        self.fig.savefig(self.fig_fname)
+        logger.info("Wrote %s." % self.fig_fname)
         pyplot.close(self.fig)
 
 
@@ -518,6 +518,10 @@ class SingleJobMultipleSpectra(MultipleSpectra):
     def prepare_figure(self):
         super().prepare_figure()
         self.ax.set_title(self.title)
+
+    def plot_spectra(self):
+        super().plot()
+        super().savefig()
 
 
 @dataclass
@@ -563,7 +567,7 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
         logger.info("Wrote %s." % fname)
         pyplot.close(fig)
 
-    def plot(self):
+    def plot_spectra(self):
         super().plot()
         super().savefig()
 
@@ -571,27 +575,45 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
 def main():
     """Main entry point."""
     import random
-
     import signac
 
-    random.seed(24)
+    random.seed(42)
 
     proj = signac.get_project(search=False)
 
     job = random.choice(list(iter(proj)))
     es = construct_electron_spectrum(job)
-    es.plot()
+
+    with rc_context():
+        mpl_util.mpl_publication_style()
+
+        es.plot()
+
     es.savefig()
 
+    # label=SpectrumLabel(key="Nm")
     spectra = multiple_jobs_single_iteration(
-        jobs=proj.find_jobs(), label=SpectrumLabel(key="Nm")
+        jobs=proj.find_jobs(),
+        label=SpectrumLabel(
+            key="zfoc_from_nozzle_center",
+            name=r"$x$",
+            unit=r"$\mathrm{\mu m}$",
+            get_value=lambda job, key: job.sp[key] * 1.0e6,
+        ),
     )
-    spectra.plot()
-    spectra.savefig()
+    with rc_context():
+        mpl_util.mpl_publication_style()
+
+        spectra.plot_spectra()
+        spectra.plot_quantity("peak_position", ylabel="E (MeV)")
+        spectra.plot_quantity("total_charge", ylabel="Q (pC)")
 
     per_job_spectra = multiple_iterations_single_job(job)
-    per_job_spectra.plot()
-    per_job_spectra.savefig()
+
+    with rc_context():
+        mpl_util.mpl_publication_style()
+
+        per_job_spectra.plot_spectra()
 
 
 if __name__ == "__main__":
