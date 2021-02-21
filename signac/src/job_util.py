@@ -3,6 +3,11 @@ from openpmd_viewer.addons import LpaDiagnostics
 import pathlib
 import math
 import numpy as np
+from util import round_to_nearest
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def is_h5_path(job):
@@ -14,6 +19,7 @@ def is_h5_path(job):
 def get_time_series_from(job):
     h5_path = is_h5_path(job)
     time_series = LpaDiagnostics(h5_path)
+    logger.info("Read time series from %s." % h5_path)
     return time_series
 
 

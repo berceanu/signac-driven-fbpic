@@ -15,9 +15,9 @@ def copy_with_hash(path_to_fname, dst_dir, signac_job):
 
 
 if __name__ == "__main__":
-    for job in sorted(project, key=lambda job: job.doc.x):
-        x = (job.doc.x * u.meter).to(u.micrometer)
-        print(f"{x:.1f} -> {job.id:.6}")
+    for job in sorted(project, key=lambda job: job.sp.zfoc_from_nozzle_center):
+        zfoc_from_nozzle_center = (job.sp.zfoc_from_nozzle_center * u.meter).to(u.micrometer)
+        print(f"{zfoc_from_nozzle_center:.1f} -> {job.id:.6}")
 
     out_path = pathlib.Path.cwd() / "runs"
     out_path.mkdir(parents=True, exist_ok=True)

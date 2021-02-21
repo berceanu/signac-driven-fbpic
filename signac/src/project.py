@@ -143,14 +143,6 @@ def are_phasespace_pngs(job):
 
 @ex
 @Project.operation
-@Project.post.true("macroparticle_count")
-def add_macroparticle_count(job):
-    count = job.sp.p_nt * job.sp.p_nr * job.sp.p_nz * job.sp.Nz * job.sp.Nr
-    job.doc.setdefault("macroparticle_count", f"{count:.2e}")
-
-
-@ex
-@Project.operation
 @Project.post.isfile("lwfa_script.py")
 def lwfa_script(job):
     """Write lwfa_script.py in the job's workspace folder."""
@@ -375,8 +367,6 @@ def generate_phasespace_movie(job):
 @Project.pre.after(run_fbpic)
 @Project.post.isfile("final_histogram.npz")
 @Project.post.isfile("final_histogram.png")
-@Project.post.true("peak_charge")
-@Project.post.true("peak_position")
 def save_final_spectrum(job):
     """
     Save the histogram corresponding to the last iteration.
@@ -386,8 +376,6 @@ def save_final_spectrum(job):
     es.plot()
     es.savefig()
 
-    job.doc["peak_position"] = int(es.hatch_window.peak_position)  # MeV
-    job.doc["peak_charge"] = int(es.hatch_window.total_charge)  # pC
 
 
 @ex

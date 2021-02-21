@@ -9,12 +9,13 @@ logger = logging.getLogger(__name__)
 
 def all_equal(iterator):
     """Checks all np.ndarrays in iterator are equal."""
+    iterator = iter(iterator)
     try:
-        iterator = iter(iterator)
         first = next(iterator)
-        return all(np.array_equal(first, rest) for rest in iterator)
     except StopIteration:
         return True
+    return all(np.array_equal(np.atleast_1d(first), np.atleast_1d(rest)) for rest in iterator)
+
 
 def round_to_nearest(x, base=50):
     return base * round(x / base)
