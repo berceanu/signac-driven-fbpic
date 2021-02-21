@@ -89,6 +89,7 @@ def mpl_publication_style():
 
     # Margins / spacing
     matplotlib.rcParams["figure.subplot.bottom"] = 0.15
+    matplotlib.rcParams["figure.subplot.left"] = 0.14
 
 
 def add_grid(ax, linewidth=0.5, linecolor="0.5"):
