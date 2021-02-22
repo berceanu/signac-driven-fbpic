@@ -75,9 +75,13 @@ class OdinEnvironment(DefaultSlurmEnvironment):
             default="31200m",
             help="Minimum memory required per allocated CPU. Default units are megabytes. (default=31200m)",
         )
+        parser.add_argument(
+            "--account",
+            default="berceanu_a+",
+            help="A bank account, typically specified at job submit time. (default=berceanu_a+)",
+        )
 
 
-# TODO: add --mem-per-cpu argument
 
 
 class Project(FlowProject):
@@ -184,6 +188,7 @@ def plot_laser(job):
 @Project.operation
 @Project.pre.after(plot_laser)
 @Project.post(fbpic_ran)
+@Project.post.never
 def run_fbpic(job):
     """
     This ``signac-flow`` operation runs a ``fbpic`` simulation.
