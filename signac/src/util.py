@@ -17,8 +17,7 @@ def oldest_newest(paths):
     sorted_paths = sorted(list(paths), key=lambda p: modification_time(p))
     oldest = sorted_paths[0]
     newest = sorted_paths[-1]
-    delta_t = modification_time(newest) - modification_time(oldest)
-    return oldest, newest, delta_t
+    return (oldest, modification_time(oldest)), (newest, modification_time(newest))
 
 
 def all_equal(iterator):

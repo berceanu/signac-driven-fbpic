@@ -60,12 +60,17 @@ def estimated_time_of_arrival(job):
     paths1, paths2 = itertools.tee(paths, 2)
     if len(list(paths1)) < 2:
         return "∞"
-    oldest, newest, delta_t = util.oldest_newest(paths2)
+    (oldest, t_old), (newest, t_new) = util.oldest_newest(paths2)
+    delta_t = t_new - t_old
+
     it = np.array(tuple(extract_iteration_number(p.name) for p in (oldest, newest)))
     delta_it = np.diff(it).item()
 
     final_iteration = job.sp.N_step - 1
-    return str(final_iteration * delta_t / delta_it).split(".")[0]
+    runtime = final_iteration * delta_t / delta_it
+
+    return str(t_old + runtime).split(".")[0]
+
 
 
 def main():
