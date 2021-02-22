@@ -52,8 +52,9 @@ def get_diags_fnames(job):
 
 
 def estimated_time_of_arrival(job):
-    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
-    if not h5_path.is_dir():
+    try:
+        h5_path = is_h5_path(job)
+    except FileNotFoundError:
         return "∞"
     paths = h5_path.glob("*.h5")
     paths1, paths2 = itertools.tee(paths, 2)

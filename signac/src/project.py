@@ -88,9 +88,9 @@ class Project(FlowProject):
     """
 
 
-preprocessing = Project.make_group(name="ex")
-fbpic = Project.make_group(name="ex")
-postprocessing= Project.make_group(name="ex")
+preprocessing = Project.make_group(name="preprocessing")
+fbpic = Project.make_group(name="fbpic")
+postprocessing= Project.make_group(name="postprocessing")
 
 
 @Project.label
@@ -115,8 +115,10 @@ def fbpic_ran(job):
     :return: True if all output files are in {job_dir}/diags/hdf5, False otherwise
     """
     iterations = job_util.estimate_diags_fnames(job)
-    h5_files = job_util.get_diags_fnames(job)
-
+    try:
+        h5_files = job_util.get_diags_fnames(job)
+    except FileNotFoundError:
+        return False
     return set(h5_files) == set(iterations)
 
 
