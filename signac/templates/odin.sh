@@ -1,7 +1,7 @@
 {% extends "slurm.sh" %}
 
 {% block tasks %}
-{% set cores_per_node = 48 %}
+{% set cores_per_node = environment.cores_per_node %}
 {% set gpus_per_node = 16 %}
 {% set threshold = 0 if force else 0.9 %}
 {% set cpu_tasks = operations|calc_tasks('np', parallel, force) %}

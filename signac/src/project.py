@@ -10,7 +10,6 @@ See also: $ python src/project.py --help
 Note: All the lines marked with the CHANGEME comment contain customizable parameters.
 """
 import logging
-import math
 import pathlib
 import sys
 
@@ -22,6 +21,7 @@ from flow.environment import DefaultSlurmEnvironment
 from matplotlib import pyplot
 from openpmd_viewer.addons import LpaDiagnostics
 
+import job_util
 from density_functions import make_gaussian_dens_func, plot_density_profile
 from electron_spectrum import construct_electron_spectrum
 from laser_profiles import make_flat_laser_profile, plot_laser_intensity
@@ -32,8 +32,6 @@ from simulation_diagnostics import (
     phase_space_plot,
 )
 from util import Timer, du, ffmpeg_command, seconds_to_hms, shell_run
-import job_util
-
 
 logger = logging.getLogger(__name__)
 log_file_name = "fbpic-project.log"
@@ -45,6 +43,7 @@ class OdinEnvironment(DefaultSlurmEnvironment):
     hostname_pattern = r".*\.ra5\.eli-np\.ro$"
     template = "odin.sh"
     mpi_cmd = "srun --mpi=pmi2"
+    cores_per_node = 48
 
     @classmethod
     def add_args(cls, parser):
@@ -88,13 +87,14 @@ ex = Project.make_group(name="ex")
 def progress(job):
     """Show progress of fbpic simulation, based on completed/total .h5 files."""
     # get last iteration based on input parameters
-    number_of_iterations = job_util.number_of_saved_iterations(job)
-    h5_files = job_util.get_diags_fnames(job)
-    return f"{len(list(h5_files))}/{number_of_iterations}"
+    num_iterations = len(list(job_util.estimate_diags_fnames(job)))
+    num_h5_files = len(list(job_util.get_diags_fnames(job)))
+    return f"{num_h5_files}/{num_iterations}"
 
 
-# TODO estimate completion time based on hdf5 timestamps
-# add as label and use status --detailed to see it
+@Project.label
+def eta(job):
+    return job_util.estimated_time_of_arrival(job)
 
 
 def fbpic_ran(job):
@@ -104,15 +104,10 @@ def fbpic_ran(job):
     :param job: the job instance is a handle to the data of a unique statepoint
     :return: True if all output files are in {job_dir}/diags/hdf5, False otherwise
     """
-    iterations = job_util.get_diags_fnames(job)
+    iterations = job_util.estimate_diags_fnames(job)
+    h5_files = job_util.get_diags_fnames(job)
 
-    # estimate iteration array based on input parameters
-    estimated_iterations = job_util.estimate_diags_fnames(job)
-
-    # check if iterations array corresponds to input params
-    did_it_run = set(estimated_iterations) == set(iterations)
-
-    return did_it_run
+    return set(h5_files) == set(iterations)
 
 
 def are_pngs(job, stem):
@@ -125,10 +120,7 @@ def are_pngs(job, stem):
     p = pathlib.Path(job.ws) / f"{stem}s"
     files = [fn.name for fn in p.glob("*.png")]
 
-    # estimate iteration array based on input parameters
-    iterations = job_util.estimate_saved_iterations(job)
-
-    pngs = (f"{stem}{it:06d}.png" for it in iterations)
+    pngs = (f"{stem}{it:06d}.png" for it in job_util.saved_iterations(job))
 
     return set(files) == set(pngs)
 
@@ -487,6 +479,6 @@ if __name__ == "__main__":
     )
     logger.info("==RUN STARTED==")
 
-    # Project().main()  # run the whole signac project workflow
+    Project().main()  # run the whole signac project workflow
 
     logger.info("==RUN FINISHED==")

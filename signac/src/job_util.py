@@ -1,11 +1,12 @@
 """Module containing various utility job-related functions."""
-from openpmd_viewer.addons import LpaDiagnostics
-import pathlib
-import math
-import numpy as np
-from util import round_to_nearest
+import itertools
 import logging
+import pathlib
 
+import numpy as np
+from openpmd_viewer.addons import LpaDiagnostics
+
+import util
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ def is_h5_path(job):
         raise FileNotFoundError(f"{h5_path} doesn't exist.")
     return h5_path
 
+
 def get_time_series_from(job):
     h5_path = is_h5_path(job)
     time_series = LpaDiagnostics(h5_path)
@@ -23,27 +25,19 @@ def get_time_series_from(job):
     return time_series
 
 
-def num_saved_iterations(N_step, diag_period):
-    return math.ceil((N_step - 1) / diag_period)
-
-
-def number_of_saved_iterations(job):
-    return num_saved_iterations(job.sp.N_step, job.sp.diag_period)
-
-
-def saved_iterations(N_step, diag_period):
-    return np.arange(0, N_step, diag_period, dtype=int)
-
-
-def estimate_saved_iterations(job):
-    return saved_iterations(job.sp.N_step, job.sp.diag_period)
+def saved_iterations(job):
+    return np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=int)
 
 
 def estimate_diags_fnames(job, digits=8, extension=".h5"):
     return (
-        f"data{iteration:0{digits}d}{extension}"
-        for iteration in estimate_saved_iterations(job)
+        f"data{iteration:0{digits}d}{extension}" for iteration in saved_iterations(job)
     )
+
+
+def extract_iteration_number(diags_fname):
+    stem, ext = diags_fname.split(".")
+    return int(stem[4:])
 
 
 def get_diags_fnames(job):
@@ -57,14 +51,26 @@ def get_diags_fnames(job):
     return fnames
 
 
-def extract_iteration_number(diags_fname):
-    stem, ext = diags_fname.split(".")
-    return int(stem[4:])
+def estimated_time_of_arrival(job):
+    h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
+    if not h5_path.is_dir():
+        return "∞"
+    paths = h5_path.glob("*.h5")
+    paths1, paths2 = itertools.tee(paths, 2)
+    if len(list(paths1)) < 2:
+        return "∞"
+    oldest, newest, delta_t = util.oldest_newest(paths2)
+    it = np.array(tuple(extract_iteration_number(p.name) for p in (oldest, newest)))
+    delta_it = np.diff(it).item()
+
+    final_iteration = job.sp.N_step - 1
+    return str(final_iteration * delta_t / delta_it).split(".")[0]
 
 
 def main():
     """Main entry point."""
     import random
+
     import signac
 
     random.seed(42)
@@ -73,15 +79,7 @@ def main():
     job = random.choice(list(iter(proj)))
     print(job.ws)
 
-    ts = get_time_series_from(job)
-    assert number_of_saved_iterations(job) == estimate_saved_iterations(job).size
-    assert ts.iterations.size == number_of_saved_iterations(job)
-
     edf = list(estimate_diags_fnames(job))
-    other_esi = [extract_iteration_number(f) for f in edf]
-    esi = estimate_saved_iterations(job)
-    assert set(esi) == set(other_esi)
-
     gdf = list(get_diags_fnames(job))
     assert set(edf) == set(gdf)
 

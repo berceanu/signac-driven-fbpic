@@ -1,11 +1,25 @@
 """Module containing various utility functions."""
-import subprocess
-import logging
-import numpy as np
-import time
 import datetime
+import logging
+import subprocess
+import time
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
+
+
+def modification_time(fname):
+    return datetime.datetime.fromtimestamp(fname.stat().st_mtime)
+
+
+def oldest_newest(paths):
+    sorted_paths = sorted(list(paths), key=lambda p: modification_time(p))
+    oldest = sorted_paths[0]
+    newest = sorted_paths[-1]
+    delta_t = modification_time(newest) - modification_time(oldest)
+    return oldest, newest, delta_t
+
 
 def all_equal(iterator):
     """Checks all np.ndarrays in iterator are equal."""
@@ -14,7 +28,9 @@ def all_equal(iterator):
         first = next(iterator)
     except StopIteration:
         return True
-    return all(np.array_equal(np.atleast_1d(first), np.atleast_1d(rest)) for rest in iterator)
+    return all(
+        np.array_equal(np.atleast_1d(first), np.atleast_1d(rest)) for rest in iterator
+    )
 
 
 def round_to_nearest(x, base=50):
