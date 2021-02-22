@@ -271,7 +271,7 @@ def run_fbpic(job):
         ),
     ]
     # set deterministic random seed
-    np.random.seed(0)
+    np.random.seed(job.sp.random_seed)
 
     # time the fbpic run
     t = Timer()
