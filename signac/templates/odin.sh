@@ -16,7 +16,6 @@
 #SBATCH --ntasks={{ (gpu_tasks, cpu_tasks)|max }}
 #SBATCH --ntasks-per-node={{ (gpu_tasks, cpu_tasks)|max }}
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=31200m
 #SBATCH --gres=gpu:{{ gpu_tasks }}
 #SBATCH --gres-flags=enforce-binding
 {% else %}
@@ -27,7 +26,12 @@
 
 {% block header %}
 {{ super () -}}
-#SBATCH --account=berceanu_a+
+{% if mem_per_cpu %}
+#SBATCH --mem-per-cpu={{ mem_per_cpu }}
+{% endif %}
+{% if account %}
+#SBATCH --account={{ account }}
+{% endif %}
 {% endblock header %}
 
 {% block project_header %}
