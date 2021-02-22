@@ -3,14 +3,15 @@
 Iterates over all defined state points and initializes
 the associated job workspace directories."""
 import logging
-import pathlib
 import math
+import pathlib
 from itertools import product
-import numpy as np
 
+import numpy as np
+import signac
 import unyt as u
 from prepic import Plasma, lwfa
-import signac
+
 import util
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
@@ -31,35 +32,32 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    for zfoc_from_nozzle_center in np.array([600, 1000, 1400, 1800]) * 1.0e-6:
+    for zfoc_from_nozzle_center in np.array([1400]) * 1.0e-6:
         sp = dict(
             # TODO: move to job document
-            nranks=4,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
+            nranks=8,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
             # The simulation box
             lambda0=0.8e-6,  # Laser wavelength (default 0.815e-6)
-            lambda0_over_dz=32,  # Δz = lambda0 / lambda0_over_dz (default 40)
-            # TODO try 40 with n_order=16
+            lambda0_over_dz=40,  # Δz = lambda0 / lambda0_over_dz (default 32)
             dr_over_dz=5,  # Δr = dr_over_dz * Δz (default 5)
             zmin=-60.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             rmax=70.0e-6,  # Length of the box along r (meters) (default 70.0e-6)
             r_boundary_conditions="reflective",  #  'reflective' (default) / 'open' more expensive
-            n_order=32,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 8)
+            n_order=16,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 16)
             Nm=3,  # Number of modes used (default 3)
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
-            n_e=8.0e+18 * 1.0e+6,  # Density (electrons.meters^-3)
+            n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z (default 2)
             p_nr=2,  # Number of particles per cell along r (default 2)
             # The laser
             a0=2.4,  # Laser amplitude
             # Laser waist, converted from experimental FWHM@intensity
-            w0=22.0e-6
-            / SQRT_FACTOR,
+            w0=22.0e-6 / SQRT_FACTOR,
             # Laser duration, converted from experimental FWHM@intensity
-            tau=25.0e-15
-            / SQRT_FACTOR,
+            tau=25.0e-15 / SQRT_FACTOR,
             z0=-10.0e-6,  # Laser centroid
             zfoc_from_nozzle_center=zfoc_from_nozzle_center,  # Laser focal position, measured from the center of the gas jet
             profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
