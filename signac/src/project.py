@@ -98,7 +98,10 @@ def progress(job):
     """Show progress of fbpic simulation, based on completed/total .h5 files."""
     # get last iteration based on input parameters
     num_iterations = len(list(job_util.estimate_diags_fnames(job)))
-    num_h5_files = len(list(job_util.get_diags_fnames(job)))
+    try:
+        num_h5_files = len(list(job_util.get_diags_fnames(job)))
+    except FileNotFoundError:
+        return f"0/{num_iterations}"
     return f"{num_h5_files}/{num_iterations}"
 
 
