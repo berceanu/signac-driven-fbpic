@@ -88,7 +88,9 @@ class Project(FlowProject):
     """
 
 
-ex = Project.make_group(name="ex")
+preprocessing = Project.make_group(name="ex")
+fbpic = Project.make_group(name="ex")
+postprocessing= Project.make_group(name="ex")
 
 
 @Project.label
@@ -141,7 +143,7 @@ def are_phasespace_pngs(job):
     return are_pngs(job, "phasespace")
 
 
-@ex
+@preprocessing
 @Project.operation
 @Project.post.isfile("lwfa_script.py")
 def lwfa_script(job):
@@ -149,7 +151,7 @@ def lwfa_script(job):
     write_lwfa_script(job)
 
 
-@ex
+@preprocessing
 @Project.operation
 @Project.post.isfile("initial_density_profile.png")
 def plot_initial_density_profile(job):
@@ -159,7 +161,7 @@ def plot_initial_density_profile(job):
     )
 
 
-@ex
+@preprocessing
 @Project.operation
 @Project.pre.after(plot_initial_density_profile)
 @Project.post.isfile("laser_intensity.png")
@@ -180,7 +182,7 @@ def plot_laser(job):
 
 # omp_num_threads=1 by default
 # np=nranks * omp_num_threads by default
-@ex.with_directives(
+@fbpic.with_directives(
     dict(nranks=lambda job: job.sp.nranks, ngpu=lambda job: job.sp.nranks)
 )
 @Project.operation
@@ -287,7 +289,7 @@ def run_fbpic(job):
     f.close()
 
 
-@ex
+@postprocessing
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
@@ -338,7 +340,7 @@ def generate_movie(job, stem):
     shell_run(command, shell=True)
 
 
-@ex
+@postprocessing
 @Project.operation
 @Project.pre.after(save_pngs)
 @Project.post.isfile("rho.mp4")
@@ -346,7 +348,7 @@ def generate_rho_movie(job):
     generate_movie(job, stem="rho")
 
 
-@ex
+@postprocessing
 @Project.operation
 @Project.pre.after(save_pngs)
 @Project.post.isfile("phasespace.mp4")
@@ -354,7 +356,7 @@ def generate_phasespace_movie(job):
     generate_movie(job, stem="phasespace")
 
 
-@ex
+@postprocessing
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.isfile("final_histogram.npz")
@@ -369,7 +371,7 @@ def save_final_spectrum(job):
     es.savefig()
 
 
-@ex
+@postprocessing
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.isfile("all_hist.txt")
@@ -417,7 +419,7 @@ def save_histograms(job):
     np.savetxt(job.fn("hist_edges.txt"), hist_edges, header="Energy histogram bins.")
 
 
-@ex
+@postprocessing
 @Project.operation
 @Project.pre.after(save_histograms)
 @Project.post.isfile("hist2d.png")
@@ -467,7 +469,7 @@ def plot_2d_hist(job):
     hist2d.canvas.print_figure(job.fn("hist2d.png"))
 
 
-@ex
+@postprocessing
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post.true("disk_usage")

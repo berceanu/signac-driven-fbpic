@@ -10,4 +10,6 @@
 #             2 signac jobs will run in parallel, using 4 GPUs each
 #             max N is the number of GPUs on the machine / nranks, eg 16 / 4 = 4
 
-python src/project.py submit -o ex --parallel
+python src/project.py submit -o preprocessing --parallel
+python src/project.py submit -o fbpic --parallel
+python src/project.py submit -o postprocessing --parallel
