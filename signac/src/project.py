@@ -82,8 +82,6 @@ class OdinEnvironment(DefaultSlurmEnvironment):
         )
 
 
-
-
 class Project(FlowProject):
     """
     Placeholder for ``FlowProject`` class.
@@ -188,7 +186,6 @@ def plot_laser(job):
 @Project.operation
 @Project.pre.after(plot_laser)
 @Project.post(fbpic_ran)
-@Project.post.never
 def run_fbpic(job):
     """
     This ``signac-flow`` operation runs a ``fbpic`` simulation.
@@ -478,8 +475,6 @@ def store_disk_usage(job):
     usage = du(job.ws)
     job.doc.setdefault("disk_usage", usage)
 
-
-# TODO (possibly) integrate `nvml.py` via `schedule` as background thread
 
 if __name__ == "__main__":
     logging.basicConfig(
