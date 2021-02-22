@@ -44,6 +44,7 @@ class OdinEnvironment(DefaultSlurmEnvironment):
     template = "odin.sh"
     mpi_cmd = "srun --mpi=pmi2"
     cores_per_node = 48
+    gpus_per_node = 16
 
     @classmethod
     def add_args(cls, parser):
@@ -68,6 +69,11 @@ class OdinEnvironment(DefaultSlurmEnvironment):
             type=float,
             default=72,
             help="The wallclock time in hours. (default=72)",
+        )
+        parser.add_argument(
+            "--mem-per-cpu",
+            default="31200m",
+            help="Minimum memory required per allocated CPU. Default units are megabytes. (default=31200m)",
         )
 
 

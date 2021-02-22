@@ -2,7 +2,7 @@
 
 {% block tasks %}
 {% set cores_per_node = environment.cores_per_node %}
-{% set gpus_per_node = 16 %}
+{% set gpus_per_node = environment.gpus_per_node %}
 {% set threshold = 0 if force else 0.9 %}
 {% set cpu_tasks = operations|calc_tasks('np', parallel, force) %}
 {% set gpu_tasks = operations|calc_tasks('ngpu', parallel, force) %}
