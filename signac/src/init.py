@@ -32,10 +32,10 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    # for zfoc_from_nozzle_center in np.array((1400)) * 1.0e-6:
-    for seed in np.array((0, 42, 137, 314)):
+    # (0, 42, 137, 314)
+    for Nm in np.array((3,4,5,)):
         sp = dict(
-            random_seed = seed,  # deterministic random seed
+            random_seed = 42,  # deterministic random seed
             # TODO: move to job document
             nranks=4,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
             # The simulation box
@@ -47,7 +47,7 @@ def main():
             rmax=70.0e-6,  # Length of the box along r (meters) (default 70.0e-6)
             r_boundary_conditions="reflective",  #  'reflective' (default) / 'open' more expensive
             n_order=32,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 16)
-            Nm=3,  # Number of modes used (default 3)
+            Nm=Nm,  # Number of modes used (default 3)
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
