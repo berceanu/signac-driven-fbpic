@@ -264,7 +264,7 @@ class ElectronSpectrum:
         percentage = self.iteration / self.total_iterations
         title = (
             f"t = {self.iteration_time_ps:.2f} ps, z = {self.z_position:.0f} $\mathrm{{\mu m}}$"
-            f"(iteration {self.iteration}, {percentage:.0%})"
+            f" (iteration {self.iteration}, {percentage:.0%})"
         )
         return title
 
@@ -593,22 +593,35 @@ def main():
 
     # es.savefig()
 
+    # spectra = multiple_jobs_single_iteration(
+    #     jobs=proj.find_jobs(),
+    #     # label=SpectrumLabel(key="Nm"),
+    #     label=SpectrumLabel(
+    #         key="zfoc_from_nozzle_center",
+    #         name=r"$x$",
+    #         unit=r"$\mathrm{\mu m}$",
+    #         get_value=lambda job, key: job.sp[key] * 1.0e6,
+    #     ),
+    # )
+    # with rc_context():
+    #     mpl_util.mpl_publication_style()
+
+    #     spectra.plot_spectra()
+    #     spectra.plot_quantity("peak_position", ylabel="E (MeV)")
+    #     spectra.plot_quantity("total_charge", ylabel="Q (pC)")
+
+
     spectra = multiple_jobs_single_iteration(
-        jobs=proj.find_jobs(),
-        # label=SpectrumLabel(key="Nm"),
+        jobs=proj.find_jobs(filter={"lambda0_over_dz": 32}),
         label=SpectrumLabel(
-            key="zfoc_from_nozzle_center",
-            name=r"$x$",
-            unit=r"$\mathrm{\mu m}$",
-            get_value=lambda job, key: job.sp[key] * 1.0e6,
+            key="random_seed",
+            name=r"random seed",
         ),
     )
     with rc_context():
         mpl_util.mpl_publication_style()
-
         spectra.plot_spectra()
-        spectra.plot_quantity("peak_position", ylabel="E (MeV)")
-        spectra.plot_quantity("total_charge", ylabel="Q (pC)")
+
 
     # per_job_spectra = multiple_iterations_single_job(job)
 
