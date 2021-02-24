@@ -140,14 +140,13 @@ def uncertainty_band(project):
         spectra.append(spectrum)
 
     ub = UncertaintyBand(spectra=spectra)
-    mjms = multiple_jobs_single_iteration(
-        project.find_jobs(filter={"Nm": {"$gt": 3}}), label=SpectrumLabel(key="Nm")
-    )
+    # mjms = multiple_jobs_single_iteration(
+    #     project.find_jobs(filter={"Nm": {"$gt": 3}}), label=SpectrumLabel(key="Nm")
+    # )
 
     with rc_context():
         mpl_util.mpl_publication_style()
-
-        mjms.plot_spectra()
+        # mjms.plot_spectra()
         ub.plot()
         ub.savefig()
 
@@ -694,12 +693,9 @@ def main():
 
     # job = random.choice(list(iter(proj)))
     # es = construct_electron_spectrum(job)
-
     # with rc_context():
     #     mpl_util.mpl_publication_style()
-
     #     es.plot()
-
     # es.savefig()
 
     # spectra = multiple_jobs_single_iteration(
@@ -714,20 +710,18 @@ def main():
     # )
     # with rc_context():
     #     mpl_util.mpl_publication_style()
-
     #     spectra.plot_spectra()
+    #     spectra.save_spectra()
     #     spectra.plot_quantity("peak_position", ylabel="E (MeV)")
     #     spectra.plot_quantity("total_charge", ylabel="Q (pC)")
 
     uncertainty_band(proj)
 
     # per_job_spectra = multiple_iterations_single_job(job)
-
     # with rc_context():
     #     mpl_util.mpl_publication_style()
-
     #     per_job_spectra.plot_spectra()
-
+    #     per_job_spectra.save_spectra()
 
 if __name__ == "__main__":
     logging.basicConfig(
