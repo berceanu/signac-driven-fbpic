@@ -140,14 +140,17 @@ def uncertainty_band(project):
         spectra.append(spectrum)
 
     ub = UncertaintyBand(spectra=spectra)
-    # mjms = multiple_jobs_single_iteration(
-    #     project.find_jobs(filter={"Nm": {"$gt": 3}}), label=SpectrumLabel(key="Nm")
-    # )
+
+    # TODO remove "Nm": 3 filter
+    mjms = multiple_jobs_single_iteration(
+        project.find_jobs(filter={"random_seed": 42, "Nm": 3}), label=SpectrumLabel(key="Nm")
+    )
 
     with rc_context():
         mpl_util.mpl_publication_style()
-        # mjms.plot_spectra()
         ub.plot()
+        mjms.add_histograms(ax=ub.ax)
+        ub.ax.legend()
         ub.savefig()
 
 
@@ -462,7 +465,10 @@ class MultipleSpectra(collections.abc.Sequence):
         self.ax.set_ylabel(self.ylabel)
         self.ax.set_ylim(*self.ylim)
 
-    def add_histograms(self):
+    def add_histograms(self, ax=None):
+        if ax is None:
+            ax = self.ax
+
         combined_cycler = cycler(color=["C0", "C1", "C2", "C3"]) + cycler(
             linestyle=["solid", "dashed", "dotted", "dashdot"]
         )
@@ -476,7 +482,7 @@ class MultipleSpectra(collections.abc.Sequence):
             label = spectrum.label.text
             legend_labels.append(label)
             spectrum.add_histogram(
-                self.ax,
+                ax,
                 linecolor=cycler_dict[label]["color"],
                 linestyle=cycler_dict[label]["linestyle"],
                 linewidth=linewidth,
@@ -492,7 +498,7 @@ class MultipleSpectra(collections.abc.Sequence):
                 )
             )
 
-        self.ax.legend(
+        ax.legend(
             handles=legend_handles,
             labels=legend_labels,
             loc="upper right",
@@ -666,20 +672,21 @@ class UncertaintyBand(MultipleSpectra):
             bins=self.energy,
             weights=self.average,
             histtype="step",
-            color="C4",
+            color="0.5",
             linewidth=0.25,
-            linestyle="solid",
+            linestyle="dashdot",
             label="$\mu$",
+            zorder=-10,
         )
         self.ax.fill_between(
             x=self.energy,
             y1=self.avg_min_two_sigma,
             y2=self.avg_pls_two_sigma,
-            facecolor="C4",
-            alpha=0.3,
+            facecolor="0.5",
+            alpha=0.2,
             label="$\mu \pm 2\sigma$",
+            zorder=10,
         )
-        self.ax.legend()
 
 
 def main():

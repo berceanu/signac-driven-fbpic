@@ -28,7 +28,7 @@ def mpl_publication_style():
     >>>     <plot your figure>
     """
     matplotlib.rcParams["savefig.dpi"] = 1200  # default 1200
-    matplotlib.rcParams["savefig.format"] = "png"  # default pdf
+    matplotlib.rcParams["savefig.format"] = "pdf"  # default pdf
 
     # Instead of individually increasing font sizes, point sizes, and line
     # thicknesses, I found it easier to just decrease the figure size so
