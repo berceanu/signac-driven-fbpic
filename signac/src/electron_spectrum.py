@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from typing import Callable, ClassVar, List, Tuple
 
 import numpy as np
+import pandas as pd
+from pandas.core.frame import DataFrame
 from cycler import cycler
 from matplotlib import axes, figure, lines, pyplot, rc_context
 from scipy.constants import c
@@ -123,6 +125,31 @@ def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
         logger.info("No iteration specified. Using %s." % out.iteration)
 
     return out
+
+
+def uncertainty_band(project):
+    spectra = list()
+    for job in project.find_jobs(filter={"Nm": 3}):
+        spectrum = construct_electron_spectrum(job)
+
+        label = SpectrumLabel(key="random_seed", name=r"random seed")
+        label.value = label.get_value(job, label.key)
+        label.text = label.create_text() + f" — {spectrum.jobid:.8}"
+
+        spectrum.label = label
+        spectra.append(spectrum)
+
+    ub = UncertaintyBand(spectra=spectra)
+    mjms = multiple_jobs_single_iteration(
+        project.find_jobs(filter={"Nm": {"$gt": 3}}), label=SpectrumLabel(key="Nm")
+    )
+
+    with rc_context():
+        mpl_util.mpl_publication_style()
+
+        mjms.plot_spectra()
+        ub.plot()
+        ub.savefig()
 
 
 def multiple_iterations_single_job(job, iterations=None):
@@ -501,6 +528,7 @@ class SingleJobMultipleSpectra(MultipleSpectra):
     title: str = field(init=False, repr=False)
 
     def __post_init__(self):
+        super().__post_init__()
         assert util.all_equal(
             (spectrum.jobid for spectrum in self)
         ), "Spectra belong to different jobs."
@@ -523,6 +551,8 @@ class SingleJobMultipleSpectra(MultipleSpectra):
 
     def plot_spectra(self):
         super().plot()
+    
+    def save_spectra(self):
         super().savefig()
 
 
@@ -532,6 +562,7 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
     title: str = field(init=False, repr=False)
 
     def __post_init__(self):
+        super().__post_init__()
         assert util.all_equal(
             (spectrum.iteration for spectrum in self)
         ), "Spectra have different iteration numbers."
@@ -571,7 +602,85 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
 
     def plot_spectra(self):
         super().plot()
+    
+    def save_spectra(self):
         super().savefig()
+
+
+@dataclass
+class UncertaintyBand(MultipleSpectra):
+    iteration: int = field(init=False)
+    title: str = field(init=False, repr=False)
+    df: DataFrame = field(init=False, repr=False)
+    average: np.ndarray = field(init=False, repr=False)
+    avg_min_two_sigma: np.ndarray = field(init=False, repr=False)
+    avg_pls_two_sigma: np.ndarray = field(init=False, repr=False)
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert util.all_equal(
+            (spectrum.iteration for spectrum in self)
+        ), "Spectra have different iteration numbers."
+        self.iteration = self[0].iteration
+        self.title = f"iteration {self.iteration}"
+        self.fig_fname = self.create_fig_fname()
+        self.df = self.dataframe()
+        self.compute_avg_spectrum()
+        self.compute_band()
+        self.average = self.df.avg
+        self.avg_min_two_sigma = self.df.avg_min_two_sigma
+        self.avg_pls_two_sigma = self.df.avg_pls_two_sigma
+
+    def create_fig_fname(self):
+        ids = sorted(f"{spectrum.jobid:.8}" for spectrum in self)
+        fig_fname = "_".join(ids)
+        return fig_fname
+
+    def prepare_figure(self):
+        super().prepare_figure()
+        self.ax.set_title(self.title)
+
+    def dataframe(self):
+        data = dict(energy=self.energy)
+        for spectrum in self:
+            data[str(spectrum.label.value)] = spectrum.differential_charge
+        df = pd.DataFrame(data)
+        df.set_index("energy", inplace=True)
+        return df
+
+    def compute_avg_spectrum(self):
+        self.df["avg"] = self.df.mean(axis=1)
+
+    def compute_band(self):
+        self.df["sigma"] = self.df.std(axis=1)
+        self.df["avg_min_two_sigma"] = self.df.avg - 2 * self.df.sigma
+        self.df["avg_pls_two_sigma"] = self.df.avg + 2 * self.df.sigma
+
+    def save_dataframe(self):
+        self.df.to_csv("uncertainty_band.csv")
+
+    def plot(self):
+        self.prepare_figure()
+
+        self.ax.hist(
+            x=self.energy,
+            bins=self.energy,
+            weights=self.average,
+            histtype="step",
+            color="C4",
+            linewidth=0.25,
+            linestyle="solid",
+            label="$\mu$",
+        )
+        self.ax.fill_between(
+            x=self.energy,
+            y1=self.avg_min_two_sigma,
+            y2=self.avg_pls_two_sigma,
+            facecolor="C4",
+            alpha=0.3,
+            label="$\mu \pm 2\sigma$",
+        )
+        self.ax.legend()
 
 
 def main():
@@ -610,18 +719,7 @@ def main():
     #     spectra.plot_quantity("peak_position", ylabel="E (MeV)")
     #     spectra.plot_quantity("total_charge", ylabel="Q (pC)")
 
-
-    spectra = multiple_jobs_single_iteration(
-        jobs=proj.find_jobs(filter={"lambda0_over_dz": 32}),
-        label=SpectrumLabel(
-            key="random_seed",
-            name=r"random seed",
-        ),
-    )
-    with rc_context():
-        mpl_util.mpl_publication_style()
-        spectra.plot_spectra()
-
+    uncertainty_band(proj)
 
     # per_job_spectra = multiple_iterations_single_job(job)
 
