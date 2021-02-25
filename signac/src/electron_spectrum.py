@@ -141,9 +141,8 @@ def uncertainty_band(project):
 
     ub = UncertaintyBand(spectra=spectra)
 
-    # TODO remove "Nm": 3 filter
     mjms = multiple_jobs_single_iteration(
-        project.find_jobs(filter={"random_seed": 42, "Nm": 3}), label=SpectrumLabel(key="Nm")
+        project.find_jobs(filter={"random_seed": 42}), label=SpectrumLabel(key="Nm")
     )
 
     with rc_context():
