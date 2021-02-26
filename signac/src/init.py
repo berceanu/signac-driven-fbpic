@@ -33,7 +33,7 @@ def main():
     )
 
     # (0, 42, 137, 314)
-    for Nm in np.array((3,4,5,)):
+    for Nm in np.array((3,4,5,6,7)):
         sp = dict(
             random_seed = 42,  # deterministic random seed
             # TODO: move to job document
