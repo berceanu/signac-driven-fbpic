@@ -65,11 +65,12 @@ def estimated_time_of_arrival(job):
 
     it = np.array(tuple(extract_iteration_number(p.name) for p in (oldest, newest)))
     delta_it = np.diff(it).item()
-
     final_iteration = job.sp.N_step - 1
-    runtime = final_iteration * delta_t / delta_it
 
-    return str(t_old + runtime).split(".")[0]
+    remaining_iterations = final_iteration - it[1]
+    runtime = remaining_iterations * delta_t / delta_it
+
+    return str(t_new + runtime).split(".")[0]
 
 
 

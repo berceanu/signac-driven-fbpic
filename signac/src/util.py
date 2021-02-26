@@ -15,7 +15,7 @@ def modification_time(fname):
 
 def oldest_newest(paths):
     sorted_paths = sorted(list(paths), key=lambda p: modification_time(p))
-    oldest = sorted_paths[0]
+    oldest = sorted_paths[-2]
     newest = sorted_paths[-1]
     return (oldest, modification_time(oldest)), (newest, modification_time(newest))
 
