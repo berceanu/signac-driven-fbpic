@@ -8,6 +8,28 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+def corners(centers):
+    """
+    Given a 1d array of center positions, compute the positions of the edges
+    between them.
+    """
+    lengths = np.diff(centers)
+    inside_corners = centers[:-1] + lengths / 2
+    leftmost_corner = centers[0] - lengths[0] / 2
+    rightmost_corner = centers[-1] + lengths[-1] / 2
+    c = np.insert(inside_corners, 0, leftmost_corner)
+    corners = np.append(c, rightmost_corner)
+
+    return corners
+
+def latex_float(f):
+    float_str = "{0:.2g}".format(f)
+    if "e" in float_str:
+        base, exponent = float_str.split("e")
+        return r"{0} \times 10^{{{1}}}".format(base, int(exponent))
+    else:
+        return float_str
+
 
 def modification_time(fname):
     return datetime.datetime.fromtimestamp(fname.stat().st_mtime)
