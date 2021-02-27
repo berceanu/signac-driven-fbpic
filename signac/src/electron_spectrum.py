@@ -567,9 +567,9 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
 
     def __post_init__(self):
         super().__post_init__()
-        # assert util.all_equal(
-        #     (spectrum.iteration for spectrum in self)
-        # ), "Spectra have different iteration numbers."
+        assert util.all_equal(
+            (spectrum.iteration for spectrum in self)
+        ), "Spectra have different iteration numbers."
         self.iteration = self[0].iteration
         self.title = f"iteration {self.iteration}"
         self.fig_fname = self.create_fig_fname()
