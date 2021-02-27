@@ -20,10 +20,11 @@ def shave(number_as_str):
 
 class MyDashboard(Dashboard):
     def job_sorter(self, job):
-        return (job.sp.lambda0_over_dz, job.sp.dr_over_dz, job.sp.Nm)
+        return job.sp.a0, job.sp.n_e
 
     def job_title(self, job):
-        return f"λ₀/{job.sp.lambda0_over_dz}, Δr/Δz={job.sp.dr_over_dz}, Nm={job.sp.Nm}"
+        ne = job.sp.n_e * (1 * u.meter ** (-3)).to(u.cm ** (-3))
+        return f"a₀ = {job.sp.a0}, nₑ = {ne:.1e}"
 
 
 config = {
