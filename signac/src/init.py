@@ -5,7 +5,6 @@ the associated job workspace directories."""
 import logging
 import math
 import pathlib
-from itertools import product
 
 import numpy as np
 import signac
@@ -32,7 +31,11 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    a0_n_e = product((2.4, 2.6), (6.0e18 * 1.0e6, 8.0e18 * 1.0e6))
+    a0 = np.linspace(2.4, 3.1, 8)
+    n_e = np.linspace(7.4, 8.1, 8) * 1.0e+18 * 1.0e+6
+    m = np.meshgrid(a0, n_e)
+    a0_n_e = np.transpose(m).reshape(-1,2)
+
     for a0, n_e in a0_n_e:
         sp = dict(
             random_seed = 42,  # deterministic random seed
