@@ -32,7 +32,8 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    for _ in range(1):
+    a0_n_e = product((2.4, 2.6), (6.0e18 * 1.0e6, 8.0e18 * 1.0e6))
+    for a0, n_e in a0_n_e:
         sp = dict(
             random_seed = 42,  # deterministic random seed
             # TODO: move to job document
@@ -50,11 +51,11 @@ def main():
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
-            n_e=8.0e18 * 1.0e6,  # Density (electrons.meters^-3)
+            n_e=n_e,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z (default 2)
             p_nr=2,  # Number of particles per cell along r (default 2)
             # The laser
-            a0=2.4,  # Laser amplitude
+            a0=a0,  # Laser amplitude
             # Laser waist, converted from experimental FWHM@intensity
             w0=22.0e-6 / SQRT_FACTOR,
             # Laser duration, converted from experimental FWHM@intensity

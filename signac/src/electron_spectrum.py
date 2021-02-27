@@ -8,13 +8,15 @@ import logging
 import pathlib
 from collections import defaultdict
 from dataclasses import dataclass, field
+from itertools import product
 from typing import Callable, ClassVar, List, Tuple
 
 import numpy as np
 import pandas as pd
-from pandas.core.frame import DataFrame
 from cycler import cycler
-from matplotlib import axes, figure, lines, pyplot, rc_context
+from matplotlib import axes, cm, colors, figure, lines, pyplot, rc_context, ticker
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from pandas.core.frame import DataFrame
 from scipy.constants import c
 from scipy.ndimage import gaussian_filter1d
 from signac.contrib.job import Job
@@ -88,7 +90,7 @@ def save_energy_histogram(job, iteration=None):
         jobid=job.id,
         total_iterations=job.sp.N_step - 1,
     )
-    logger.info("Wrote %s." % fn_hist)
+    logger.info("Wrote %s using iteration %s." % (fn_hist, iteration))
     return fn_hist
 
 
@@ -97,6 +99,32 @@ def construct_electron_spectrum(job, iteration=None):
     fig_fname = fn_hist.parent / fn_hist.stem
 
     return ElectronSpectrum(fn_hist, fig_fname)
+
+
+def multiple_iterations_single_job(job, iterations=None):
+    time_series = job_util.get_time_series_from(job)
+    avail_iter = time_series.iterations
+
+    if iterations is None:
+        logger.info("No iterations specified. Available iterations %s." % avail_iter)
+        center = np.take(avail_iter, avail_iter.size // 2)
+        middle = np.take(avail_iter, avail_iter.size * 3 // 4)
+        end = np.take(avail_iter, avail_iter.size - 1)
+        iterations = np.array([center, middle, end])
+        logger.info(f"Using %s." % iterations)
+    else:
+        iterations = np.array(iterations)
+        assert np.all(
+            np.isin(iterations, avail_iter)
+        ), "Specified non-existing iteration(s)."
+
+    spectra = list()
+    for iteration in sorted(iterations):
+        spectrum = construct_electron_spectrum(job, iteration)
+        spectrum.label = SpectrumLabel(text=f"iteration = {iteration}")
+        spectra.append(spectrum)
+
+    return SingleJobMultipleSpectra(spectra=spectra)
 
 
 def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
@@ -119,12 +147,68 @@ def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
         spectrum.label = my_label
         spectra.append(spectrum)
 
-    out = MultipleJobsMultipleSpectra(spectra=spectra)
+    return MultipleJobsMultipleSpectra(spectra=spectra)
 
-    if iteration is None:
-        logger.info("No iteration specified. Using %s." % out.iteration)
 
-    return out
+def two_parameters_study(project, keys=("a0", "n_e")):
+    spectra = list()
+
+    vy = job_util.get_key_values(project, keys[0])
+    vx = job_util.get_key_values(project, keys[1])
+
+    for val_y, val_x in product(vy, vx):
+        job = next(iter(project.find_jobs(filter={keys[0]: val_y, keys[1]: val_x})))
+        spectrum = construct_electron_spectrum(job)
+
+        ne = util.latex_float(job.sp.n_e * 1.0e-6)  # to cm^-3
+        my_label = SpectrumLabel(
+            text=f"$a_0 = {job.sp.a0}$, $n_e = {ne}$ $\\mathrm{{cm^{{-3}}}}$"
+            + f" — {spectrum.jobid:.8}"
+        )
+        spectrum.label = my_label
+        spectra.append(spectrum)
+
+    mjms = MultipleJobsMultipleSpectra(spectra=spectra)
+
+    width = len(vx)
+    height = len(vy)
+
+    data = np.zeros((height, width))
+
+    for row in range(height):
+        for col in range(width):
+            data[row, col] = mjms[width * row + col].hatch_window.peak_position
+
+    fig, ax = pyplot.subplots()
+    X = util.corners(np.array(vx) / 1.0e24)
+    Y = util.corners(np.array(vy))
+    img = ax.pcolorfast(
+        X,
+        Y,
+        data,
+        norm=colors.Normalize(vmin=data.min()-.5, vmax=data.max()+.5),
+        cmap = cm.get_cmap('RdBu', np.max(data)-np.min(data)+1)
+    )
+    ax.xaxis.set_major_locator(ticker.FixedLocator(np.array(vx) / 1.0e24))
+    ax.yaxis.set_major_locator(ticker.FixedLocator(np.array(vy)))
+    ax.xaxis.set_minor_locator(ticker.NullLocator())
+    ax.yaxis.set_minor_locator(ticker.NullLocator())
+
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="4%", pad=0.02)
+    cbar = ax.figure.colorbar(
+        img,
+        cax=cax,
+    )
+    cbar.set_label(r"E ($\mathrm{MeV}$)")
+
+    ax.set_xlabel(r"$n_e$ ($10^{18}\,\mathrm{electrons\,cm^{-3}}$)")
+    ax.set_ylabel(r"$a_0$")
+
+    fig.savefig("imshow.png")
+    pyplot.close(fig)
+
+    return mjms
 
 
 def spatial_convergence_study(project):
@@ -177,32 +261,6 @@ def uncertainty_band(project):
         mjms.add_histograms(ax=ub.ax)
         ub.ax.legend()
         ub.savefig()
-
-
-def multiple_iterations_single_job(job, iterations=None):
-    time_series = job_util.get_time_series_from(job)
-    avail_iter = time_series.iterations
-
-    if iterations is None:
-        logger.info("No iterations specified. Available iterations %s." % avail_iter)
-        center = np.take(avail_iter, avail_iter.size // 2)
-        middle = np.take(avail_iter, avail_iter.size * 3 // 4)
-        end = np.take(avail_iter, avail_iter.size - 1)
-        iterations = np.array([center, middle, end])
-        logger.info(f"Using %s." % iterations)
-    else:
-        iterations = np.array(iterations)
-        assert np.all(
-            np.isin(iterations, avail_iter)
-        ), "Specified non-existing iteration(s)."
-
-    spectra = list()
-    for iteration in sorted(iterations):
-        spectrum = construct_electron_spectrum(job, iteration)
-        spectrum.label = SpectrumLabel(text=f"iteration = {iteration}")
-        spectra.append(spectrum)
-
-    return SingleJobMultipleSpectra(spectra=spectra)
 
 
 @dataclass
@@ -269,7 +327,7 @@ class ElectronSpectrum:
     xlabel: str = r"$E\, (\mathrm{MeV})$"
     xlim: Tuple[float] = (50.0, 350.0)
     hatch_window: EnergyWindow = field(
-        init=False, default_factory=lambda: EnergyWindow(100.0, 300.0)
+        init=False, default_factory=lambda: EnergyWindow(150.0, 300.0)
     )
     sigma: int = 16  # std of Gaussian Kernel
     ylabel: str = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
@@ -691,6 +749,7 @@ class UncertaintyBand(MultipleSpectra):
 def main():
     """Main entry point."""
     import random
+
     import signac
 
     random.seed(42)
@@ -702,7 +761,7 @@ def main():
     # with rc_context():
     #     mpl_util.mpl_publication_style()
     #     es.plot()
-    # es.savefig()
+    #     es.savefig()
 
     # spectra = multiple_jobs_single_iteration(
     #     jobs=proj.find_jobs(),
@@ -721,8 +780,23 @@ def main():
     #     spectra.plot_quantity("peak_position", ylabel="E (MeV)")
     #     spectra.plot_quantity("total_charge", ylabel="Q (pC)")
 
-    # uncertainty_band(proj)
-    spatial_convergence_study(proj)
+    mjms = two_parameters_study(proj)
+    for es in mjms:
+        with rc_context():
+            mpl_util.mpl_publication_style()
+            es.plot()
+            es.savefig()
+
+    # spectra = multiple_jobs_single_iteration(
+    #     jobs=proj.find_jobs(),
+    #     label=SpectrumLabel(
+    #         key="random_seed",
+    #         name=r"random seed",
+    #     ),
+    # )
+    # with rc_context():
+    #     mpl_util.mpl_publication_style()
+    #     spectra.plot_spectra()
 
     # per_job_spectra = multiple_iterations_single_job(job)
     # with rc_context():

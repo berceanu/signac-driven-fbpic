@@ -10,6 +10,10 @@ import util
 
 logger = logging.getLogger(__name__)
 
+def get_key_values(project, key, key_class=float):
+    schema = project.detect_schema()
+    return sorted(schema[key][key_class])
+
 
 def is_h5_path(job):
     h5_path = pathlib.Path(job.ws) / "diags" / "hdf5"
