@@ -20,10 +20,10 @@ def shave(number_as_str):
 
 class MyDashboard(Dashboard):
     def job_sorter(self, job):
-        return (job.sp.random_seed, job.sp.Nm)
+        return (job.sp.lambda0_over_dz, job.sp.dr_over_dz, job.sp.Nm)
 
     def job_title(self, job):
-        return f"Nm = {job.sp.Nm}, random seed = {job.sp.random_seed}"
+        return f"λ₀/{job.sp.lambda0_over_dz}, Δr/Δz={job.sp.dr_over_dz}, Nm={job.sp.Nm}"
 
 
 config = {

@@ -32,15 +32,15 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    for n1, n2 in product((5, 10), (24, 32)):
+    for _ in range(1):
         sp = dict(
             random_seed = 42,  # deterministic random seed
             # TODO: move to job document
             nranks=4,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
             # The simulation box
             lambda0=0.8e-6,  # Laser wavelength (default 0.815e-6)
-            lambda0_over_dz=n2,  # Δz = lambda0 / lambda0_over_dz (default 32)
-            dr_over_dz=n1,  # Δr = dr_over_dz * Δz (default 5)
+            lambda0_over_dz=24,  # Δz = lambda0 / lambda0_over_dz (default 32)
+            dr_over_dz=10,  # Δr = dr_over_dz * Δz (default 5)
             zmin=-60.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             rmax=70.0e-6,  # Length of the box along r (meters) (default 70.0e-6)

@@ -127,6 +127,31 @@ def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
     return out
 
 
+def spatial_convergence_study(project):
+    spectra = list()
+    jobs = list()
+    for job in project:
+        if job.id.startswith("a1167a21") or job.id.startswith("107ef80"):
+            jobs.append(job)
+
+    for job in jobs:
+        spectrum = construct_electron_spectrum(job)
+
+        label = SpectrumLabel(
+            text=f"$\\frac{{\\lambda}}{{{job.sp.lambda0_over_dz}}}$, $\\frac{{\\Delta r}}{{\\Delta z}}={job.sp.dr_over_dz}$, $N_m={job.sp.Nm}$"
+            + f" — {spectrum.jobid:.8}"
+        )
+        spectrum.label = label
+        spectra.append(spectrum)
+
+    mjms = MultipleJobsMultipleSpectra(spectra=spectra)
+
+    with rc_context():
+        mpl_util.mpl_publication_style()
+        mjms.plot_spectra()
+        mjms.save_spectra()
+
+
 def uncertainty_band(project):
     spectra = list()
     for job in project.find_jobs(filter={"Nm": 3}):
@@ -142,7 +167,8 @@ def uncertainty_band(project):
     ub = UncertaintyBand(spectra=spectra)
 
     mjms = multiple_jobs_single_iteration(
-        project.find_jobs(filter={"random_seed": 42, "Nm": {"$lt": 7}}), label=SpectrumLabel(key="Nm")
+        project.find_jobs(filter={"random_seed": 42, "Nm": {"$lt": 7}}),
+        label=SpectrumLabel(key="Nm"),
     )
 
     with rc_context():
@@ -356,17 +382,6 @@ class ElectronSpectrum:
 
         return add_gaussian_filter
 
-    def add_ticks(self, major_x_every=25.0, major_y_every=10.0):
-        mpl_util.add_ticks(
-            self.ax,
-            major_x_every=major_x_every,
-            major_y_every=major_y_every,
-            alpha=self.alpha,
-        )
-
-    def add_grid(self):
-        mpl_util.add_grid(self.ax, linewidth=self.linewidth, linecolor=self.linecolor)
-
     def add_hatch(self):
         self.ax.fill_between(
             x=self.energy,
@@ -409,8 +424,6 @@ class ElectronSpectrum:
         self.prepare_figure()
         self.add_histogram()
         self.gaussian_filter()()
-        # self.add_ticks()
-        # self.add_grid()
         self.add_hatch()
         self.annotate_peak()
         self.add_job_id()
@@ -503,22 +516,9 @@ class MultipleSpectra(collections.abc.Sequence):
             loc="upper right",
         )
 
-    def add_grid(self):
-        mpl_util.add_grid(self.ax, linewidth=self.linewidth, linecolor=self.linecolor)
-
-    def add_ticks(self, major_x_every=25.0, major_y_every=10.0):
-        mpl_util.add_ticks(
-            self.ax,
-            major_x_every=major_x_every,
-            major_y_every=major_y_every,
-            alpha=self.alpha,
-        )
-
     def plot(self):
         self.prepare_figure()
         self.add_histograms()
-        # self.add_grid()
-        # self.add_ticks()
 
     def savefig(self):
         self.fig.savefig(self.fig_fname)
@@ -555,7 +555,7 @@ class SingleJobMultipleSpectra(MultipleSpectra):
 
     def plot_spectra(self):
         super().plot()
-    
+
     def save_spectra(self):
         super().savefig()
 
@@ -567,9 +567,9 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
 
     def __post_init__(self):
         super().__post_init__()
-        assert util.all_equal(
-            (spectrum.iteration for spectrum in self)
-        ), "Spectra have different iteration numbers."
+        # assert util.all_equal(
+        #     (spectrum.iteration for spectrum in self)
+        # ), "Spectra have different iteration numbers."
         self.iteration = self[0].iteration
         self.title = f"iteration {self.iteration}"
         self.fig_fname = self.create_fig_fname()
@@ -606,7 +606,7 @@ class MultipleJobsMultipleSpectra(MultipleSpectra):
 
     def plot_spectra(self):
         super().plot()
-    
+
     def save_spectra(self):
         super().savefig()
 
@@ -721,13 +721,15 @@ def main():
     #     spectra.plot_quantity("peak_position", ylabel="E (MeV)")
     #     spectra.plot_quantity("total_charge", ylabel="Q (pC)")
 
-    uncertainty_band(proj)
+    # uncertainty_band(proj)
+    spatial_convergence_study(proj)
 
     # per_job_spectra = multiple_iterations_single_job(job)
     # with rc_context():
     #     mpl_util.mpl_publication_style()
     #     per_job_spectra.plot_spectra()
     #     per_job_spectra.save_spectra()
+
 
 if __name__ == "__main__":
     logging.basicConfig(
