@@ -149,6 +149,14 @@ def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
 
     return MultipleJobsMultipleSpectra(spectra=spectra)
 
+# must decide on a datastructure to use
+# we potentially have multiple parameters: a0, n_e, tau, w_0 etc
+# for each combination/set of parameter values we have a 1D object, namely the spectrum
+# if we just varry a0: for each a0 value, we get 1D array => 2D array
+# if we varry a0 and n_e, for each n_e value, we get a 2D array (1D spectra for each a0) => 3D object
+# if we varry a0, n_e and another param => 4D object
+# use xarray
+
 
 def two_parameters_study(project, keys=("a0", "n_e")):
     spectra = list()
