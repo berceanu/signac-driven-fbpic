@@ -48,9 +48,9 @@ class XSpectra:
         mat = self.find_main_peak()
 
         axes = dict()
-        for dim in self.charge.dims[:-1]:
+        for i, dim in enumerate(self.charge.dims[:-1]):
             c = self.get_coordinate(dim)
-            axes[dim] = {"values": c, "corners": util.corners(c)}
+            axes[{0:"y", 1:"x"}[i]] = {"values": c, "corners": util.corners(c), "label": self.charge.coords[dim].attrs.get("plot_label", "")}
 
         with rc_context():
             mpl_util.mpl_publication_style()
@@ -60,16 +60,20 @@ class XSpectra:
             ax = fig.add_subplot(111, aspect=1)
 
             img = ax.pcolorfast(
-                axes["n_e"]["corners"],
-                axes["a_0"]["corners"],
+                axes["x"]["corners"],
+                axes["y"]["corners"],
                 mat,
                 norm=colors.Normalize(vmin=mat.min() - 0.5, vmax=mat.max() + 0.5),
                 cmap=cm.get_cmap("Greys", np.max(mat) - np.min(mat) + 1),
             )
             ax.xaxis.set_minor_locator(ticker.NullLocator())
             ax.yaxis.set_minor_locator(ticker.NullLocator())
-            ax.xaxis.set_major_locator(ticker.FixedLocator(axes["n_e"]["values"]))
-            ax.yaxis.set_major_locator(ticker.FixedLocator(axes["a_0"]["values"]))
+            ax.xaxis.set_major_locator(ticker.FixedLocator(axes["x"]["values"]))
+            ax.yaxis.set_major_locator(ticker.FixedLocator(axes["y"]["values"]))
+            # 
+            ax.hlines(y=axes["y"]["corners"], xmin=axes["x"]["corners"][0], xmax=axes["x"]["corners"][-1])
+            ax.vlines(x=axes["x"]["corners"], ymin=axes["y"]["corners"][0], ymax=axes["y"]["corners"][-1])
+            # 
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="4%", pad=0.02)
             cbar = ax.figure.colorbar(
@@ -83,9 +87,10 @@ class XSpectra:
                     length=length,
                     width=width,
                 )
-            ax.set_ylabel(self.charge.a_0.plot_label)
-            ax.set_xlabel(self.charge.n_e.plot_label)
             cbar.set_label(self.charge.E.plot_label)
+            #
+            ax.set_ylabel(axes["y"]["label"])
+            ax.set_xlabel(axes["x"]["label"])
 
             fig.savefig("matshow")
 
