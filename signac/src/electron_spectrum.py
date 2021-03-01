@@ -182,12 +182,13 @@ def two_parameters_study(project, keys=("a0", "n_e")):
     fig, ax = pyplot.subplots()
     X = util.corners(np.array(vx) / 1.0e24)
     Y = util.corners(np.array(vy))
-    img = ax.pcolorfast(
+    img = ax.pcolormesh(
         X,
         Y,
         data,
         norm=colors.Normalize(vmin=data.min()-.5, vmax=data.max()+.5),
-        cmap = cm.get_cmap('RdBu', np.max(data)-np.min(data)+1)
+        cmap = cm.get_cmap('Reds', np.max(data)-np.min(data)+1),
+        edgecolor="black",
     )
     ax.xaxis.set_major_locator(ticker.FixedLocator(np.array(vx) / 1.0e24))
     ax.yaxis.set_major_locator(ticker.FixedLocator(np.array(vy)))
@@ -781,11 +782,11 @@ def main():
     #     spectra.plot_quantity("total_charge", ylabel="Q (pC)")
 
     mjms = two_parameters_study(proj)
-    for es in mjms:
-        with rc_context():
-            mpl_util.mpl_publication_style()
-            es.plot()
-            es.savefig()
+    # for es in mjms:
+    #     with rc_context():
+    #         mpl_util.mpl_publication_style()
+    #         es.plot()
+    #         es.savefig()
 
     # spectra = multiple_jobs_single_iteration(
     #     jobs=proj.find_jobs(),
