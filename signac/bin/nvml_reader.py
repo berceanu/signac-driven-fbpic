@@ -120,6 +120,29 @@ def generate_time_ticks(time_index, num_ticks=5):
     return tuple(ticks)
 
 
+def generate_y_labels(gpus_in_csv):
+    s_uuid = list()
+    for gpu in gpus_in_csv:
+        s_uuid.append(gpu.uuid[: gpus_in_csv.short_uuid_len])
+    return tuple(s_uuid)
+
+
+def Y_matrix(gpus_in_csv, df, time_index, quantity):
+    normalized_by = {
+        "used_gpu_memory_MiB": "total_memory",
+        "used_power_W": "power_limit",
+    }[quantity]
+
+    Y = np.zeros(shape=(len(gpus_in_csv), time_index.size))
+
+    for count, gpu in enumerate(gpus_in_csv):
+        s = uuid_series(df, gpu.uuid, quantity)
+        r = reindex_time_series(s, time_index)
+        Y[count] = r / getattr(gpu, normalized_by)
+
+    return Y
+
+
 def main():
     """Main entry point."""
     path_to_csv = pathlib.Path.cwd() / "nvml_20210228-165008.csv"
@@ -156,26 +179,26 @@ def main():
     num_samples = dti.size
 
     X_ticks = generate_time_ticks(dti)
+    Y_labels = generate_y_labels(gpus_in_csv)
 
     X = np.linspace(start=0, stop=1, num=num_samples, endpoint=True)
-    Y = np.zeros(shape=(len(gpus_in_csv), num_samples))
 
-    s_uuid = list()
-    for count, gpu in enumerate(gpus_in_csv):
-        s_uuid.append(gpu.uuid[: gpus_in_csv.short_uuid_len])
-        s = uuid_series(df, gpu.uuid, "used_gpu_memory_MiB")
-        r = reindex_time_series(s, dti)
-        Y[count] = r / gpu.total_memory
-    Y_labels = tuple(s_uuid)
+    def save_figure(quantity):
+        suffix = {"used_gpu_memory_MiB": "mem", "used_power_W": "pow"}[quantity]
 
-    f = FigureHorizontalBars(
-        X=X,
-        Y=Y,
-        x_ticks=X_ticks,
-        y_labels=Y_labels,
-    )
-    f.render()
-    f.save(fname=path_to_csv.with_suffix(".png"))
+        Y = Y_matrix(gpus_in_csv=gpus_in_csv, df=df, time_index=dti, quantity=quantity)
+
+        f = FigureHorizontalBars(
+            X=X,
+            Y=Y,
+            x_ticks=X_ticks,
+            y_labels=Y_labels,
+        )
+        f.render()
+        f.save(fname=path_to_csv.with_suffix(f".{suffix}.png"))
+
+    save_figure("used_gpu_memory_MiB")
+    save_figure("used_power_W")
 
 
 if __name__ == "__main__":
