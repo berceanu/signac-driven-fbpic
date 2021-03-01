@@ -71,9 +71,9 @@ class XSpectra:
                     length=length,
                     width=width,
                 )
-            cbar.set_label(r"E ($\mathrm{MeV}$)")
-            ax.set_xlabel(r"$n_e$ ($10^{18}\,\mathrm{electrons\,cm^{-3}}$)")
-            ax.set_ylabel(r"$a_0$")
+            ax.set_ylabel(self.differential_charge.a_0.plot_label)
+            ax.set_xlabel(self.differential_charge.n_e.plot_label)
+            cbar.set_label(self.differential_charge.E.plot_label)
 
             fig.savefig("matshow")
 
@@ -110,24 +110,28 @@ def main():
         dims=("a_0", "n_e", "E"),
         coords={"a_0": a_0, "n_e": n_e, "E": energy},
     )
-    spectra.attrs["long_name"] = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}$"
+    spectra.attrs[
+        "plot_label"
+    ] = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
     spectra.attrs["units"] = "pC / MeV"
     #
+    spectra.a_0.attrs["plot_label"] = r"$a_0$"
     spectra.a_0.attrs["units"] = "dimensionless"
     #
+    spectra.n_e.attrs["plot_label"] = r"$n_e$ ($10^{18}\,\mathrm{cm^{-3}}$)"
     spectra.n_e.attrs["units"] = "1 / meter ** 3"
     spectra.n_e.attrs["scaling_factor"] = 1.0e-18
     spectra.n_e.attrs["to_units"] = "1 / centimeter ** 3"
     #
+    spectra.E.attrs["plot_label"] = r"E ($\mathrm{MeV}$)"
     spectra.E.attrs["units"] = "MeV"
 
     xs = XSpectra(spectra)
+    xs.matshow()
 
     # print(xs.differential_charge.sel(a_0=2.4, n_e=7.6e24, method="nearest"))
 
-    # 2.54 * ureg("dimensionless")
 
-    xs.matshow()
 
 
 if __name__ == "__main__":
