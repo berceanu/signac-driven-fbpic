@@ -105,28 +105,33 @@ def main():
     df = pd.read_csv(path_to_csv)
 
     df["time_stamp"] = pd.to_datetime(df["time_stamp"])
+    df.set_index("time_stamp", inplace=True)
 
     df["gpu_uuid"] = df["gpu_uuid"].astype("string")
     df["hw_slowdown"] = df["hw_slowdown"].astype("category")
     df["sw_power_cap"] = df["sw_power_cap"].astype("category")
 
 
-    # print(len(df[))
+    grouped = df.groupby(["gpu_uuid"])
+    print(grouped[["used_power_W", "used_gpu_memory_MiB"]].agg(["max", "mean", "std"]))
 
-    X = np.linspace(start=0, stop=2 * np.pi, num=1576, endpoint=True)
-    Y = np.zeros(shape=(len(gpus_in_csv), 1576), dtype=np.float64)
+    # df = df.resample('3T').mean()
+
+
+    X = np.linspace(start=0, stop=2 * np.pi, num=81, endpoint=True)
+    Y = np.zeros(shape=(len(gpus_in_csv), 81), dtype=np.float64)
 
     ylabels = list()
     for row, gpu in enumerate(gpus_in_csv):
         mask = df["gpu_uuid"]==gpu.uuid
-        size = len(df[mask].index)
-        Y[row, :size] = df.loc[mask, "used_gpu_memory_MiB"] / gpu.total_memory
+        series = df.loc[mask, "used_gpu_memory_MiB"].resample('5T').mean() / gpu.total_memory
+        size = len(series)
+        print(size)
+        Y[row, :size] = series
         ylabels.append(gpu.uuid[:gpus_in_csv.short_uuid_len])
 
-    print(Y[0])
+    print(Y.max()*100, Y.min())
     Y_labels = tuple(ylabels)
-    # grouped = df.groupby(["gpu_uuid"])
-    # print(grouped[["used_power_W", "used_gpu_memory_MiB"]].agg(["max", "mean", "std"]))
     X_ticks = tuple(
         [
             Tick(0.0, "$0$"),
