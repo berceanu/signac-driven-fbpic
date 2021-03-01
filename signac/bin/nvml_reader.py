@@ -6,12 +6,12 @@ Usage: python nvml_reader.py filename.csv
 import collections.abc
 import pathlib
 from dataclasses import dataclass, field
-import sys
 from typing import Tuple
 
 import numpy as np
 import pandas as pd
 import pynvml
+
 from horizontal_bars_figure import FigureHorizontalBars, Tick
 
 
@@ -97,14 +97,17 @@ def uuid_series(df, uuid, column):
     mask = df["gpu_uuid"].values == uuid
     return df.loc[mask, column]
 
+
 def resampled_time_index(df, freq="5T", rounding="30T"):
     start_time = df.index[0].round(rounding)
     end_time = df.index[-1].round(rounding)
     return pd.date_range(start=start_time, end=end_time, freq=freq)
 
+
 def reindex_time_series(series, new_index):
     resampled = series.resample(new_index.freq).mean()
     return resampled.reindex(new_index)
+
 
 def generate_time_ticks(time_index, num_ticks=5):
     tick_positions = np.linspace(0.0, 1.0, num_ticks)
@@ -115,7 +118,7 @@ def generate_time_ticks(time_index, num_ticks=5):
     for position, label in zip(tick_positions, tick_labels):
         ticks.append(Tick(position, label.strftime("%H:%M")))
     return tuple(ticks)
- 
+
 
 def main():
     """Main entry point."""
@@ -126,7 +129,6 @@ def main():
 
     # ----------------------------------------------------------------------------------
 
-
     df = pd.read_csv(path_to_csv)
 
     df["time_stamp"] = pd.to_datetime(df["time_stamp"])
@@ -136,32 +138,34 @@ def main():
     df["hw_slowdown"] = df["hw_slowdown"].astype("category")
     df["sw_power_cap"] = df["sw_power_cap"].astype("category")
 
-
-    print(f"{path_to_csv.name} was recorded over the time interval from {df.index[0]} to {df.index[-1]}.")
-    # from 2021-02-28 16:51:08.999636 to 2021-02-28 23:30:11.035116.
+    # ----------------------------------------------------------------------------------
 
     grouped = df.groupby(["gpu_uuid"])
     print(grouped[["used_power_W", "used_gpu_memory_MiB"]].agg(["max", "mean", "std"]))
 
-    # select by date / time
+    # ----------------------------------------------------------------------------------
+
+    print(
+        f"{path_to_csv.name} was recorded over the time interval from {df.index[0]} to {df.index[-1]}."
+    )
     df = df.loc["2021-02-28 17:30":"2021-02-28 22:30"]
-        
+
+    # ----------------------------------------------------------------------------------
+
     dti = resampled_time_index(df)
-    n_samples = dti.size
+    num_samples = dti.size
 
     X_ticks = generate_time_ticks(dti)
-    print(X_ticks)
 
-    X = np.linspace(start=0, stop=2 * np.pi, num=n_samples, endpoint=True)
-    Y = np.zeros(shape=(len(gpus_in_csv), n_samples), dtype=np.float64)
+    X = np.linspace(start=0, stop=1, num=num_samples, endpoint=True)
+    Y = np.zeros(shape=(len(gpus_in_csv), num_samples))
 
     s_uuid = list()
     for count, gpu in enumerate(gpus_in_csv):
-        s_uuid.append(gpu.uuid[:gpus_in_csv.short_uuid_len])
+        s_uuid.append(gpu.uuid[: gpus_in_csv.short_uuid_len])
         s = uuid_series(df, gpu.uuid, "used_gpu_memory_MiB")
         r = reindex_time_series(s, dti)
         Y[count] = r / gpu.total_memory
-
     Y_labels = tuple(s_uuid)
 
     f = FigureHorizontalBars(
@@ -171,11 +175,7 @@ def main():
         y_labels=Y_labels,
     )
     f.render()
-    f.save(fname="nvml_20210228-165008.png")
-
-
-
-
+    f.save(fname=path_to_csv.with_suffix(".png"))
 
 
 if __name__ == "__main__":
