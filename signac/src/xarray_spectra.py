@@ -50,7 +50,11 @@ class XSpectra:
         axes = dict()
         for i, dim in enumerate(self.charge.dims[:-1]):
             c = self.get_coordinate(dim)
-            axes[{0:"y", 1:"x"}[i]] = {"values": c, "corners": util.corners(c), "label": self.charge.coords[dim].attrs.get("plot_label", "")}
+            axes[{0: "y", 1: "x"}[i]] = {
+                "values": c,
+                "corners": util.corners(c),
+                "label": self.charge.coords[dim].attrs.get("plot_label", ""),
+            }
 
         with rc_context():
             mpl_util.mpl_publication_style()
@@ -70,10 +74,24 @@ class XSpectra:
             ax.yaxis.set_minor_locator(ticker.NullLocator())
             ax.xaxis.set_major_locator(ticker.FixedLocator(axes["x"]["values"]))
             ax.yaxis.set_major_locator(ticker.FixedLocator(axes["y"]["values"]))
-            # 
-            ax.hlines(y=axes["y"]["corners"], xmin=axes["x"]["corners"][0], xmax=axes["x"]["corners"][-1])
-            ax.vlines(x=axes["x"]["corners"], ymin=axes["y"]["corners"][0], ymax=axes["y"]["corners"][-1])
-            # 
+            #
+            ax.hlines(
+                y=axes["y"]["corners"],
+                xmin=axes["x"]["corners"][0],
+                xmax=axes["x"]["corners"][-1],
+                linewidth=0.5,
+                linestyle="solid",
+                color="white",
+            )
+            ax.vlines(
+                x=axes["x"]["corners"],
+                ymin=axes["y"]["corners"][0],
+                ymax=axes["y"]["corners"][-1],
+                linewidth=0.5,
+                linestyle="solid",
+                color="white",
+            )
+            #
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="4%", pad=0.02)
             cbar = ax.figure.colorbar(
@@ -91,7 +109,7 @@ class XSpectra:
             #
             ax.set_ylabel(axes["y"]["label"])
             ax.set_xlabel(axes["x"]["label"])
-
+            #
             fig.savefig("matshow")
 
     def find_main_peak(self):
