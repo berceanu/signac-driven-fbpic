@@ -7,7 +7,6 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib import figure, rc_context, cm, colors, ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mpl_util
-from peak_detection import peak_position
 import util
 from pint.registry import UnitRegistry
 
@@ -27,7 +26,9 @@ class XSpectra:
 
         Y = util.corners(self.differential_charge.a_0.values)
 
-        Q = self.differential_charge.n_e.values * self.ureg(self.differential_charge.n_e.units)
+        Q = self.differential_charge.n_e.values * self.ureg(
+            self.differential_charge.n_e.units
+        )
         n_e = Q.to("1 / centimeter ** 3")
         X = util.corners(n_e.magnitude / 1e18)
 
@@ -46,8 +47,12 @@ class XSpectra:
                 cmap=cm.get_cmap("Reds", np.max(mat) - np.min(mat) + 1),
             )
 
-            ax.xaxis.set_major_locator(ticker.FixedLocator(self.differential_charge.n_e.values / 1.0e24))
-            ax.yaxis.set_major_locator(ticker.FixedLocator(self.differential_charge.a_0.values))
+            ax.xaxis.set_major_locator(
+                ticker.FixedLocator(self.differential_charge.n_e.values / 1.0e24)
+            )
+            ax.yaxis.set_major_locator(
+                ticker.FixedLocator(self.differential_charge.a_0.values)
+            )
             ax.xaxis.set_minor_locator(ticker.NullLocator())
             ax.yaxis.set_minor_locator(ticker.NullLocator())
 
@@ -62,36 +67,40 @@ class XSpectra:
             ax.set_xlabel(r"$n_e$ ($10^{18}\,\mathrm{electrons\,cm^{-3}}$)")
             ax.set_ylabel(r"$a_0$")
 
-
             # plot mat
 
             fig.savefig("matshow")
 
     def find_main_peak(self):
-        # collapse (8, 8, 500) to (8, 8) matrix
-        return self.differential_charge.argmax(dim="E")
+        peak_indices = self.differential_charge.argmax(dim="E")
+        return self.differential_charge.E[peak_indices]
+
+
+def gaussian(x, mu, sig, h):
+    return h * np.exp(-np.power((x - mu) / sig, 2) / 2)
 
 
 def main():
     """Main entry point."""
+    rng = np.random.default_rng(seed=42)
+
     a_0 = np.linspace(2.4, 3.1, 8)
     n_e = np.linspace(7.4, 8.1, 8) * 1.0e18 * 1.0e6
     energy = np.linspace(1, 500, 500)
 
-    mu, sigma = 0, 0.1 # mean and standard deviation
+    peak_sigma = rng.integers(45, 55, (a_0.size, n_e.size))
+    peak_height = rng.integers(30, 50, (a_0.size, n_e.size))
+    peak_energy = rng.normal(200, 50, (a_0.size, n_e.size)).round().astype(int)
 
-    # we want 8x8=64 different peak positions and heights
-    # we need loc to be 8x8
-
-    peak_positions = np.random.default_rng().normal(200, 100, (8, 8))
-    print(peak_positions)
-
-    # print(np.broadcast(peak_positions, 40).size)
-    # s = np.random.default_rng().normal(peak_positions, np.ones((8,8)), (8,8,50))
-    # print(s.shape)
+    charge = gaussian(
+        x=energy,
+        mu=peak_energy[:, :, np.newaxis],
+        sig=peak_sigma[:, :, np.newaxis],
+        h=peak_height[:, :, np.newaxis],
+    )
 
     spectra = xr.DataArray(
-        np.random.uniform(0, 50, (a_0.size, n_e.size, energy.size)),
+        charge,
         dims=("a_0", "n_e", "E"),
         coords={"a_0": a_0, "n_e": n_e, "E": energy},
     )
@@ -103,11 +112,14 @@ def main():
 
     xs = XSpectra(spectra)
 
-    print(xs.differential_charge.sel(a_0=2.4, n_e=7.6e24, method='nearest'))
+    print(peak_energy)
+    print(xs.find_main_peak())
+
+    # print(xs.differential_charge.sel(a_0=2.4, n_e=7.6e24, method="nearest"))
 
     # 2.54 * ureg("dimensionless")
 
-    xs.matshow()
+    # xs.matshow()
 
 
 if __name__ == "__main__":
