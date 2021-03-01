@@ -6,18 +6,33 @@ Usage: python nvml_reader.py filename.csv
 import collections.abc
 import pathlib
 from dataclasses import dataclass, field
-from typing import List
+from typing import Tuple
 
+import numpy as np
 import pandas as pd
 import pynvml
+from horizontal_bars_figure import FigureHorizontalBars, Tick
 
 
-def length_of_longest_string(list_of_strings):
-    return len(max(list_of_strings, key=len))
+def get_gpus_in_csv(path_to_csv, gpus_on_machine):
+    df = pd.read_csv(path_to_csv)
+    csv_uuids = tuple(df["gpu_uuid"].unique())
+
+    gpus_in_csv = list()
+
+    for gpu in gpus_on_machine:
+        if gpu.uuid in csv_uuids:
+            gpus_in_csv.append(gpu)
+
+    return GpuList(tuple(gpus_in_csv))
 
 
 def min_len_unique_uuid(uuids):
     """Determine the minimum string length required for a UUID to be unique."""
+
+    def length_of_longest_string(list_of_strings):
+        return len(max(list_of_strings, key=len))
+
     uuid_length = length_of_longest_string(uuids)
     tmp = set()
     for i in range(uuid_length):
@@ -32,52 +47,43 @@ def min_len_unique_uuid(uuids):
     return i
 
 
-def get_all_gpus():
+def get_gpus_on_machine():
     """Populates the list of available GPUs on the machine."""
     pynvml.nvmlInit()
     gpu_count = pynvml.nvmlDeviceGetCount()
 
-    gpus = list()
+    gpus_on_machine = list()
     for gpu in range(gpu_count):
         handle = pynvml.nvmlDeviceGetHandleByIndex(gpu)
         uuid = pynvml.nvmlDeviceGetUUID(handle).decode("UTF-8")
         mem_total = pynvml.nvmlDeviceGetMemoryInfo(handle).total / 1024 ** 2
         enforced_power_limit = pynvml.nvmlDeviceGetEnforcedPowerLimit(handle) / 1000
         device = GpuDevice(
-            index=gpu,
             uuid=uuid,
             total_memory=int(mem_total),
             power_limit=int(enforced_power_limit),
         )
-        gpus.append(device)
+        gpus_on_machine.append(device)
     pynvml.nvmlShutdown()
-    return GpuList(gpus)
+    return GpuList(tuple(gpus_on_machine))
 
 
 @dataclass
 class GpuDevice:
     """Stores GPU properties, per device."""
 
-    index: int  # from 0 to N - 1, with N the number of GPUs
     uuid: str  # eg, "GPU-1dfe3b5c-79a0-0422-f0d0-b22c6ded0af0"
-    uuid_short: str = field(init=False)  #  eg, "GPU-1d"
     total_memory: int  # MiB (Mebibyte)
     power_limit: int  # Watt
 
 
 @dataclass
 class GpuList(collections.abc.Sequence):
-    gpus: List[GpuDevice]
-    num_gpus: int = field(init=False, repr=False)
-    uuids: List[str] = field(init=False, repr=False)
-    short_uuids: List[str] = field(init=False, repr=False)
-    indexes: List[int] = field(init=False, repr=False)
+    gpus: Tuple[GpuDevice]
+    short_uuid_len: int = field(init=False)
 
     def __post_init__(self):
-        self.num_gpus = len(self)
-        self.uuids = [gpu.uuid for gpu in self]
-        self.indexes = [gpu.index for gpu in self]
-        self.set_short_uuids()
+        self.short_uuid_len = min_len_unique_uuid(list(gpu.uuid for gpu in self))
 
     def __getitem__(self, key):
         return self.gpus.__getitem__(key)
@@ -85,56 +91,65 @@ class GpuList(collections.abc.Sequence):
     def __len__(self):
         return self.gpus.__len__()
 
-    def set_short_uuids(self):
-        min_len = min_len_unique_uuid(self.uuids)
-        # mutating!
-        short_ids = list()
-        for gpu in self:
-            gpu.uuid_short = gpu.uuid[:min_len]
-            short_ids.append(gpu.uuid_short)
-        self.short_uuids = short_ids
-
 
 def main():
     """Main entry point."""
-    gpus = get_all_gpus()
+    path_to_csv = pathlib.Path.cwd() / "nvml_20210228-165008.csv"
+
+    gpus_on_machine = get_gpus_on_machine()
+    gpus_in_csv = get_gpus_in_csv(path_to_csv, gpus_on_machine)
 
     # ----------------------------------------------------------------------------------
 
-    p = pathlib.Path.cwd() / "nvml_20210228-165008.csv"
-    df = pd.read_csv(p)
 
-    uuid_min_len = len(gpus[0].uuid_short)
-    df["gpu_uuid"] = df["gpu_uuid"].astype("string")
-    df["short_gpu_uuid"] = df["gpu_uuid"].str[:uuid_min_len]
+    df = pd.read_csv(path_to_csv)
 
     df["time_stamp"] = pd.to_datetime(df["time_stamp"])
-    df.set_index("time_stamp", inplace=True)
 
-    # select by date / time
-    # df = df.loc["2021-02-10 11:28":"2021-02-10 20:24"]
-
-    grouped = df.groupby(["short_gpu_uuid"])
-    print(grouped[["used_power_W", "used_gpu_memory_MiB"]].agg(["max", "mean", "std"]))
+    df["gpu_uuid"] = df["gpu_uuid"].astype("string")
+    df["hw_slowdown"] = df["hw_slowdown"].astype("category")
+    df["sw_power_cap"] = df["sw_power_cap"].astype("category")
 
 
-# "nvml_20210228-165008.csv" -> "nvml_20210228-165008.png"
+    # print(len(df[))
 
-# The GpuDevice has an associated GpuData object holding a dataframe.
+    X = np.linspace(start=0, stop=2 * np.pi, num=1576, endpoint=True)
+    Y = np.zeros(shape=(len(gpus_in_csv), 1576), dtype=np.float64)
 
-# To build the figure, the following steps are needed:
-# 1. Build a list of GPU devices on the system,
-# with total memory and power limit for each
-# uuid_short: str = field(init=False)  #  eg, "GPU-1d"
-# total_memory: int  # MiB (Mebibyte)
-# power_limit: int  # Watt
+    ylabels = list()
+    for row, gpu in enumerate(gpus_in_csv):
+        mask = df["gpu_uuid"]==gpu.uuid
+        size = len(df[mask].index)
+        Y[row, :size] = df.loc[mask, "used_gpu_memory_MiB"] / gpu.total_memory
+        ylabels.append(gpu.uuid[:gpus_in_csv.short_uuid_len])
 
-# 1. get a list of unique GPUs from the .csv file
-# 2. for each such GPU, build a GpuData object
-# holding *normalized* values of power and memory usage
+    print(Y[0])
+    Y_labels = tuple(ylabels)
+    # grouped = df.groupby(["gpu_uuid"])
+    # print(grouped[["used_power_W", "used_gpu_memory_MiB"]].agg(["max", "mean", "std"]))
+    X_ticks = tuple(
+        [
+            Tick(0.0, "$0$"),
+            Tick(0.25, "$\\frac{\\pi}{2}$"),
+            Tick(0.5, "$\\pi$"),
+            Tick(0.75, "$\\frac{3\\pi}{2}$"),
+            Tick(1.0, "$2\\pi$"),
+        ]
+    )
 
-# Separate figures for used power and used memory
-# normalize used power and memory by their MAX values
+    f = FigureHorizontalBars(
+        X=X,
+        Y=Y,
+        x_ticks=X_ticks,
+        y_labels=Y_labels,
+    )
+    f.render()
+    f.save(fname="nvml_20210228-165008.png")
+
+
+
+
+
 
 if __name__ == "__main__":
     main()

@@ -1,13 +1,12 @@
-from decimal import DivisionUndefined
-import numpy as np
-import collections.abc
-from dataclasses import dataclass, field
-from matplotlib import pyplot, axes, figure, backends
-from typing import List, ClassVar, Tuple
 import math
 import random
 import string
+from dataclasses import dataclass, field
+from typing import ClassVar, Tuple
 
+import numpy as np
+from matplotlib import axes, figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 def random_string_of_length(n):
     return "".join(random.choice(string.ascii_uppercase) for i in range(n))
@@ -156,7 +155,7 @@ class FigureHorizontalBars:
         self.n_subplots = math.ceil(n_bars / self.max_bars_per_subplot)
 
         self.fig = figure.Figure(figsize=(20, 8), dpi=192)
-        canvas = backends.backend_agg.FigureCanvasAgg(self.fig)
+        canvas = FigureCanvasAgg(self.fig)
 
         self.bars = self.create_bars()
 
