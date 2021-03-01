@@ -176,12 +176,10 @@ def main():
     # ----------------------------------------------------------------------------------
 
     dti = resampled_time_index(df)
-    num_samples = dti.size
+    X = np.linspace(start=0, stop=1, num=dti.size, endpoint=True)
 
     X_ticks = generate_time_ticks(dti)
     Y_labels = generate_y_labels(gpus_in_csv)
-
-    X = np.linspace(start=0, stop=1, num=num_samples, endpoint=True)
 
     def save_figure(quantity):
         suffix = {"used_gpu_memory_MiB": "mem", "used_power_W": "pow"}[quantity]
