@@ -21,59 +21,65 @@ class XSpectra:
     def __post_init__(self):
         self.differential_charge.pint.quantify()
 
+    def get_coordinate(self, dim):
+        c = self.differential_charge.coords[dim]
+        units = c.attrs.get("units", "dimensionless")
+        to_units = c.attrs.get("to_units", units)
+        scale = c.attrs.get("scaling_factor", 1)
+
+        c_with_units = c.values * self.ureg(c.units)
+        c_converted = c_with_units.to(to_units)
+        c_scaled = c_converted * scale
+        return c_scaled.magnitude
+
     def matshow(self):
         mat = self.find_main_peak()
 
-        Y = util.corners(self.differential_charge.a_0.values)
-
-        Q = self.differential_charge.n_e.values * self.ureg(
-            self.differential_charge.n_e.units
-        )
-        n_e = Q.to("1 / centimeter ** 3")
-        X = util.corners(n_e.magnitude / 1e18)
+        axes = dict()
+        for dim in self.differential_charge.dims[:-1]:
+            c = self.get_coordinate(dim)
+            axes[dim] = {"values": c, "corners": util.corners(c)}
 
         with rc_context():
             mpl_util.mpl_publication_style()
 
             fig = figure.Figure()
             canvas = FigureCanvasAgg(fig)
-            ax = fig.add_subplot(1, 1, 1, aspect=1)
+            ax = fig.add_subplot(111, aspect=1)
 
             img = ax.pcolorfast(
-                X,
-                Y,
+                axes["n_e"]["corners"],
+                axes["a_0"]["corners"],
                 mat,
                 norm=colors.Normalize(vmin=mat.min() - 0.5, vmax=mat.max() + 0.5),
-                cmap=cm.get_cmap("Reds", np.max(mat) - np.min(mat) + 1),
-            )
-
-            ax.xaxis.set_major_locator(
-                ticker.FixedLocator(self.differential_charge.n_e.values / 1.0e24)
-            )
-            ax.yaxis.set_major_locator(
-                ticker.FixedLocator(self.differential_charge.a_0.values)
+                cmap=cm.get_cmap("Greys", np.max(mat) - np.min(mat) + 1),
             )
             ax.xaxis.set_minor_locator(ticker.NullLocator())
             ax.yaxis.set_minor_locator(ticker.NullLocator())
-
+            ax.xaxis.set_major_locator(ticker.FixedLocator(axes["n_e"]["values"]))
+            ax.yaxis.set_major_locator(ticker.FixedLocator(axes["a_0"]["values"]))
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="4%", pad=0.02)
             cbar = ax.figure.colorbar(
                 img,
                 cax=cax,
             )
+            for ticks, length, width in zip(("major", "minor"), (3.5, 2), (0.8, 0.6)):
+                cbar.ax.tick_params(
+                    axis="both",
+                    which=ticks,
+                    length=length,
+                    width=width,
+                )
             cbar.set_label(r"E ($\mathrm{MeV}$)")
-
             ax.set_xlabel(r"$n_e$ ($10^{18}\,\mathrm{electrons\,cm^{-3}}$)")
             ax.set_ylabel(r"$a_0$")
-
-            # plot mat
 
             fig.savefig("matshow")
 
     def find_main_peak(self):
-        peak_indices = self.differential_charge.argmax(dim="E")
-        return self.differential_charge.E[peak_indices]
+        peak_idx = self.differential_charge.argmax(dim="E")
+        return self.differential_charge.E[peak_idx]
 
 
 def gaussian(x, mu, sig, h):
@@ -106,20 +112,22 @@ def main():
     )
     spectra.attrs["long_name"] = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}$"
     spectra.attrs["units"] = "pC / MeV"
+    #
     spectra.a_0.attrs["units"] = "dimensionless"
+    #
     spectra.n_e.attrs["units"] = "1 / meter ** 3"
+    spectra.n_e.attrs["scaling_factor"] = 1.0e-18
+    spectra.n_e.attrs["to_units"] = "1 / centimeter ** 3"
+    #
     spectra.E.attrs["units"] = "MeV"
 
     xs = XSpectra(spectra)
-
-    print(peak_energy)
-    print(xs.find_main_peak())
 
     # print(xs.differential_charge.sel(a_0=2.4, n_e=7.6e24, method="nearest"))
 
     # 2.54 * ureg("dimensionless")
 
-    # xs.matshow()
+    xs.matshow()
 
 
 if __name__ == "__main__":
