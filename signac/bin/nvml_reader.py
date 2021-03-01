@@ -175,11 +175,12 @@ def main():
 
     # ----------------------------------------------------------------------------------
 
-    dti = resampled_time_index(df)
-    X = np.linspace(start=0, stop=1, num=dti.size, endpoint=True)
-
-    X_ticks = generate_time_ticks(dti)
     Y_labels = generate_y_labels(gpus_in_csv)
+
+    dti = resampled_time_index(df)
+    X_ticks = generate_time_ticks(dti)
+
+    # ----------------------------------------------------------------------------------
 
     def save_figure(quantity):
         suffix = {"used_gpu_memory_MiB": "mem", "used_power_W": "pow"}[quantity]
@@ -187,13 +188,15 @@ def main():
         Y = Y_matrix(gpus_in_csv=gpus_in_csv, df=df, time_index=dti, quantity=quantity)
 
         f = FigureHorizontalBars(
-            X=X,
+            X=np.linspace(start=0, stop=1, num=dti.size, endpoint=True),
             Y=Y,
             x_ticks=X_ticks,
             y_labels=Y_labels,
         )
         f.render()
         f.save(fname=path_to_csv.with_suffix(f".{suffix}.png"))
+
+    # ----------------------------------------------------------------------------------
 
     save_figure("used_gpu_memory_MiB")
     save_figure("used_power_W")
