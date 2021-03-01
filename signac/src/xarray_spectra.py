@@ -1,33 +1,45 @@
-import xarray as xr
+from dataclasses import dataclass
+
 import numpy as np
-import pint_xarray
 import pint
-import sys
+import pint_xarray
+import xarray as xr
+from matplotlib import cm, colors, figure, rc_context, ticker
 from matplotlib.backends.backend_agg import FigureCanvasAgg
-from matplotlib import figure, rc_context, cm, colors, ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import mpl_util
-import util
 from pint.registry import UnitRegistry
 
-from dataclasses import dataclass, field
+import mpl_util
+import util
+
+
+def gaussian(x, mu, sig, h):
+    return h * np.exp(-np.power((x - mu) / sig, 2) / 2)
 
 
 @dataclass
 class XSpectra:
-    differential_charge: xr.DataArray
+    charge: xr.DataArray
     ureg: UnitRegistry = pint.UnitRegistry()
 
     def __post_init__(self):
-        self.differential_charge.pint.quantify()
+        self.charge.attrs["units"] = "pC / MeV"
+        self.charge.attrs[
+            "plot_label"
+        ] = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
+        #
+        self.charge.E.attrs["units"] = "MeV"
+        self.charge.E.attrs["plot_label"] = r"E ($\mathrm{MeV}$)"
+        #
+        self.charge.pint.quantify()
 
     def get_coordinate(self, dim):
-        c = self.differential_charge.coords[dim]
+        c = self.charge.coords[dim]
         units = c.attrs.get("units", "dimensionless")
         to_units = c.attrs.get("to_units", units)
         scale = c.attrs.get("scaling_factor", 1)
 
-        c_with_units = c.values * self.ureg(c.units)
+        c_with_units = c.values * self.ureg(units)
         c_converted = c_with_units.to(to_units)
         c_scaled = c_converted * scale
         return c_scaled.magnitude
@@ -36,7 +48,7 @@ class XSpectra:
         mat = self.find_main_peak()
 
         axes = dict()
-        for dim in self.differential_charge.dims[:-1]:
+        for dim in self.charge.dims[:-1]:
             c = self.get_coordinate(dim)
             axes[dim] = {"values": c, "corners": util.corners(c)}
 
@@ -71,19 +83,15 @@ class XSpectra:
                     length=length,
                     width=width,
                 )
-            ax.set_ylabel(self.differential_charge.a_0.plot_label)
-            ax.set_xlabel(self.differential_charge.n_e.plot_label)
-            cbar.set_label(self.differential_charge.E.plot_label)
+            ax.set_ylabel(self.charge.a_0.plot_label)
+            ax.set_xlabel(self.charge.n_e.plot_label)
+            cbar.set_label(self.charge.E.plot_label)
 
             fig.savefig("matshow")
 
     def find_main_peak(self):
-        peak_idx = self.differential_charge.argmax(dim="E")
-        return self.differential_charge.E[peak_idx]
-
-
-def gaussian(x, mu, sig, h):
-    return h * np.exp(-np.power((x - mu) / sig, 2) / 2)
+        peak_idx = self.charge.argmax(dim="E")
+        return self.charge.E[peak_idx]
 
 
 def main():
@@ -110,28 +118,19 @@ def main():
         dims=("a_0", "n_e", "E"),
         coords={"a_0": a_0, "n_e": n_e, "E": energy},
     )
-    spectra.attrs[
-        "plot_label"
-    ] = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
-    spectra.attrs["units"] = "pC / MeV"
     #
     spectra.a_0.attrs["plot_label"] = r"$a_0$"
-    spectra.a_0.attrs["units"] = "dimensionless"
     #
     spectra.n_e.attrs["plot_label"] = r"$n_e$ ($10^{18}\,\mathrm{cm^{-3}}$)"
     spectra.n_e.attrs["units"] = "1 / meter ** 3"
-    spectra.n_e.attrs["scaling_factor"] = 1.0e-18
     spectra.n_e.attrs["to_units"] = "1 / centimeter ** 3"
-    #
-    spectra.E.attrs["plot_label"] = r"E ($\mathrm{MeV}$)"
-    spectra.E.attrs["units"] = "MeV"
+    spectra.n_e.attrs["scaling_factor"] = 1.0e-18
+    ##
 
     xs = XSpectra(spectra)
     xs.matshow()
 
-    # print(xs.differential_charge.sel(a_0=2.4, n_e=7.6e24, method="nearest"))
-
-
+    # print(xs.charge.sel(a_0=2.4, n_e=7.6e24, method="nearest"))
 
 
 if __name__ == "__main__":
