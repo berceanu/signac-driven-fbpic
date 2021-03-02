@@ -112,9 +112,9 @@ class XSpectra:
             #
             fig.savefig("matshow")
 
-    def find_main_peak(self):
-        peak_idx = self.charge.argmax(dim="E")
-        return self.charge.E[peak_idx]
+    def find_main_peak(self, energy_window=slice(100, 300)):
+        peak_idx = self.charge.sel(E=energy_window).argmax(dim="E")
+        return self.charge.E.sel(E=energy_window)[peak_idx]
 
 
 def main():
