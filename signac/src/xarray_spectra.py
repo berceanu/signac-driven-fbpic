@@ -33,25 +33,37 @@ class XSpectra:
         #
         self.charge.pint.quantify()
 
-    def get_coordinate(self, dim):
+    def get_coordinate(self, dim, values=None):
         c = self.charge.coords[dim]
+
+        if values is None:
+            values = c.values
+
         units = c.attrs.get("units", "dimensionless")
         to_units = c.attrs.get("to_units", units)
         scale = c.attrs.get("scaling_factor", 1)
 
-        c_with_units = c.values * self.ureg(units)
+        c_with_units = values * self.ureg(units)
         c_converted = c_with_units.to(to_units)
         c_scaled = c_converted * scale
-        return c_scaled.magnitude
+        return c, c_scaled.magnitude
 
     def sample(self, dim_val, other_dim):
         dim = next(iter(dim_val))
         assert dim != other_dim, "other_dim can't be equal to dim."
+
+        def create_title():
+            c, c_value = self.get_coordinate(dim, values=dim_val[dim])
+
+            l = c.plot_label.split("$")
+            l[2] = f" = {c_value:.1f}" + l[2]
+            return "$".join(l)
+
         mat = self.charge.sel(dim_val, method="nearest")
 
         # get the other dimension's corners
-        other_coord = self.get_coordinate(other_dim)
-        other_corners = util.corners(other_coord)
+        c_other_coord, other_coord_val = self.get_coordinate(other_dim)
+        other_corners = util.corners(other_coord_val)
 
         with rc_context():
             mpl_util.mpl_publication_style()
@@ -68,7 +80,7 @@ class XSpectra:
                 rasterized=True,
             )
             #
-            ax.set_title(f"${dim} = {dim_val[dim]}$")
+            ax.set_title(create_title())
             ax.hlines(
                 y=other_corners,
                 xmin=self.charge.E[0],
@@ -77,20 +89,18 @@ class XSpectra:
                 linestyle="solid",
                 color="white",
             )
-            for v in other_coord:
-                ax.annotate(
-                    text=f"{v:.1f}", xy=(5, v), xycoords="data", color="white", fontsize=7
-                )
+            for v in other_coord_val:
+                ax.text(5, v, f"{v:.1f}", color="white", fontsize=7)
             #
-            ax.yaxis.set_minor_locator(ticker.NullLocator())
-            ax.yaxis.set_minor_formatter(ticker.NullFormatter())
-            ax.yaxis.set_major_locator(ticker.NullLocator())
-            ax.yaxis.set_major_formatter(ticker.NullFormatter())
+            ax.yaxis.set(
+                minor_locator=ticker.NullLocator(),
+                minor_formatter=ticker.NullFormatter(),
+                major_locator=ticker.NullLocator(),
+                major_formatter=ticker.NullFormatter(),
+            )
             #
-            ax.spines["right"].set_visible(False)
-            ax.spines["left"].set_visible(False)
-            ax.spines["top"].set_visible(False)
-            ax.spines["bottom"].set_visible(False)
+            for pos in "right", "left", "top", "bottom":
+                ax.spines[pos].set_visible(False)
             #
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="6%", pad=0.02)
@@ -107,7 +117,7 @@ class XSpectra:
                 )
             cbar.set_label(self.charge.plot_label)
             #
-            ax.set_ylabel(self.charge.coords[other_dim].attrs.get("plot_label", ""))
+            ax.set_ylabel(c_other_coord.attrs.get("plot_label", ""))
             ax.set_xlabel(self.charge.E.plot_label)
             #
             fig.savefig("sample", bbox_inches="tight")
@@ -127,11 +137,11 @@ class XSpectra:
 
         axes = dict()
         for ax, dim in dims.items():
-            c = self.get_coordinate(dim)
+            c, c_val = self.get_coordinate(dim)
             axes[ax] = {
-                "values": c,
-                "corners": util.corners(c),
-                "label": self.charge.coords[dim].attrs.get("plot_label", ""),
+                "values": c_val,
+                "corners": util.corners(c_val),
+                "label": c.attrs.get("plot_label", ""),
             }
 
         with rc_context():
@@ -149,10 +159,11 @@ class XSpectra:
                 cmap=cm.get_cmap("Greys", mat.max() - mat.min() + 1),
                 rasterized=True,
             )
-            ax.xaxis.set_minor_locator(ticker.NullLocator())
-            ax.yaxis.set_minor_locator(ticker.NullLocator())
-            ax.xaxis.set_major_locator(ticker.FixedLocator(axes["x"]["values"]))
-            ax.yaxis.set_major_locator(ticker.FixedLocator(axes["y"]["values"]))
+            for xy, ax_xy in zip(("x", "y"), ax.xaxis, ax.yaxis):
+                ax_xy.set(
+                    minor_locator=ticker.NullLocator(),
+                    major_locator=ticker.FixedLocator(axes[xy]["values"]),
+                )
             #
             ax.hlines(
                 y=axes["y"]["corners"],
@@ -238,6 +249,7 @@ def main():
     # TODO fix n_e = .. ax title (10^18...)
     # TODO add sample line on 2D plot
     # TODO update 2D plot when sample is changed
+
 
 if __name__ == "__main__":
     main()
