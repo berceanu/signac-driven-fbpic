@@ -3,12 +3,6 @@ Reimplementation of the particle energy histogram for the electron species, dire
 The resulting speedup compared to the openPMD-viewer-based `particle_energy_histogram` is a factor ~4.
 
 To view all groups datasets and corresponding attributes in an .h5 file, use `h5ls -rv filename.h5`.
-
-/data/91800              Group
-    Attribute: dt scalar
-        Data:  1.11188e-16
-    Attribute: time scalar
-        Data:  1.02071e-11
 """
 import pathlib
 from dataclasses import dataclass, field
@@ -17,14 +11,11 @@ from typing import Any, Dict
 import h5py
 import numexpr as ne
 import numpy as np
-import numpy.testing as npt
 import pint
 import signac
 from fast_histogram import histogram1d
 
 import job_util
-import util
-from simulation_diagnostics import particle_energy_histogram
 
 ureg = pint.UnitRegistry()
 m_e = ureg.electron_mass
@@ -89,35 +80,12 @@ def job_energy_histogram(job):
     return energy_histogram(uxyz, w)
 
 
-def old_energy_histogram(job):
-    time_series = job_util.get_time_series_from(job)
-    old_hist, _, _ = particle_energy_histogram(
-        tseries=time_series,
-        iteration=91800,
-        species="electrons",
-        cutoff=np.inf,
-    )
-    return old_hist
-
-
 def main():
     """Main entry point."""
     proj = signac.get_project(search=False)
 
-    job = next(iter(proj))
-    new_hist = job_energy_histogram(job)
-    old_hist = old_energy_histogram(job)
-    npt.assert_almost_equal(old_hist, new_hist, decimal=1)
-
-    t = util.Timer()
-    t.start()
-    #
-    for job in proj:
-        # new_hist = job_energy_histogram(job)  # ~14s
-        old_hist = old_energy_histogram(job)  # ~ 54s
-    #
-    runtime = t.stop()
-    print(runtime)
+    for job in proj:  # ~14s
+        hist = job_energy_histogram(job)
 
 
 if __name__ == "__main__":
