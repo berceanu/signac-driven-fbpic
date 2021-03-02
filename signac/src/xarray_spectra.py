@@ -52,12 +52,16 @@ class XSpectra:
         dim = next(iter(dim_val))
         assert dim != other_dim, "other_dim can't be equal to dim."
 
-        def create_title():
-            c, c_value = self.get_coordinate(dim, values=dim_val[dim])
+        c, c_value = self.get_coordinate(dim, values=dim_val[dim])
 
+        def create_title():
             l = c.plot_label.split("$")
             l[2] = f" = {c_value:.1f}" + l[2]
             return "$".join(l)
+
+        dims = {"y": "n_e", "x": "a_0"}
+        inv_dims = {v: k for k, v in dims.items()}
+        self.matshow(dims=dims, axline={inv_dims[dim]: c_value})
 
         mat = self.charge.sel(dim_val, method="nearest")
 
@@ -122,7 +126,7 @@ class XSpectra:
             #
             fig.savefig("sample", bbox_inches="tight")
 
-    def matshow(self, dims=None):
+    def matshow(self, dims=None, axline=None):
         if dims is None:
             dims = {"y": "n_e", "x": "a_0"}
 
@@ -159,7 +163,7 @@ class XSpectra:
                 cmap=cm.get_cmap("Greys", mat.max() - mat.min() + 1),
                 rasterized=True,
             )
-            for xy, ax_xy in zip(("x", "y"), ax.xaxis, ax.yaxis):
+            for xy, ax_xy in zip(("x", "y"), (ax.xaxis, ax.yaxis)):
                 ax_xy.set(
                     minor_locator=ticker.NullLocator(),
                     major_locator=ticker.FixedLocator(axes[xy]["values"]),
@@ -199,6 +203,14 @@ class XSpectra:
             #
             ax.set_ylabel(axes["y"]["label"])
             ax.set_xlabel(axes["x"]["label"])
+            #
+            xy = next(iter(axline))
+            {"x": ax.axvline, "y": ax.axhline}[xy](
+                axline[xy],
+                color="white",
+                linestyle="dashed",
+                linewidth=2,
+            )
             #
             fig.savefig("matshow", bbox_inches="tight")
 
@@ -241,14 +253,8 @@ def main():
     ##
 
     xs = XSpectra(spectra)
-    xs.matshow()
-
-    xs.sample({"n_e": 7.9e24}, "a_0")
     # xs.sample({"a_0": 3.1}, "n_e")
-
-    # TODO fix n_e = .. ax title (10^18...)
-    # TODO add sample line on 2D plot
-    # TODO update 2D plot when sample is changed
+    xs.sample({"n_e": 7.9e24}, "a_0")
 
 
 if __name__ == "__main__":
