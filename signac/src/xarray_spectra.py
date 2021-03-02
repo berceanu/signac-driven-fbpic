@@ -79,7 +79,7 @@ class XSpectra:
             )
             for v in other_coord:
                 ax.annotate(
-                    text=f"{v}", xy=(5, v), xycoords="data", color="white", fontsize=7
+                    text=f"{v:.1f}", xy=(5, v), xycoords="data", color="white", fontsize=7
                 )
             #
             ax.yaxis.set_minor_locator(ticker.NullLocator())
@@ -184,7 +184,7 @@ class XSpectra:
                     length=length,
                     width=width,
                 )
-            cbar.set_label(r"$E_p$ ($\mathrm{MeV}$)")
+            cbar.set_label(r"$E_{\mathrm{p}}$ ($\mathrm{MeV}$)")
             #
             ax.set_ylabel(axes["y"]["label"])
             ax.set_xlabel(axes["x"]["label"])
@@ -235,6 +235,9 @@ def main():
     xs.sample({"n_e": 7.9e24}, "a_0")
     # xs.sample({"a_0": 3.1}, "n_e")
 
+    # TODO fix n_e = .. ax title (10^18...)
+    # TODO add sample line on 2D plot
+    # TODO update 2D plot when sample is changed
 
 if __name__ == "__main__":
     main()
