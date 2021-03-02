@@ -29,7 +29,7 @@ class XSpectra:
         ] = r"$\frac{\mathrm{d} Q}{\mathrm{d} E}\, \left(\frac{\mathrm{pC}}{\mathrm{MeV}}\right)$"
         #
         self.charge.E.attrs["units"] = "MeV"
-        self.charge.E.attrs["plot_label"] = r"E ($\mathrm{MeV}$)"
+        self.charge.E.attrs["plot_label"] = r"$E$ ($\mathrm{MeV}$)"
         #
         self.charge.pint.quantify()
 
@@ -44,13 +44,91 @@ class XSpectra:
         c_scaled = c_converted * scale
         return c_scaled.magnitude
 
-    def matshow(self):
+    def sample(self, dim_val, other_dim):
+        dim = next(iter(dim_val))
+        assert dim != other_dim, "other_dim can't be equal to dim."
+        mat = self.charge.sel(dim_val, method="nearest")
+
+        # get the other dimension's corners
+        other_coord = self.get_coordinate(other_dim)
+        other_corners = util.corners(other_coord)
+
+        with rc_context():
+            mpl_util.mpl_publication_style()
+
+            fig = figure.Figure()
+            canvas = FigureCanvasAgg(fig)
+            ax = fig.add_subplot(111)
+
+            img = ax.pcolorfast(
+                self.charge.E.values,
+                other_corners,
+                mat.values,
+                cmap=cm.get_cmap("turbo"),
+                rasterized=True,
+            )
+            #
+            ax.set_title(f"${dim} = {dim_val[dim]}$")
+            ax.hlines(
+                y=other_corners,
+                xmin=self.charge.E[0],
+                xmax=self.charge.E[-1],
+                linewidth=0.5,
+                linestyle="solid",
+                color="white",
+            )
+            for v in other_coord:
+                ax.annotate(
+                    text=f"{v}", xy=(5, v), xycoords="data", color="white", fontsize=7
+                )
+            #
+            ax.yaxis.set_minor_locator(ticker.NullLocator())
+            ax.yaxis.set_minor_formatter(ticker.NullFormatter())
+            ax.yaxis.set_major_locator(ticker.NullLocator())
+            ax.yaxis.set_major_formatter(ticker.NullFormatter())
+            #
+            ax.spines["right"].set_visible(False)
+            ax.spines["left"].set_visible(False)
+            ax.spines["top"].set_visible(False)
+            ax.spines["bottom"].set_visible(False)
+            #
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="6%", pad=0.02)
+            cbar = ax.figure.colorbar(
+                img,
+                cax=cax,
+            )
+            for ticks, length, width in zip(("major", "minor"), (3.5, 2), (0.8, 0.6)):
+                cbar.ax.tick_params(
+                    axis="both",
+                    which=ticks,
+                    length=length,
+                    width=width,
+                )
+            cbar.set_label(self.charge.plot_label)
+            #
+            ax.set_ylabel(self.charge.coords[other_dim].attrs.get("plot_label", ""))
+            ax.set_xlabel(self.charge.E.plot_label)
+            #
+            fig.savefig("sample", bbox_inches="tight")
+
+    def matshow(self, dims=None):
+        if dims is None:
+            dims = {"y": "n_e", "x": "a_0"}
+
         mat = self.find_main_peak()
 
+        mat_dims = {"y": mat.dims[0], "x": mat.dims[1]}
+
+        if (mat_dims["y"] == dims["x"]) and (mat_dims["x"] == dims["y"]):
+            mat = mat.transpose()
+
+        mat = mat.values
+
         axes = dict()
-        for i, dim in enumerate(self.charge.dims[:-1]):
+        for ax, dim in dims.items():
             c = self.get_coordinate(dim)
-            axes[{0: "y", 1: "x"}[i]] = {
+            axes[ax] = {
                 "values": c,
                 "corners": util.corners(c),
                 "label": self.charge.coords[dim].attrs.get("plot_label", ""),
@@ -68,7 +146,8 @@ class XSpectra:
                 axes["y"]["corners"],
                 mat,
                 norm=colors.Normalize(vmin=mat.min() - 0.5, vmax=mat.max() + 0.5),
-                cmap=cm.get_cmap("Greys", np.max(mat) - np.min(mat) + 1),
+                cmap=cm.get_cmap("Greys", mat.max() - mat.min() + 1),
+                rasterized=True,
             )
             ax.xaxis.set_minor_locator(ticker.NullLocator())
             ax.yaxis.set_minor_locator(ticker.NullLocator())
@@ -105,12 +184,12 @@ class XSpectra:
                     length=length,
                     width=width,
                 )
-            cbar.set_label(self.charge.E.plot_label)
+            cbar.set_label(r"$E_p$ ($\mathrm{MeV}$)")
             #
             ax.set_ylabel(axes["y"]["label"])
             ax.set_xlabel(axes["x"]["label"])
             #
-            fig.savefig("matshow")
+            fig.savefig("matshow", bbox_inches="tight")
 
     def find_main_peak(self, energy_window=slice(100, 300)):
         peak_idx = self.charge.sel(E=energy_window).argmax(dim="E")
@@ -153,7 +232,8 @@ def main():
     xs = XSpectra(spectra)
     xs.matshow()
 
-    # print(xs.charge.sel(a_0=2.4, n_e=7.6e24, method="nearest"))
+    xs.sample({"n_e": 7.9e24}, "a_0")
+    # xs.sample({"a_0": 3.1}, "n_e")
 
 
 if __name__ == "__main__":
