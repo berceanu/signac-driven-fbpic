@@ -94,15 +94,16 @@ def mpl_publication_style(extension="pdf"):
     matplotlib.rcParams["figure.subplot.left"] = 0.14
 
 
-def add_colorbar(ax, mappable, *, size="3%", position="right"):
+def add_colorbar(ax, mappable, *, size="5%", position="right"):
     orientation = "horizontal" if (position == "top") else "vertical"
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes(position, size=size, pad="0.5%")
+    cax = divider.append_axes(position, size=size, pad="1%")
     cbar = ax.figure.colorbar(
         mappable,
         cax=cax,
         orientation=orientation,
     )
+    cbar.outline.set_visible(False)
     # restore default tick length and width
     for ticks, length, width in zip(("major", "minor"), (3.5, 2), (0.8, 0.6)):
         cbar.ax.tick_params(

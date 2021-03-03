@@ -155,11 +155,6 @@ class XSpectra:
             cmap=cm.get_cmap("turbo", mat.max() - mat.min() + 1),
             rasterized=True,
         )
-        # for xy, ax_xy in zip(("x", "y"), (ax.xaxis, ax.yaxis)):
-        #     ax_xy.set(  # TODO remove
-        #         minor_locator=ticker.NullLocator(),
-        #         major_locator=ticker.FixedLocator(axes[xy]["values"]),
-        #     )
         for xy in "x", "y":
             {"y": ax.hlines, "x": ax.vlines}[xy](
                 axes[xy]["corners"],
