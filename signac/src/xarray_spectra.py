@@ -54,7 +54,7 @@ class XSpectra:
         c_scaled = c_converted * scale
         return c, c_scaled.magnitude
 
-    def sample(self, dim_val, other_dim, dim_mapping=None):
+    def sample(self, dim_val, other_dim, dim_mapping=None, vmax=None, left_xlim=0.0):
         dim = next(iter(dim_val))
         assert dim != other_dim, "other_dim can't be equal to dim."
 
@@ -83,10 +83,14 @@ class XSpectra:
             canvas = FigureCanvasAgg(fig)
             ax = fig.add_subplot(111)
 
+            if vmax is None:
+                vmax = mat.max()
+            
             img = ax.pcolorfast(
                 self.charge.E.values,
                 other_corners,
                 mat.values,
+                norm=colors.Normalize(vmin=0.0, vmax=vmax),
                 cmap=cm.get_cmap("turbo"),
                 rasterized=True,
             )
@@ -101,7 +105,7 @@ class XSpectra:
                 color="white",
             )
             for v in other_coord_val:
-                ax.text(5, v, f"{v:.1f}", color="white", fontsize=7)
+                ax.text(left_xlim + 5, v, f"{v:.1f}", color="white", fontsize=7)
             #
             ax.yaxis.set(
                 minor_locator=ticker.NullLocator(),
@@ -130,6 +134,7 @@ class XSpectra:
             #
             ax.set_ylabel(c_other_coord.attrs.get("plot_label", ""))
             ax.set_xlabel(self.charge.E.plot_label)
+            ax.set_xlim(left=left_xlim)
             #
             fig.savefig("sample", bbox_inches="tight")
 
@@ -167,7 +172,7 @@ class XSpectra:
                 axes["y"]["corners"],
                 mat,
                 norm=colors.Normalize(vmin=mat.min() - 0.5, vmax=mat.max() + 0.5),
-                cmap=cm.get_cmap("Greys", mat.max() - mat.min() + 1),
+                cmap=cm.get_cmap("Reds", mat.max() - mat.min() + 1),
                 rasterized=True,
             )
             for xy, ax_xy in zip(("x", "y"), (ax.xaxis, ax.yaxis)):

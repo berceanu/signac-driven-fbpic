@@ -46,8 +46,8 @@ def main():
     # ds.to_zarr("spectra.zarr")
 
     xs = XSpectra(spectra, dim_mapping={"y": "a0", "x": "n_e"})
+    xs.sample({"n_e": 7.9e24}, "a0", vmax=40.0, left_xlim=50.0)
     # xs.sample({"a0": 3.1}, "n_e")
-    xs.sample({"n_e": 7.9e24}, "a0")
 
 
 if __name__ == "__main__":
