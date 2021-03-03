@@ -107,9 +107,12 @@ class XSpectra:
             linewidth=0.5,
             linestyle="solid",
             color="white",
+            zorder=1,
         )
         for v in other_coord_val:
-            ax.text(self.left_xlim + 5, v, f"{v:.1f}", color="white", fontsize=6)
+            ax.text(
+                self.left_xlim + 5, v, f"{v:.1f}", color="white", fontsize=6, zorder=10
+            )
         #
         ax.yaxis.set(
             minor_locator=ticker.NullLocator(),
