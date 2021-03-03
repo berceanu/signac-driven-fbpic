@@ -9,7 +9,7 @@ import numpy as np
 import job_util
 from energy_histograms import job_energy_histogram
 from xarray_spectra import XSpectra
-
+from util import first
 
 def main():
     """Main entry point."""
@@ -24,7 +24,7 @@ def main():
     for i, j in np.ndindex(charge.shape[:-1]):
         match = proj.find_jobs(filter={"a0": a0[i], "n_e": n_e[j]})
         assert len(match) == 1, "More than 1 job found."
-        job = next(iter(match))
+        job = first(match)
         charge[i, j, :] = job_energy_histogram(job)
 
     spectra = xr.DataArray(
