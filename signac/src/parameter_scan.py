@@ -20,6 +20,11 @@ def main():
     n_e = job_util.get_key_values(proj, "n_e")
     energy = np.linspace(1, 499, 499)
 
+    s1 = generate_slices("a0", np.array((2.4, 2.7, 3.0, 3.1)))
+    s2 = generate_slices("n_e", np.array((7.4, 7.7, 7.9, 8.1)) * 1.0e24)
+    s = s1 + s2
+    assert(len(s) == 8), "choose precisely 8 values"
+
     charge = np.zeros((len(a0), len(n_e), energy.shape[0]))
 
     for i, j in np.ndindex(charge.shape[:-1]):
@@ -42,10 +47,6 @@ def main():
     spectra.n_e.attrs["scaling_factor"] = 1.0e-18
 
     xs = XSpectra(spectra, gaussian_std=10)
-    #
-    s1 = generate_slices("a0", (2.4, 2.6, 2.7, 3.1))
-    s2 = generate_slices("n_e", np.array((7.4, 7.6, 7.9, 8.0)) * 1.0e24)
-    s = s1 + s2
     #
     xf = XFigure(xs, s)
     xf.render()

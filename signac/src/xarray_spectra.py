@@ -215,8 +215,8 @@ class XFigure:
             gridspec_kw={
                 "width_ratios": [1, 1, 1],
                 "height_ratios": [1, 1, 1],
-                "wspace": 0.21,
-                "hspace": 0.5,
+                "wspace": 0.23,
+                "hspace": 0.4,
                 "left": 0.03,
                 "right": 0.99,
                 "top": 0.96,
