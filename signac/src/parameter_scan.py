@@ -13,23 +13,6 @@ from energy_histograms import job_energy_histogram
 from xarray_spectra import XSpectra
 
 
-def two_parameters_study(project, keys=("a0", "n_e")):
-
-    vy = job_util.get_key_values(project, keys[0])
-    vx = job_util.get_key_values(project, keys[1])
-
-    spectra = list()
-    for val_y, val_x in product(vy, vx):
-        job = next(iter(project.find_jobs(filter={keys[0]: val_y, keys[1]: val_x})))
-        spectrum = job_energy_histogram(job)
-        spectra.append(spectrum)
-
-
-# Plan: 1. compute all the spectra via job_energy_histogram.
-#       2. load them into XSpectra.
-#       3. profit!
-
-
 def main():
     """Main entry point."""
     proj = signac.get_project(search=False)
@@ -51,6 +34,18 @@ def main():
         dims=("a0", "n_e", "E"),
         coords={"a0": a0, "n_e": n_e, "E": energy},
     )
+    #
+    spectra.a0.attrs["plot_label"] = r"$a0$"
+    #
+    spectra.n_e.attrs["plot_label"] = r"$n_e$ ($10^{18}\,\mathrm{cm^{-3}}$)"
+    spectra.n_e.attrs["units"] = "1 / meter ** 3"
+    spectra.n_e.attrs["to_units"] = "1 / centimeter ** 3"
+    spectra.n_e.attrs["scaling_factor"] = 1.0e-18
+    ##
+
+    xs = XSpectra(spectra)
+    # xs.sample({"a0": 3.1}, "n_e")
+    xs.sample({"n_e": 7.9e24}, "a0")
 
 
 if __name__ == "__main__":
