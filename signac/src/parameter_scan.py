@@ -35,7 +35,7 @@ def main():
         coords={"a0": a0, "n_e": n_e, "E": energy},
     )
     #
-    spectra.a0.attrs["plot_label"] = r"$a0$"
+    spectra.a0.attrs["plot_label"] = r"$a_0$"
     #
     spectra.n_e.attrs["plot_label"] = r"$n_e$ ($10^{18}\,\mathrm{cm^{-3}}$)"
     spectra.n_e.attrs["units"] = "1 / meter ** 3"
@@ -46,8 +46,8 @@ def main():
     # ds.to_zarr("spectra.zarr")
 
     xs = XSpectra(spectra, dim_mapping={"y": "a0", "x": "n_e"})
-    xs.sample({"n_e": 7.9e24}, "a0", vmax=40.0, left_xlim=50.0)
-    # xs.sample({"a0": 3.1}, "n_e")
+    # xs.sample({"n_e": 7.9e24}, "a0", vmax=40.0, left_xlim=50.0)
+    xs.sample({"a0": 3.1}, "n_e", vmax=40.0, left_xlim=50.0)
 
 
 if __name__ == "__main__":

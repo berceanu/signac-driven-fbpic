@@ -256,7 +256,7 @@ def main():
         coords={"a0": a0, "n_e": n_e, "E": energy},
     )
     #
-    spectra.a0.attrs["plot_label"] = r"$a0$"
+    spectra.a0.attrs["plot_label"] = r"$a_0$"
     #
     spectra.n_e.attrs["plot_label"] = r"$n_e$ ($10^{18}\,\mathrm{cm^{-3}}$)"
     spectra.n_e.attrs["units"] = "1 / meter ** 3"
