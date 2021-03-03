@@ -11,6 +11,7 @@ from energy_histograms import job_energy_histogram
 from xarray_spectra import XSpectra
 from util import first
 
+
 def main():
     """Main entry point."""
     proj = signac.get_project(search=False)

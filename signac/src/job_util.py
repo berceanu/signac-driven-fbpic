@@ -10,6 +10,7 @@ import util
 
 logger = logging.getLogger(__name__)
 
+
 def get_key_values(project, key, key_class=float):
     schema = project.detect_schema()
     return sorted(schema[key][key_class])
@@ -75,7 +76,6 @@ def estimated_time_of_arrival(job):
     runtime = remaining_iterations * delta_t / delta_it
 
     return str(t_new + runtime).split(".")[0]
-
 
 
 def main():

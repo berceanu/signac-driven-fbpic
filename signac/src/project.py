@@ -90,7 +90,7 @@ class Project(FlowProject):
 
 preprocessing = Project.make_group(name="preprocessing")
 fbpic = Project.make_group(name="fbpic")
-postprocessing= Project.make_group(name="postprocessing")
+postprocessing = Project.make_group(name="postprocessing")
 
 
 @Project.label

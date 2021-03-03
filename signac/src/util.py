@@ -8,12 +8,14 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
 def first(s):
-    '''Return the first element from an ordered collection
-       or an arbitrary element from an unordered collection.
-       Raise StopIteration if the collection is empty.
-    '''
+    """Return the first element from an ordered collection
+    or an arbitrary element from an unordered collection.
+    Raise StopIteration if the collection is empty.
+    """
     return next(iter(s))
+
 
 def corners(centers):
     """
@@ -28,6 +30,7 @@ def corners(centers):
     corners = np.append(c, rightmost_corner)
 
     return corners
+
 
 def latex_float(f):
     float_str = "{0:.2g}".format(f)

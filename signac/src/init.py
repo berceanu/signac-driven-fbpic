@@ -32,13 +32,13 @@ def main():
     )
 
     a0 = np.linspace(2.4, 3.1, 8)
-    n_e = np.linspace(7.4, 8.1, 8) * 1.0e+18 * 1.0e+6
+    n_e = np.linspace(7.4, 8.1, 8) * 1.0e18 * 1.0e6
 
     m = np.meshgrid(a0, n_e)
-    a0_n_e = np.transpose(m).reshape(-1,2)
+    a0_n_e = np.transpose(m).reshape(-1, 2)
     for a0, n_e in a0_n_e:
         sp = dict(
-            random_seed = 42,  # deterministic random seed
+            random_seed=42,  # deterministic random seed
             # TODO: move to job document
             nranks=4,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
             # The simulation box
