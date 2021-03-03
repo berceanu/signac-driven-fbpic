@@ -2,7 +2,7 @@
 Provides N-dimensional data structure for storing spectra depending on multiple
 statepoint parameters.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 import pint
@@ -12,6 +12,7 @@ from matplotlib import cm, colors, figure, rc_context, ticker
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from pint.registry import UnitRegistry
+from typing import Dict
 
 import mpl_util
 import util
@@ -25,6 +26,7 @@ def gaussian(x, mu, sig, h):
 class XSpectra:
     charge: xr.DataArray
     ureg: UnitRegistry = pint.UnitRegistry()
+    dim_mapping: Dict[str, str] = field(default_factory=lambda: {"y": "n_e", "x": "a0"})
 
     def __post_init__(self):
         self.charge.attrs["units"] = "pC / MeV"
@@ -52,7 +54,7 @@ class XSpectra:
         c_scaled = c_converted * scale
         return c, c_scaled.magnitude
 
-    def sample(self, dim_val, other_dim):
+    def sample(self, dim_val, other_dim, dim_mapping=None):
         dim = next(iter(dim_val))
         assert dim != other_dim, "other_dim can't be equal to dim."
 
@@ -63,9 +65,10 @@ class XSpectra:
             l[2] = f" = {c_value:.1f}" + l[2]
             return "$".join(l)
 
-        dims = {"y": "n_e", "x": "a0"}
-        inv_dims = {v: k for k, v in dims.items()}
-        self.matshow(dims=dims, axline={inv_dims[dim]: c_value})
+        if dim_mapping is None:
+            dim_mapping = self.dim_mapping
+        inv_dim_mapping = {v: k for k, v in dim_mapping.items()}
+        self.matshow(dim_mapping=dim_mapping, axline={inv_dim_mapping[dim]: c_value})
 
         mat = self.charge.sel(dim_val, method="nearest")
 
@@ -130,21 +133,21 @@ class XSpectra:
             #
             fig.savefig("sample", bbox_inches="tight")
 
-    def matshow(self, dims=None, axline=None):
-        if dims is None:
-            dims = {"y": "n_e", "x": "a0"}
+    def matshow(self, dim_mapping=None, axline=None):
+        if dim_mapping is None:
+            dim_mapping = self.dim_mapping
 
         mat = self.find_main_peak()
 
         mat_dims = {"y": mat.dims[0], "x": mat.dims[1]}
 
-        if (mat_dims["y"] == dims["x"]) and (mat_dims["x"] == dims["y"]):
+        if (mat_dims["y"] == dim_mapping["x"]) and (mat_dims["x"] == dim_mapping["y"]):
             mat = mat.transpose()
 
         mat = mat.values
 
         axes = dict()
-        for ax, dim in dims.items():
+        for ax, dim in dim_mapping.items():
             c, c_val = self.get_coordinate(dim)
             axes[ax] = {
                 "values": c_val,
