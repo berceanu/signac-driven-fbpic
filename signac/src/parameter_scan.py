@@ -2,8 +2,6 @@
 Computes the electron energy spectra for the whole parameter space and loads it
 into the N-dimensional array class.
 """
-from itertools import product
-
 import signac
 import xarray as xr
 import numpy as np
@@ -46,6 +44,8 @@ def main():
     # xs.sample({"n_e": 7.9e24}, "a0", vmax=40.0, left_xlim=50.0)
     xs.sample({"a0": 3.1}, "n_e", vmax=40.0, left_xlim=50.0)
 
+    # TODO check trends in Paolo email
+    # introduce smoothing and compare again with original plot
 
 if __name__ == "__main__":
     main()
