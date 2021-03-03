@@ -8,6 +8,13 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+def first(s):
+    '''Return the first element from an ordered collection
+       or an arbitrary element from an unordered collection.
+       Raise StopIteration if the collection is empty.
+    '''
+    return next(iter(s))
+
 def corners(centers):
     """
     Given a 1d array of center positions, compute the positions of the edges
