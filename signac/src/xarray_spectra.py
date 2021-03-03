@@ -8,12 +8,12 @@ import numpy as np
 import pint
 import pint_xarray
 import xarray as xr
-from matplotlib import cm, colors, figure, rc_context, ticker
+from matplotlib import cm, colors, figure, rc_context, ticker, rcParams
 from matplotlib.backends.backend_agg import FigureCanvasAgg
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from pint.registry import UnitRegistry
-from typing import Dict
+from typing import Any, Dict, Tuple
 from scipy.ndimage import gaussian_filter1d
+from util import first
 
 import mpl_util
 import util
@@ -24,11 +24,33 @@ def gaussian(x, mu, sig, h):
 
 
 @dataclass
+class Slice:
+    dimension_name: str
+    dimension_value: float
+    other_dimension_name: str
+
+    def __post_init__(self):
+        assert (
+            self.dimension_name != self.other_dimension_name
+        ), "Dimension names must be different."
+
+    def to_dict(self):
+        return {self.dimension_name: self.dimension_value}
+
+
+def generate_slices(dimension_name, values):
+    other_dimension_name = {"a0": "n_e", "n_e": "a0"}[dimension_name]
+    return tuple(Slice(dimension_name, v, other_dimension_name) for v in values)
+
+
+@dataclass
 class XSpectra:
     charge: xr.DataArray
     ureg: UnitRegistry = pint.UnitRegistry()
     dim_mapping: Dict[str, str] = field(default_factory=lambda: {"y": "n_e", "x": "a0"})
-    gaussian_std: int = field(default=16, repr=False)
+    gaussian_std: int = 10
+    vmax: float = 40.0
+    left_xlim: float = 50.0
 
     def __post_init__(self):
         self.charge.attrs["units"] = "pC / MeV"
@@ -41,7 +63,7 @@ class XSpectra:
         #
         self.charge.pint.quantify()
 
-    def get_coordinate(self, dim, values=None):
+    def get_coordinate(self, dim, *, values=None):
         c = self.charge.coords[dim]
 
         if values is None:
@@ -56,186 +78,180 @@ class XSpectra:
         c_scaled = c_converted * scale
         return c, c_scaled.magnitude
 
-    def sample(self, dim_val, other_dim, dim_mapping=None, vmax=None, left_xlim=0.0):
-        dim = next(iter(dim_val))
-        assert dim != other_dim, "other_dim can't be equal to dim."
-
-        c, c_value = self.get_coordinate(dim, values=dim_val[dim])
+    def sample(self, ax, s: Slice):
+        c, c_value = self.get_coordinate(s.dimension_name, values=s.dimension_value)
 
         def create_title():
             l = c.plot_label.split("$")
             l[2] = f" = {c_value:.1f}" + l[2]
             return "$".join(l)
 
-        if dim_mapping is None:
-            dim_mapping = self.dim_mapping
-        inv_dim_mapping = {v: k for k, v in dim_mapping.items()}
-        self.matshow(dim_mapping=dim_mapping, axline={inv_dim_mapping[dim]: c_value})
-
-        mat = self.charge.sel(dim_val, method="nearest")
-
         # get the other dimension's corners
-        c_other_coord, other_coord_val = self.get_coordinate(other_dim)
+        c_other_coord, other_coord_val = self.get_coordinate(s.other_dimension_name)
         other_corners = util.corners(other_coord_val)
 
-        with rc_context():
-            mpl_util.mpl_publication_style()
+        mat = self.charge.sel(s.to_dict(), method="nearest")
 
-            fig = figure.Figure()
-            canvas = FigureCanvasAgg(fig)
-            ax = fig.add_subplot(111)
+        img = ax.pcolorfast(
+            self.charge.E.values,
+            other_corners,
+            mat.values,
+            norm=colors.Normalize(vmin=0.0, vmax=self.vmax),
+            cmap=cm.get_cmap("turbo"),
+            rasterized=True,
+        )
+        ax.set_title(create_title(), fontsize=6)
+        ax.hlines(
+            y=other_corners,
+            xmin=self.charge.E[0],
+            xmax=self.charge.E[-1],
+            linewidth=0.5,
+            linestyle="solid",
+            color="white",
+        )
+        for v in other_coord_val:
+            ax.text(self.left_xlim + 5, v, f"{v:.1f}", color="white", fontsize=6)
+        #
+        ax.yaxis.set(
+            minor_locator=ticker.NullLocator(),
+            minor_formatter=ticker.NullFormatter(),
+            major_locator=ticker.NullLocator(),
+            major_formatter=ticker.NullFormatter(),
+        )
+        for pos in "right", "left", "top", "bottom":
+            ax.spines[pos].set_visible(False)
+        #
+        ax.set_ylabel(c_other_coord.attrs.get("plot_label", ""))
+        ax.set_xlim(left=self.left_xlim)
+        ax.set_xlabel(self.charge.E.plot_label)
+        #
+        cbar = mpl_util.add_colorbar(ax, img)
+        cbar.ax.set_title(self.charge.plot_label)
+        #
+        return img, cbar
 
-            if vmax is None:
-                vmax = mat.max()
-
-            img = ax.pcolorfast(
-                self.charge.E.values,
-                other_corners,
-                mat.values,
-                norm=colors.Normalize(vmin=0.0, vmax=vmax),
-                cmap=cm.get_cmap("turbo"),
-                rasterized=True,
-            )
-            #
-            ax.set_title(create_title())
-            ax.hlines(
-                y=other_corners,
-                xmin=self.charge.E[0],
-                xmax=self.charge.E[-1],
-                linewidth=0.5,
-                linestyle="solid",
-                color="white",
-            )
-            for v in other_coord_val:
-                ax.text(left_xlim + 5, v, f"{v:.1f}", color="white", fontsize=7)
-            #
-            ax.yaxis.set(
-                minor_locator=ticker.NullLocator(),
-                minor_formatter=ticker.NullFormatter(),
-                major_locator=ticker.NullLocator(),
-                major_formatter=ticker.NullFormatter(),
-            )
-            #
-            for pos in "right", "left", "top", "bottom":
-                ax.spines[pos].set_visible(False)
-            #
-            divider = make_axes_locatable(ax)
-            cax = divider.append_axes("right", size="6%", pad=0.02)
-            cbar = ax.figure.colorbar(
-                img,
-                cax=cax,
-            )
-            for ticks, length, width in zip(("major", "minor"), (3.5, 2), (0.8, 0.6)):
-                cbar.ax.tick_params(
-                    axis="both",
-                    which=ticks,
-                    length=length,
-                    width=width,
-                )
-            cbar.set_label(self.charge.plot_label)
-            #
-            ax.set_ylabel(c_other_coord.attrs.get("plot_label", ""))
-            ax.set_xlabel(self.charge.E.plot_label)
-            ax.set_xlim(left=left_xlim)
-            #
-            fig.savefig("sample", bbox_inches="tight")
-
-    def matshow(self, dim_mapping=None, axline=None):
-        if dim_mapping is None:
-            dim_mapping = self.dim_mapping
-
+    def matshow(self, ax):
         mat = self.find_main_peak()
-
         mat_dims = {"y": mat.dims[0], "x": mat.dims[1]}
-
-        if (mat_dims["y"] == dim_mapping["x"]) and (mat_dims["x"] == dim_mapping["y"]):
+        if (mat_dims["y"] == self.dim_mapping["x"]) and (
+            mat_dims["x"] == self.dim_mapping["y"]
+        ):
             mat = mat.transpose()
 
-        mat = mat.values
-
         axes = dict()
-        for ax, dim in dim_mapping.items():
+        for xy, dim in self.dim_mapping.items():
             c, c_val = self.get_coordinate(dim)
-            axes[ax] = {
+            axes[xy] = {
                 "values": c_val,
                 "corners": util.corners(c_val),
                 "label": c.attrs.get("plot_label", ""),
             }
 
-        with rc_context():
-            mpl_util.mpl_publication_style()
-
-            fig = figure.Figure()
-            canvas = FigureCanvasAgg(fig)
-            ax = fig.add_subplot(111, aspect=1)
-
-            img = ax.pcolorfast(
-                axes["x"]["corners"],
-                axes["y"]["corners"],
-                mat,
-                norm=colors.Normalize(vmin=mat.min() - 0.5, vmax=mat.max() + 0.5),
-                cmap=cm.get_cmap("turbo", mat.max() - mat.min() + 1),
-                rasterized=True,
+        mat = mat.values
+        img = ax.pcolorfast(
+            axes["x"]["corners"],
+            axes["y"]["corners"],
+            mat,
+            norm=colors.Normalize(vmin=mat.min() - 0.5, vmax=mat.max() + 0.5),
+            cmap=cm.get_cmap("turbo", mat.max() - mat.min() + 1),
+            rasterized=True,
+        )
+        for xy, ax_xy in zip(("x", "y"), (ax.xaxis, ax.yaxis)):
+            ax_xy.set(  # TODO remove
+                minor_locator=ticker.NullLocator(),
+                major_locator=ticker.FixedLocator(axes[xy]["values"]),
             )
-            for xy, ax_xy in zip(("x", "y"), (ax.xaxis, ax.yaxis)):
-                ax_xy.set(
-                    minor_locator=ticker.NullLocator(),
-                    major_locator=ticker.FixedLocator(axes[xy]["values"]),
-                )
-            #
-            ax.hlines(
-                y=axes["y"]["corners"],
-                xmin=axes["x"]["corners"][0],
-                xmax=axes["x"]["corners"][-1],
+        for xy in "x", "y":
+            {"y": ax.hlines, "x": ax.vlines}[xy](
+                axes[xy]["corners"],
+                axes[{"x": "y", "y": "x"}[xy]]["corners"][0],
+                axes[{"x": "y", "y": "x"}[xy]]["corners"][-1],
                 linewidth=0.5,
                 linestyle="solid",
                 color="white",
             )
-            ax.vlines(
-                x=axes["x"]["corners"],
-                ymin=axes["y"]["corners"][0],
-                ymax=axes["y"]["corners"][-1],
-                linewidth=0.5,
-                linestyle="solid",
-                color="white",
-            )
-            #
-            divider = make_axes_locatable(ax)
-            cax = divider.append_axes("right", size="5%", pad=0.02)
-            cbar = ax.figure.colorbar(
-                img,
-                cax=cax,
-            )
-            for ticks, length, width in zip(("major", "minor"), (3.5, 2), (0.8, 0.6)):
-                cbar.ax.tick_params(
-                    axis="both",
-                    which=ticks,
-                    length=length,
-                    width=width,
-                )
-            cbar.set_label(r"$E_{\mathrm{p}}$ ($\mathrm{MeV}$)")
-            #
-            ax.set_ylabel(axes["y"]["label"])
-            ax.set_xlabel(axes["x"]["label"])
-            #
-            xy = next(iter(axline))
-            {"x": ax.axvline, "y": ax.axhline}[xy](
-                axline[xy],
-                color="white",
-                linestyle="dashed",
-                linewidth=2,
-            )
-            #
-            fig.savefig("matshow", bbox_inches="tight")
+        ax.set_ylabel(axes["y"]["label"])
+        ax.set_xlabel(axes["x"]["label"])
+        #
+        cbar = mpl_util.add_colorbar(
+            ax,
+            img,
+        )
+        cbar.ax.set_title(r"$E_{\mathrm{p}}$ ($\mathrm{MeV}$)")
+        #
+        return img, cbar
 
     def find_main_peak(self, energy_window=slice(100, 300)):
-        numpy_charge = self.charge.data
+        numpy_charge = self.charge.values
         smooth_charge = gaussian_filter1d(numpy_charge, self.gaussian_std, axis=-1)
         new_charge = xr.DataArray(
             smooth_charge, dims=self.charge.dims, attrs=self.charge.attrs.copy()
         )
         peak_idx = new_charge.sel(E=energy_window).argmax(dim="E")
         return new_charge.E.sel(E=energy_window)[peak_idx]
+
+
+@dataclass
+class XFigure:
+    spectra: XSpectra = field(repr=False)
+    slices: Tuple[Slice]
+    fig: Any = field(init=False)
+    axd: Dict[str, Any] = field(init=False)
+    layout: str = """
+                   ABC
+                   DEF
+                   GHI
+                   """
+
+    def __post_init__(self):
+        self.fig = figure.Figure()
+        _ = FigureCanvasAgg(self.fig)
+        with rc_context():
+            mpl_util.mpl_publication_style()
+            self.axd = self.create_axes()
+
+    def create_axes(self):
+        axd = self.fig.subplot_mosaic(
+            self.layout,
+            gridspec_kw={
+                "width_ratios": [1, 1, 1],
+                "height_ratios": [1, 1, 1],
+                "wspace": 0.26,
+                "hspace": 0.5,
+                "left": 0.03,
+                "right": 0.99,
+                "top": 0.96,
+                "bottom": 0.03,
+            },
+        )
+        return axd
+
+    def render(self):
+        with rc_context():
+            mpl_util.mpl_publication_style()
+
+            im, cb = {}, {}
+            for count, character in enumerate("ABCDFGHI"):
+                im[character], cb[character] = self.spectra.sample(
+                    self.axd[character], self.slices[count]
+                )
+
+            im["E"], cb["E"] = self.spectra.matshow(self.axd["E"])
+
+            for character in "BCDFGHI":
+                cb[character].remove()
+                self.axd[character].set_xlabel("")
+
+            for character in "AE":
+                for ticks in "minor", "major":
+                    cb[character].ax.tick_params(
+                        labelsize=5, which=ticks, direction="out"
+                    )
+
+    def savefig(self):
+        with rc_context():
+            mpl_util.mpl_publication_style(extension="png")
+            self.fig.savefig("xfig")
 
 
 def main():
@@ -271,9 +287,23 @@ def main():
     spectra.n_e.attrs["scaling_factor"] = 1.0e-18
     ##
 
-    xs = XSpectra(spectra, dim_mapping={"y": "a0", "x": "n_e"}, gaussian_std=10)
+    xs = XSpectra(
+        spectra,
+        dim_mapping={"y": "a0", "x": "n_e"},
+        gaussian_std=10,
+        vmax=40.0,
+        left_xlim=50.0,
+    )
     # xs.sample({"a0": 3.1}, "n_e")
-    xs.sample({"n_e": 7.9e24}, "a0", vmax=40.0, left_xlim=50.0)
+    # xs.sample({"n_e": 7.9e24}, "a0", vmax=40.0, left_xlim=50.0)
+
+    s1 = generate_slices("a0", (2.4, 2.6, 2.7, 3.1))
+    s2 = generate_slices("n_e", np.array((7.4, 7.6, 7.9, 8.0)) * 1.0e24)
+    s = s1 + s2
+
+    xf = XFigure(xs, s)
+    xf.render()
+    xf.savefig()
 
 
 if __name__ == "__main__":
