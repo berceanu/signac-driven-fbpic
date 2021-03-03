@@ -30,7 +30,7 @@ mc = (1 * m_e * c).to("kilogram * meter / second").magnitude
 @dataclass
 class LastH5File:
     job: Any = field(repr=False)
-    iteration: int = field(init=False)
+    iteration: int = field(init=False, repr=False)
     fpath: pathlib.Path = field(init=False)
     h5_path: pathlib.Path = field(init=False, repr=False)
     fname: str = field(init=False, repr=False)
