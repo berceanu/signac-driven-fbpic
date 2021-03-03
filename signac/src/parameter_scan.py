@@ -45,9 +45,9 @@ def main():
     # ds = xr.Dataset({"spectra": spectra})
     # ds.to_zarr("spectra.zarr")
 
-    xs = XSpectra(spectra)
+    xs = XSpectra(spectra, dim_mapping={"y": "a0", "x": "n_e"})
     # xs.sample({"a0": 3.1}, "n_e")
-    xs.sample({"n_e": 7.9e24}, "a0", dim_mapping={"y": "a0", "x": "n_e"})
+    xs.sample({"n_e": 7.9e24}, "a0")
 
 
 if __name__ == "__main__":
