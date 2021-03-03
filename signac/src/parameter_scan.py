@@ -40,12 +40,12 @@ def main():
     spectra.n_e.attrs["to_units"] = "1 / centimeter ** 3"
     spectra.n_e.attrs["scaling_factor"] = 1.0e-18
 
-    xs = XSpectra(spectra, dim_mapping={"y": "a0", "x": "n_e"})
-    # xs.sample({"n_e": 7.9e24}, "a0", vmax=40.0, left_xlim=50.0)
-    xs.sample({"a0": 3.1}, "n_e", vmax=40.0, left_xlim=50.0)
+    xs = XSpectra(spectra, gaussian_std=10)
+    xs.sample({"n_e": 7.9e24}, "a0", vmax=40.0, left_xlim=50.0)
+    # xs.sample({"a0": 3.1}, "n_e", vmax=40.0, left_xlim=50.0)
 
     # TODO check trends in Paolo email
-    # introduce smoothing and compare again with original plot
+
 
 if __name__ == "__main__":
     main()

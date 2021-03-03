@@ -13,7 +13,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from pint.registry import UnitRegistry
 from typing import Dict
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter1d
 
 import mpl_util
 import util
@@ -28,6 +28,7 @@ class XSpectra:
     charge: xr.DataArray
     ureg: UnitRegistry = pint.UnitRegistry()
     dim_mapping: Dict[str, str] = field(default_factory=lambda: {"y": "n_e", "x": "a0"})
+    gaussian_std: int = field(default=16, repr=False)
 
     def __post_init__(self):
         self.charge.attrs["units"] = "pC / MeV"
@@ -173,7 +174,7 @@ class XSpectra:
                 axes["y"]["corners"],
                 mat,
                 norm=colors.Normalize(vmin=mat.min() - 0.5, vmax=mat.max() + 0.5),
-                cmap=cm.get_cmap("Reds", mat.max() - mat.min() + 1),
+                cmap=cm.get_cmap("turbo", mat.max() - mat.min() + 1),
                 rasterized=True,
             )
             for xy, ax_xy in zip(("x", "y"), (ax.xaxis, ax.yaxis)):
@@ -200,7 +201,7 @@ class XSpectra:
             )
             #
             divider = make_axes_locatable(ax)
-            cax = divider.append_axes("right", size="4%", pad=0.02)
+            cax = divider.append_axes("right", size="5%", pad=0.02)
             cbar = ax.figure.colorbar(
                 img,
                 cax=cax,
@@ -227,10 +228,12 @@ class XSpectra:
             #
             fig.savefig("matshow", bbox_inches="tight")
 
-    def find_main_peak(self, energy_window=slice(100, 300), gaussian_std=16):
+    def find_main_peak(self, energy_window=slice(100, 300)):
         numpy_charge = self.charge.data
-        smooth_charge = gaussian_filter(numpy_charge, gaussian_std)
-        new_charge = xr.DataArray(smooth_charge, dims=self.charge.dims, attrs=self.charge.attrs.copy())
+        smooth_charge = gaussian_filter1d(numpy_charge, self.gaussian_std, axis=-1)
+        new_charge = xr.DataArray(
+            smooth_charge, dims=self.charge.dims, attrs=self.charge.attrs.copy()
+        )
         peak_idx = new_charge.sel(E=energy_window).argmax(dim="E")
         return new_charge.E.sel(E=energy_window)[peak_idx]
 
@@ -268,9 +271,9 @@ def main():
     spectra.n_e.attrs["scaling_factor"] = 1.0e-18
     ##
 
-    xs = XSpectra(spectra)
+    xs = XSpectra(spectra, dim_mapping={"y": "a0", "x": "n_e"}, gaussian_std=10)
     # xs.sample({"a0": 3.1}, "n_e")
-    xs.sample({"n_e": 7.9e24}, "a0")
+    xs.sample({"n_e": 7.9e24}, "a0", vmax=40.0, left_xlim=50.0)
 
 
 if __name__ == "__main__":
