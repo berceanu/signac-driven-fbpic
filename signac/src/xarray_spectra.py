@@ -13,6 +13,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from pint.registry import UnitRegistry
 from typing import Dict
+from scipy.ndimage import gaussian_filter
 
 import mpl_util
 import util
@@ -226,9 +227,12 @@ class XSpectra:
             #
             fig.savefig("matshow", bbox_inches="tight")
 
-    def find_main_peak(self, energy_window=slice(100, 300)):
-        peak_idx = self.charge.sel(E=energy_window).argmax(dim="E")
-        return self.charge.E.sel(E=energy_window)[peak_idx]
+    def find_main_peak(self, energy_window=slice(100, 300), gaussian_std=16):
+        numpy_charge = self.charge.data
+        smooth_charge = gaussian_filter(numpy_charge, gaussian_std)
+        new_charge = xr.DataArray(smooth_charge, dims=self.charge.dims, attrs=self.charge.attrs.copy())
+        peak_idx = new_charge.sel(E=energy_window).argmax(dim="E")
+        return new_charge.E.sel(E=energy_window)[peak_idx]
 
 
 def main():
