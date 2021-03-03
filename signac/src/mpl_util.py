@@ -110,6 +110,7 @@ def add_colorbar(ax, mappable, *, size="3%", position="right"):
             length=length,
             width=width,
         )
+    return cbar
 
 
 def main():

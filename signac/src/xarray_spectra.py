@@ -295,7 +295,7 @@ def main():
     s1 = generate_slices("a0", (2.4, 2.6, 2.7, 3.1))
     s2 = generate_slices("n_e", np.array((7.4, 7.6, 7.9, 8.0)) * 1.0e24)
     s = s1 + s2
-    
+
     xf = XFigure(xs, s)
     xf.render()
     xf.savefig()
