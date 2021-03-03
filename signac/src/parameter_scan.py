@@ -42,10 +42,12 @@ def main():
     spectra.n_e.attrs["to_units"] = "1 / centimeter ** 3"
     spectra.n_e.attrs["scaling_factor"] = 1.0e-18
     ##
+    # ds = xr.Dataset({"spectra": spectra})
+    # ds.to_zarr("spectra.zarr")
 
     xs = XSpectra(spectra)
     # xs.sample({"a0": 3.1}, "n_e")
-    xs.sample({"n_e": 7.9e24}, "a0")
+    xs.sample({"n_e": 7.9e24}, "a0", dim_mapping={"y": "a0", "x": "n_e"})
 
 
 if __name__ == "__main__":
