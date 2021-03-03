@@ -8,18 +8,15 @@ import logging
 import pathlib
 from collections import defaultdict
 from dataclasses import dataclass, field
-from itertools import product
-from typing import Callable, ClassVar, List, Tuple
+from typing import Any, Callable, ClassVar, List, Tuple
 
 import numpy as np
 import pandas as pd
 from cycler import cycler
-from matplotlib import axes, cm, colors, figure, lines, pyplot, rc_context, ticker
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib import axes, figure, lines, pyplot, rc_context
 from pandas.core.frame import DataFrame
 from scipy.constants import c
 from scipy.ndimage import gaussian_filter1d
-from signac.contrib.job import Job
 
 import job_util
 import mpl_util
@@ -207,7 +204,7 @@ class SpectrumLabel:
     key: str = ""
     name: str = ""
     unit: str = ""
-    get_value: Callable[[Job, str], float] = lambda job, key: job.sp[key]
+    get_value: Callable[[Any, str], float] = lambda job, key: job.sp[key]
     precision: int = 0
     value: float = 0.0
     text: str = ""
