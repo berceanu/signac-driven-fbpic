@@ -1,6 +1,7 @@
 """Module containing useful matplotlib-related functionality."""
 import matplotlib
 from matplotlib import pyplot, ticker
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 class LabelOffset:
@@ -17,10 +18,10 @@ class LabelOffset:
         self.axis.set_label_text(self.label + " " + fmt.get_offset())
 
 
-def mpl_publication_style():
+def mpl_publication_style(extension="pdf", bigger_ticks=True):
     """
     https://turnermoni.ca/python3.html
-    
+
     Usage:
     >>> from matplotlib import rc_context
     >>> with rc_context():
@@ -28,7 +29,7 @@ def mpl_publication_style():
     >>>     <plot your figure>
     """
     matplotlib.rcParams["savefig.dpi"] = 1200  # default 1200
-    matplotlib.rcParams["savefig.format"] = "png"  # default pdf
+    matplotlib.rcParams["savefig.format"] = extension  # default pdf
 
     # Instead of individually increasing font sizes, point sizes, and line
     # thicknesses, I found it easier to just decrease the figure size so
@@ -44,18 +45,20 @@ def mpl_publication_style():
     matplotlib.rcParams["ytick.direction"] = "in"
     matplotlib.rcParams["xtick.direction"] = "in"
 
-    # Increase the major and minor tick-mark lengths
-    matplotlib.rcParams["xtick.major.size"] = 6  # default 3.5
-    matplotlib.rcParams["ytick.major.size"] = 6  # default 3.5
-    matplotlib.rcParams["xtick.minor.size"] = 3  # default 2
-    matplotlib.rcParams["ytick.minor.size"] = 3  # default 2
+    if bigger_ticks:
+        # Increase the major and minor tick-mark lengths
+        matplotlib.rcParams["xtick.major.size"] = 6  # default 3.5
+        matplotlib.rcParams["ytick.major.size"] = 6  # default 3.5
+        matplotlib.rcParams["xtick.minor.size"] = 3  # default 2
+        matplotlib.rcParams["ytick.minor.size"] = 3  # default 2
 
-    # Change the tick-mark and axes widths, as well as the widths of plotted lines,
-    # to be consistent with the font weight
-    matplotlib.rcParams["xtick.major.width"] = 0.6  # default 0.8
-    matplotlib.rcParams["ytick.major.width"] = 0.6  # default 0.8
-    matplotlib.rcParams["xtick.minor.width"] = 1  # default 0.6
-    matplotlib.rcParams["ytick.minor.width"] = 1  # default 0.6
+        # Change the tick-mark and axes widths, as well as the widths of plotted lines,
+        # to be consistent with the font weight
+        matplotlib.rcParams["xtick.major.width"] = 0.6  # default 0.8
+        matplotlib.rcParams["ytick.major.width"] = 0.6  # default 0.8
+        matplotlib.rcParams["xtick.minor.width"] = 1  # default 0.6
+        matplotlib.rcParams["ytick.minor.width"] = 1  # default 0.6
+
     matplotlib.rcParams["axes.linewidth"] = 0.6  # default 0.8
     matplotlib.rcParams["lines.linewidth"] = 1.0  # default 1.5
     matplotlib.rcParams["lines.markeredgewidth"] = 0.6  # default 1
@@ -90,6 +93,24 @@ def mpl_publication_style():
     # Margins / spacing
     matplotlib.rcParams["figure.subplot.bottom"] = 0.15
     matplotlib.rcParams["figure.subplot.left"] = 0.14
+
+
+def add_colorbar(ax, mappable, size="5%", label=""):
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size=size, pad=0.02)
+    cbar = ax.figure.colorbar(
+        mappable,
+        cax=cax,
+    )
+    cbar.set_label(label)
+    # restore default tick length and width
+    for ticks, length, width in zip(("major", "minor"), (3.5, 2), (0.8, 0.6)):
+        cbar.ax.tick_params(
+            axis="both",
+            which=ticks,
+            length=length,
+            width=width,
+        )
 
 
 def add_grid(ax, linewidth=0.5, linecolor="0.5"):
