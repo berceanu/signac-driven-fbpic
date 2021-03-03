@@ -1,3 +1,7 @@
+"""
+Provides N-dimensional data structure for storing spectra depending on multiple
+statepoint parameters.
+"""
 from dataclasses import dataclass
 
 import numpy as np
