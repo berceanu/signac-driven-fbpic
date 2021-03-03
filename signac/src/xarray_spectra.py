@@ -85,7 +85,7 @@ class XSpectra:
 
             if vmax is None:
                 vmax = mat.max()
-            
+
             img = ax.pcolorfast(
                 self.charge.E.values,
                 other_corners,
