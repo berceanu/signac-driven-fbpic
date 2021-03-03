@@ -2,14 +2,14 @@
 Computes the electron energy spectra for the whole parameter space and loads it
 into the N-dimensional array class.
 """
+import numpy as np
 import signac
 import xarray as xr
-import numpy as np
 
 import job_util
 from energy_histograms import job_energy_histogram
-from xarray_spectra import XSpectra
 from util import first
+from xarray_spectra import XFigure, XSpectra, generate_slices
 
 
 def main():
@@ -42,10 +42,14 @@ def main():
     spectra.n_e.attrs["scaling_factor"] = 1.0e-18
 
     xs = XSpectra(spectra, gaussian_std=10)
-    xs.sample({"n_e": 7.9e24}, "a0", vmax=40.0, left_xlim=50.0)
-    # xs.sample({"a0": 3.1}, "n_e", vmax=40.0, left_xlim=50.0)
-
-    # TODO check trends in Paolo email
+    #
+    s1 = generate_slices("a0", (2.4, 2.6, 2.7, 3.1))
+    s2 = generate_slices("n_e", np.array((7.4, 7.6, 7.9, 8.0)) * 1.0e24)
+    s = s1 + s2
+    #
+    xf = XFigure(xs, s)
+    xf.render()
+    xf.savefig()
 
 
 if __name__ == "__main__":
