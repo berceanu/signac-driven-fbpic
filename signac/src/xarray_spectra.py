@@ -63,7 +63,7 @@ class XSpectra:
             l[2] = f" = {c_value:.1f}" + l[2]
             return "$".join(l)
 
-        dims = {"y": "n_e", "x": "a_0"}
+        dims = {"y": "n_e", "x": "a0"}
         inv_dims = {v: k for k, v in dims.items()}
         self.matshow(dims=dims, axline={inv_dims[dim]: c_value})
 
@@ -132,7 +132,7 @@ class XSpectra:
 
     def matshow(self, dims=None, axline=None):
         if dims is None:
-            dims = {"y": "n_e", "x": "a_0"}
+            dims = {"y": "n_e", "x": "a0"}
 
         mat = self.find_main_peak()
 
@@ -227,13 +227,13 @@ def main():
     """Main entry point."""
     rng = np.random.default_rng(seed=42)
 
-    a_0 = np.linspace(2.4, 3.1, 8)
+    a0 = np.linspace(2.4, 3.1, 8)
     n_e = np.linspace(7.4, 8.1, 8) * 1.0e18 * 1.0e6
     energy = np.linspace(1, 500, 500)
 
-    peak_sigma = rng.integers(45, 55, (a_0.size, n_e.size))
-    peak_height = rng.integers(30, 50, (a_0.size, n_e.size))
-    peak_energy = rng.normal(200, 50, (a_0.size, n_e.size)).round().astype(int)
+    peak_sigma = rng.integers(45, 55, (a0.size, n_e.size))
+    peak_height = rng.integers(30, 50, (a0.size, n_e.size))
+    peak_energy = rng.normal(200, 50, (a0.size, n_e.size)).round().astype(int)
 
     charge = gaussian(
         x=energy,
@@ -244,11 +244,11 @@ def main():
 
     spectra = xr.DataArray(
         charge,
-        dims=("a_0", "n_e", "E"),
-        coords={"a_0": a_0, "n_e": n_e, "E": energy},
+        dims=("a0", "n_e", "E"),
+        coords={"a0": a0, "n_e": n_e, "E": energy},
     )
     #
-    spectra.a_0.attrs["plot_label"] = r"$a_0$"
+    spectra.a0.attrs["plot_label"] = r"$a0$"
     #
     spectra.n_e.attrs["plot_label"] = r"$n_e$ ($10^{18}\,\mathrm{cm^{-3}}$)"
     spectra.n_e.attrs["units"] = "1 / meter ** 3"
@@ -257,8 +257,8 @@ def main():
     ##
 
     xs = XSpectra(spectra)
-    # xs.sample({"a_0": 3.1}, "n_e")
-    xs.sample({"n_e": 7.9e24}, "a_0")
+    # xs.sample({"a0": 3.1}, "n_e")
+    xs.sample({"n_e": 7.9e24}, "a0")
 
 
 if __name__ == "__main__":

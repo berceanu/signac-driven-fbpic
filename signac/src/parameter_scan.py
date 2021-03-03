@@ -21,6 +21,11 @@ def two_parameters_study(project, keys=("a0", "n_e")):
         spectra.append(spectrum)
 
 
+# Plan: 1. compute all the spectra via job_energy_histogram.
+#       2. load them into XSpectra.
+#       3. profit!
+
+
 def main():
     """Main entry point."""
     proj = signac.get_project(search=False)
