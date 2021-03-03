@@ -77,7 +77,7 @@ class XSpectra:
         c_scaled = c_converted * scale
         return c, c_scaled.magnitude
 
-    def sample(self, ax, s: Slice):
+    def sample(self, ax, s: Slice, *, add_cbar=True, add_xlabel=True):
         c, c_value = self.get_coordinate(s.dimension_name, values=s.dimension_value)
 
         def create_title():
@@ -125,11 +125,12 @@ class XSpectra:
         #
         ax.set_ylabel(c_other_coord.attrs.get("plot_label", ""))
         ax.set_xlim(left=self.left_xlim)
-        ax.set_xlabel(self.charge.E.plot_label)
-        #
-        cbar = mpl_util.add_colorbar(ax, img)
-        cbar.ax.set_title(self.charge.plot_label)
-        #
+        if add_xlabel:
+            ax.set_xlabel(self.charge.E.plot_label)
+        cbar = None
+        if add_cbar:
+            cbar = mpl_util.add_colorbar(ax, img)
+            cbar.ax.set_title(self.charge.plot_label)
         return img, cbar
 
     def matshow(self, ax):
@@ -229,16 +230,15 @@ class XFigure:
             mpl_util.mpl_publication_style()
 
             im, cb = {}, {}
-            for count, character in enumerate("ABCDFGHI"):
+            im["A"], cb["A"] = self.spectra.sample(self.axd["A"], self.slices[0])
+            for count, character in enumerate("BCDFGHI", 1):
                 im[character], cb[character] = self.spectra.sample(
-                    self.axd[character], self.slices[count]
+                    self.axd[character],
+                    self.slices[count],
+                    add_cbar=False,
+                    add_xlabel=False,
                 )
-
             im["E"], cb["E"] = self.spectra.matshow(self.axd["E"])
-
-            for character in "BCDFGHI":
-                cb[character].remove()
-                self.axd[character].set_xlabel("")
 
             for character in "AE":
                 for ticks in "minor", "major":
