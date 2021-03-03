@@ -101,7 +101,7 @@ class XSpectra:
         )
         ax.set_title(create_title(), fontsize=6)
         ax.hlines(
-            y=other_corners,
+            y=other_corners[:-1],
             xmin=self.charge.E[0],
             xmax=self.charge.E[-1],
             linewidth=0.5,
@@ -163,6 +163,7 @@ class XSpectra:
                 linewidth=0.5,
                 linestyle="solid",
                 color="white",
+                zorder=1,
             )
         ax.set_ylabel(axes["y"]["label"])
         ax.set_xlabel(axes["x"]["label"])
