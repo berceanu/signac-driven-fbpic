@@ -31,8 +31,8 @@ mc = (1 * m_e * c).to("kilogram * meter / second").magnitude
 class LastH5File:
     job: Any = field(repr=False)
     iteration: int = field(init=False)
-    fpath: pathlib.PosixPath = field(init=False)
-    h5_path: pathlib.PosixPath = field(init=False, repr=False)
+    fpath: pathlib.Path = field(init=False)
+    h5_path: pathlib.Path = field(init=False, repr=False)
     fname: str = field(init=False, repr=False)
     electrons: str = field(init=False, repr=False)
     mom: Dict[str, str] = field(init=False, repr=False)
