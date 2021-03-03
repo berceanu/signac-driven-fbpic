@@ -3,17 +3,16 @@ Provides N-dimensional data structure for storing spectra depending on multiple
 statepoint parameters.
 """
 from dataclasses import dataclass, field
+from typing import Any, Dict, Tuple
 
 import numpy as np
 import pint
 import pint_xarray
 import xarray as xr
-from matplotlib import cm, colors, figure, rc_context, ticker, rcParams
+from matplotlib import cm, colors, figure, rc_context, ticker
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from pint.registry import UnitRegistry
-from typing import Any, Dict, Tuple
 from scipy.ndimage import gaussian_filter1d
-from util import first
 
 import mpl_util
 import util
@@ -156,11 +155,11 @@ class XSpectra:
             cmap=cm.get_cmap("turbo", mat.max() - mat.min() + 1),
             rasterized=True,
         )
-        for xy, ax_xy in zip(("x", "y"), (ax.xaxis, ax.yaxis)):
-            ax_xy.set(  # TODO remove
-                minor_locator=ticker.NullLocator(),
-                major_locator=ticker.FixedLocator(axes[xy]["values"]),
-            )
+        # for xy, ax_xy in zip(("x", "y"), (ax.xaxis, ax.yaxis)):
+        #     ax_xy.set(  # TODO remove
+        #         minor_locator=ticker.NullLocator(),
+        #         major_locator=ticker.FixedLocator(axes[xy]["values"]),
+        #     )
         for xy in "x", "y":
             {"y": ax.hlines, "x": ax.vlines}[xy](
                 axes[xy]["corners"],
@@ -250,7 +249,7 @@ class XFigure:
 
     def savefig(self):
         with rc_context():
-            mpl_util.mpl_publication_style(extension="png")
+            mpl_util.mpl_publication_style()
             self.fig.savefig("xfig")
 
 
@@ -286,7 +285,6 @@ def main():
     spectra.n_e.attrs["to_units"] = "1 / centimeter ** 3"
     spectra.n_e.attrs["scaling_factor"] = 1.0e-18
     ##
-
     xs = XSpectra(
         spectra,
         dim_mapping={"y": "a0", "x": "n_e"},
@@ -294,13 +292,10 @@ def main():
         vmax=40.0,
         left_xlim=50.0,
     )
-    # xs.sample({"a0": 3.1}, "n_e")
-    # xs.sample({"n_e": 7.9e24}, "a0", vmax=40.0, left_xlim=50.0)
-
     s1 = generate_slices("a0", (2.4, 2.6, 2.7, 3.1))
     s2 = generate_slices("n_e", np.array((7.4, 7.6, 7.9, 8.0)) * 1.0e24)
     s = s1 + s2
-
+    
     xf = XFigure(xs, s)
     xf.render()
     xf.savefig()
