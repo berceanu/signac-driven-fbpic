@@ -150,68 +150,6 @@ def multiple_jobs_single_iteration(jobs, iteration=None, label=None):
     return MultipleJobsMultipleSpectra(spectra=spectra)
 
 
-def two_parameters_study(project, keys=("a0", "n_e")):
-    spectra = list()
-
-    vy = job_util.get_key_values(project, keys[0])
-    vx = job_util.get_key_values(project, keys[1])
-
-    for val_y, val_x in product(vy, vx):
-        job = next(iter(project.find_jobs(filter={keys[0]: val_y, keys[1]: val_x})))
-        spectrum = construct_electron_spectrum(job)
-
-        ne = util.latex_float(job.sp.n_e * 1.0e-6)  # to cm^-3
-        my_label = SpectrumLabel(
-            text=f"$a_0 = {job.sp.a0}$, $n_e = {ne}$ $\\mathrm{{cm^{{-3}}}}$"
-            + f" — {spectrum.jobid:.8}"
-        )
-        spectrum.label = my_label
-        spectra.append(spectrum)
-
-    mjms = MultipleJobsMultipleSpectra(spectra=spectra)
-
-    width = len(vx)
-    height = len(vy)
-
-    data = np.zeros((height, width))
-
-    for row in range(height):
-        for col in range(width):
-            data[row, col] = mjms[width * row + col].hatch_window.peak_position
-
-    fig, ax = pyplot.subplots()
-    X = util.corners(np.array(vx) / 1.0e24)
-    Y = util.corners(np.array(vy))
-    img = ax.pcolormesh(
-        X,
-        Y,
-        data,
-        norm=colors.Normalize(vmin=data.min()-.5, vmax=data.max()+.5),
-        cmap = cm.get_cmap('Reds', np.max(data)-np.min(data)+1),
-        edgecolor="black",
-    )
-    ax.xaxis.set_major_locator(ticker.FixedLocator(np.array(vx) / 1.0e24))
-    ax.yaxis.set_major_locator(ticker.FixedLocator(np.array(vy)))
-    ax.xaxis.set_minor_locator(ticker.NullLocator())
-    ax.yaxis.set_minor_locator(ticker.NullLocator())
-
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="4%", pad=0.02)
-    cbar = ax.figure.colorbar(
-        img,
-        cax=cax,
-    )
-    cbar.set_label(r"E ($\mathrm{MeV}$)")
-
-    ax.set_xlabel(r"$n_e$ ($10^{18}\,\mathrm{electrons\,cm^{-3}}$)")
-    ax.set_ylabel(r"$a_0$")
-
-    fig.savefig("imshow.png")
-    pyplot.close(fig)
-
-    return mjms
-
-
 def spatial_convergence_study(project):
     spectra = list()
     jobs = list()
@@ -780,13 +718,6 @@ def main():
     #     spectra.save_spectra()
     #     spectra.plot_quantity("peak_position", ylabel="E (MeV)")
     #     spectra.plot_quantity("total_charge", ylabel="Q (pC)")
-
-    mjms = two_parameters_study(proj)
-    # for es in mjms:
-    #     with rc_context():
-    #         mpl_util.mpl_publication_style()
-    #         es.plot()
-    #         es.savefig()
 
     # spectra = multiple_jobs_single_iteration(
     #     jobs=proj.find_jobs(),
