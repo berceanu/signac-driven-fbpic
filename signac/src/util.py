@@ -111,7 +111,7 @@ def nozzle_center_offset(distance):
     """
     Convert between distance from center of gas nozzle to distance from z = 0 point.
     """
-    other_distance = np.subtract(1500.0e-6, distance)
+    other_distance = np.subtract(3000.0e-6, distance)
     return other_distance
 
 

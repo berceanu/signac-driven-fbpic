@@ -35,7 +35,7 @@ def read_density(txt_file, every_nth=20, offset=0.0):
 def make_gaussian_dens_func(job):
     def ramp(z, *, center, sigma, p):
         """Gaussian-like function."""
-        return np.exp(-(((z - center) / sigma) ** p))
+        return np.exp(-((np.abs(z - center) / sigma) ** p))
 
     # The density profile
     def dens_func(z, r):

@@ -31,12 +31,12 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    a0 = np.linspace(2.4, 3.1, 8)
+    power = np.linspace(1.5, 3, 8)
     n_e = np.linspace(7.4, 8.1, 8) * 1.0e18 * 1.0e6
 
-    m = np.meshgrid(a0, n_e)
-    a0_n_e = np.transpose(m).reshape(-1, 2)
-    for a0, n_e in a0_n_e:
+    m = np.meshgrid(power, n_e)  # a0
+    p_n_e = np.transpose(m).reshape(-1, 2)
+    for p, n_e in p_n_e:
         sp = dict(
             random_seed=42,  # deterministic random seed
             # TODO: move to job document
@@ -58,7 +58,7 @@ def main():
             p_nz=2,  # Number of particles per cell along z (default 2)
             p_nr=2,  # Number of particles per cell along r (default 2)
             # The laser
-            a0=a0,  # Laser amplitude
+            a0=2.4,  # Laser amplitude
             # Laser waist, converted from experimental FWHM@intensity
             w0=22.0e-6 / SQRT_FACTOR,
             # Laser duration, converted from experimental FWHM@intensity
@@ -67,11 +67,11 @@ def main():
             zfoc_from_nozzle_center=1400e-6,  # Laser focal position, measured from the center of the gas jet
             profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
             # The density profile
-            flat_top_dist=1000.0e-6,  # plasma flat top distance
-            sigma_right=500.0e-6,
-            center_left=1000.0e-6,
-            sigma_left=500.0e-6,
-            power=2.0,
+            flat_top_dist=0.0e-6,  # plasma flat top distance
+            sigma_right=1471.0e-6,
+            center_left=3000.0e-6,
+            sigma_left=1471.0e-6,
+            power=p,
             current_correction="curl-free",  # "curl-free" (default, faster) or "cross-deposition" (more local)
             # do not change below this line ##############
             Nz=None,  # Number of gridpoints along z
