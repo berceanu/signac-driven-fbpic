@@ -37,16 +37,15 @@ class Slice:
         return {self.dimension_name: self.dimension_value}
 
 
-def generate_slices(dimension_name, values):
-    other_dimension_name = {"a0": "n_e", "n_e": "a0"}[dimension_name]
+def generate_slices(dimension_name, values, other_dimension_name):
     return tuple(Slice(dimension_name, v, other_dimension_name) for v in values)
 
 
 @dataclass
 class XSpectra:
     charge: xr.DataArray
+    dim_mapping: Dict[str, str]
     ureg: UnitRegistry = pint.UnitRegistry()
-    dim_mapping: Dict[str, str] = field(default_factory=lambda: {"y": "n_e", "x": "a0"})
     gaussian_std: int = 10
     vmax: float = 40.0
     left_xlim: float = 50.0
@@ -291,8 +290,8 @@ def main():
         vmax=40.0,
         left_xlim=50.0,
     )
-    s1 = generate_slices("a0", (2.4, 2.6, 2.7, 3.1))
-    s2 = generate_slices("n_e", np.array((7.4, 7.6, 7.9, 8.0)) * 1.0e24)
+    s1 = generate_slices("a0", (2.4, 2.6, 2.7, 3.1), "n_e")
+    s2 = generate_slices("n_e", np.array((7.4, 7.6, 7.9, 8.0)) * 1.0e24, "a0")
     s = s1 + s2
 
     xf = XFigure(xs, s)
