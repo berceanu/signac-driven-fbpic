@@ -26,8 +26,7 @@ def upload(path_to_file, dbx=dropbox.Dropbox('F79X1kIK8MEAAAAAAAAAAWkcCbtuJk62bZ
             if overwrite
             else dropbox.files.WriteMode.add)
     mtime = os.path.getmtime(path_to_file)
-    with open(path_to_file, 'rb') as f:
-        data = f.read()
+    data = path_to_file.read_bytes()
     with stopwatch('upload %d bytes' % len(data)):
         try:
             res = dbx.files_upload(
