@@ -31,10 +31,10 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    power = np.linspace(1.5, 3, 8)
-    n_e = np.linspace(7.4, 8.1, 8) * 1.0e18 * 1.0e6
+    n_e = np.linspace(7.6, 7.8, 9) * 1.0e+18 * 1.0e+6
+    power = np.linspace(2.0, 2.2, 9)
 
-    m = np.meshgrid(power, n_e)  # a0
+    m = np.meshgrid(power, n_e)
     p_n_e = np.transpose(m).reshape(-1, 2)
     for p, n_e in p_n_e:
         sp = dict(
