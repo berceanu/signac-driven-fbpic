@@ -29,28 +29,29 @@ def read_spectrum(path_to_csv):
     return df_
 
 
-def plot_spectrum(df, ax):
-    ax.step(df.index, df.dN_over_dE_normalized)
-    ax.set_xlabel("E (MeV)")
-    ax.set_ylabel("dN/dE (a.u.)")
+def plot_spectrum(spectrum, axes):
+    """Visualize spectrum."""
+    axes.step(spectrum.E_MeV, spectrum.dN_over_dE_normalized, "black")
+    axes.set_xlabel("E (MeV)")
+    axes.set_ylabel("dN/dE (a.u.)")
 
 
 def main():
     """Main entry point."""
 
     csv_path = pathlib.Path.cwd() / "experimental_spectrum.csv"
-    df = read_spectrum(csv_path)
+    spectrum = read_spectrum(csv_path)
 
     with rc_context():
         mpl_util.mpl_publication_style()
 
         fig = figure.Figure()
         _ = FigureCanvasAgg(fig)
-        ax = fig.add_subplot(111)
+        axs = fig.add_subplot(111)
 
-        plot_spectrum(df, ax)
+        plot_spectrum(spectrum, axs)
         fig.savefig("spectrum_exp")
 
 
-if __name__ == "__main__":
+if __name__ == "df__main__":
     main()
