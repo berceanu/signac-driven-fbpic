@@ -8,6 +8,12 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+def normalize_to_interval(a, b, data):
+    """Given the `data` array, normalize its values in the [a, b] interval."""
+    d = np.atleast_1d(data.copy())
+    norm_data = (b - a) * (d - d.min()) / (d.max() - d.min()) + a
+    return norm_data
+
 
 def first(s):
     """Return the first element from an ordered collection
