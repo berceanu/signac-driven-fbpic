@@ -63,7 +63,7 @@ def pcolor_spectrum(spectrum, axes):
 
 
 def spectrum_figure(spectrum, plotter):
-    """Create spectrum figure, either 1D or 2D."""
+    """Create spectrum figure, either 1D or colormap."""
     with rc_context():
         mpl_util.mpl_publication_style()
 
