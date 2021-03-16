@@ -31,9 +31,9 @@ def read_spectrum(path_to_csv):
 
 def plot_spectrum(spectrum, axes):
     """Visualize spectrum."""
-    axes.step(spectrum.E_MeV, spectrum.dN_over_dE_normalized, "black")
-    axes.set_xlabel("E (MeV)")
-    axes.set_ylabel("dN/dE (a.u.)")
+    axes.step(spectrum.index, spectrum.dN_over_dE_normalized, "black")
+    axes.set_xlabel(r"$E$ ($\mathrm{MeV}$)")
+    axes.set_ylabel(r"$\frac{\mathrm{d} N}{\mathrm{d} E}$ ($\mathrm{a.u.}$)")
 
 
 def main():
@@ -53,5 +53,5 @@ def main():
         fig.savefig("spectrum_exp")
 
 
-if __name__ == "df__main__":
+if __name__ == "__main__":
     main()
