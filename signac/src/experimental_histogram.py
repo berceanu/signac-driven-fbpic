@@ -92,10 +92,10 @@ def plot_on_top(fig, project, job_filter):
     def filter_to_label():
         s = ""
         for key, value in job_filter.items():
-            if key == "power":
+            if "power" in key:
                 my_key = r"$\alpha$"
                 my_value = value
-            elif key == "n_e":
+            elif "n_e" in key:
                 my_key = r"$n_e$"
                 my_value = f"${util.latex_float(value / 1.0e+6)}$"
             else:
