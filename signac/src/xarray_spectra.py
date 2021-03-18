@@ -81,7 +81,7 @@ class XSpectra:
 
         def create_title():
             l = c.plot_label.split("$")
-            l[2] = f" = {c_value:.1f}" + l[2]
+            l[2] = f" = {c_value:.3f}" + l[2]
             return "$".join(l)
 
         # get the other dimension's corners
@@ -110,7 +110,7 @@ class XSpectra:
         )
         for v in other_coord_val:
             ax.text(
-                self.left_xlim + 5, v, f"{v:.1f}", color="white", fontsize=6, zorder=10
+                self.left_xlim + 5, v, f"{v:.3f}", color="white", fontsize=6, zorder=10
             )
         #
         ax.yaxis.set(
