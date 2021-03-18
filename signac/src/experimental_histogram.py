@@ -8,8 +8,10 @@ import pandas as pd
 from matplotlib import cm, colors, figure, rc_context, ticker
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
+import energy_histograms
 import mpl_util
 import util
+import signac
 
 
 def read_spectrum(path_to_csv):
@@ -32,7 +34,12 @@ def read_spectrum(path_to_csv):
 
 def plot_spectrum(spectrum, axes):
     """Visualize spectrum as a line."""
-    axes.step(spectrum.index.values, spectrum.dN_over_dE_normalized.values, "black")
+    axes.step(
+        spectrum.index.values,
+        spectrum.dN_over_dE_normalized.values,
+        "black",
+        label="experiment",
+    )
     axes.set_xlabel(r"$E$ ($\mathrm{MeV}$)")
     axes.set_ylabel(r"$\frac{\mathrm{d} N}{\mathrm{d} E}$ ($\mathrm{a.u.}$)")
     return axes
@@ -79,14 +86,67 @@ def spectrum_figure(spectrum, plotter):
     return fig
 
 
+def plot_on_top(fig, project, job_filter):
+    """Plot simulated spectrum on top of the experimental one."""
+
+    def filter_to_label():
+        s = ""
+        for key, value in job_filter.items():
+            if key == "power":
+                my_key = r"$\alpha$"
+                my_value = value
+            elif key == "n_e":
+                my_key = r"$n_e$"
+                my_value = f"${util.latex_float(value / 1.0e+6)}$"
+            else:
+                my_key = key
+                my_value = value
+            s += f"{my_key} = {my_value}, "
+        return s[:-2]
+
+    match = project.find_jobs(filter=job_filter)
+    assert len(match) == 1, "More than 1 job found."
+    job = util.first(match)
+
+    energy = np.linspace(1, 499, 499)
+    hist = energy_histograms.job_energy_histogram(job)
+
+    mask = energy >= 71
+    energy = energy[mask]
+    hist = hist[mask]
+    charge = util.normalize_to_interval(0, 1, hist)
+
+    with rc_context():
+        mpl_util.mpl_publication_style()
+
+        axs = fig.axes
+        assert len(axs) == 1, "Figure contains multiple Axes"
+        axs = util.first(axs)
+
+        lbl = filter_to_label()
+        axs.step(energy, charge, label=lbl)
+        axs.set_xlim(71, 499)
+        axs.legend(fontsize=5)
+
+        fig.savefig(util.slugify(lbl))
+
+    return axs
+
+
 def main():
     """Main entry point."""
 
     csv_path = pathlib.Path.cwd() / "experimental_spectrum.csv"
     spectrum = read_spectrum(csv_path)
 
-    spectrum_figure(spectrum, plot_spectrum)
     spectrum_figure(spectrum, pcolor_spectrum)
+    fig = spectrum_figure(spectrum, plot_spectrum)
+
+    proj = signac.get_project(
+        root="/scratch/berceanu/runs/signac-driven-fbpic/", search=False
+    )
+
+    plot_on_top(fig, proj, job_filter=dict(power=2.125, n_e=7.8e24))
 
 
 if __name__ == "__main__":
