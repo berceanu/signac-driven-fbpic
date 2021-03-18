@@ -26,6 +26,7 @@ def read_spectrum(path_to_csv):
     df_["dN_over_dE"] = df_["dN_over_dE"].astype(np.float64)
     df_["dN_over_dE_normalized"] = util.normalize_to_interval(0, 1, df_["dN_over_dE"])
 
+    print(df_.index)
     return df_
 
 
@@ -57,6 +58,7 @@ def pcolor_spectrum(spectrum, axes):
         axes.spines[pos].set_visible(False)
     #
     axes.set_xlabel(r"$E$ ($\mathrm{MeV}$)")
+    axes.set_xlim(71, 499)
     cbar = mpl_util.add_colorbar(axes, img)
     cbar.ax.set_title(r"$\frac{\mathrm{d} N}{\mathrm{d} E}$ ($\mathrm{a.u.}$)")
     return img, cbar
