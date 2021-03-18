@@ -44,6 +44,8 @@ def main():
         assert len(match) == 1, "More than 1 job found."
         job = first(match)
         charge[i, j, :] = job_energy_histogram(job)
+        # TODO: normalize to [0, 1]
+        # TODO: set energy range to [71, 499]
 
     spectra = xr.DataArray(
         charge,
