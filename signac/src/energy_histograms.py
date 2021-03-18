@@ -61,12 +61,12 @@ class LastH5File:
         return tuple(fnames)[-1]
 
 
-def energy_histogram(normalized_particle_momenta, weights, bins=499, range=(1, 500)):
+def energy_histogram(normalized_particle_momenta, weights, bins=499, erange=(1, 500)):
     ux = normalized_particle_momenta["x"]
     uy = normalized_particle_momenta["y"]
     uz = normalized_particle_momenta["z"]
     expr = ne.evaluate("sqrt(1+ux**2+uy**2+uz**2)")
-    return histogram1d(mc2 * expr, bins=bins, range=range, weights=e_pC * weights)
+    return histogram1d(mc2 * expr, bins=bins, range=erange, weights=e_pC * weights)
 
 
 def job_energy_histogram(job):
