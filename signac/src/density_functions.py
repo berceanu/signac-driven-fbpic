@@ -71,7 +71,7 @@ def make_gaussian_dens_func(job):
         # Make down-ramp
         n = np.where(
             (z >= job.sp.center_right)
-            & (z < job.sp.center_right + 2 * job.sp.sigma_right),
+            & (z < job.sp.center_right + 3 * job.sp.sigma_right),
             ramp(
                 z, center=job.sp.center_right, sigma=job.sp.sigma_right, p=job.sp.power
             ),
@@ -79,7 +79,7 @@ def make_gaussian_dens_func(job):
         )
 
         # after down-ramp
-        n = np.where(z >= job.sp.center_right + 2 * job.sp.sigma_right, 0, n)
+        n = np.where(z >= job.sp.center_right + 3 * job.sp.sigma_right, 0, n)
 
         return n
 

@@ -31,8 +31,8 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    n_e = np.linspace(7.6, 7.8, 9) * 1.0e+18 * 1.0e+6
-    power = np.linspace(2.0, 2.2, 9)
+    n_e = np.linspace(7.2, 7.9, 8) * 1.0e+18 * 1.0e+6
+    power = np.linspace(1.4, 2.1, 8)
 
     m = np.meshgrid(power, n_e)
     p_n_e = np.transpose(m).reshape(-1, 2)
@@ -58,7 +58,7 @@ def main():
             p_nz=2,  # Number of particles per cell along z (default 2)
             p_nr=2,  # Number of particles per cell along r (default 2)
             # The laser
-            a0=2.4,  # Laser amplitude
+            a0=2.8,  # Laser amplitude
             # Laser waist, converted from experimental FWHM@intensity
             w0=22.0e-6 / SQRT_FACTOR,
             # Laser duration, converted from experimental FWHM@intensity
@@ -68,9 +68,9 @@ def main():
             profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
             # The density profile
             flat_top_dist=0.0e-6,  # plasma flat top distance
-            sigma_right=1471.0e-6,
+            sigma_right=1251.0e-6,
             center_left=3000.0e-6,
-            sigma_left=1471.0e-6,
+            sigma_left=1251.0e-6,
             power=p,
             current_correction="curl-free",  # "curl-free" (default, faster) or "cross-deposition" (more local)
             # do not change below this line ##############
@@ -114,7 +114,7 @@ def main():
         sp["zfoc"] = util.nozzle_center_offset(sp["zfoc_from_nozzle_center"])
 
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
-        sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
+        sp["p_zmax"] = sp["center_right"] + 2.5 * sp["sigma_right"]
 
         sp["L_interact"] = sp["p_zmax"] - sp["p_zmin"]
         sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value("m/s")
