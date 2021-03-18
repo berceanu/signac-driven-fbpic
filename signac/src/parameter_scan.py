@@ -25,7 +25,7 @@ def main():
     x_values = job_util.get_key_values(proj, DIM_MAPPING["x"])
     energy = np.linspace(1, 499, 499)
 
-    random.seed(42)
+    random.seed(12)
 
     chosen_y_vals = generate_slices(
         DIM_MAPPING["y"], np.array(random.sample(y_values, 4)), DIM_MAPPING["x"]
