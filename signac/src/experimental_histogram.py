@@ -146,7 +146,10 @@ def main():
         root="/scratch/berceanu/runs/signac-driven-fbpic/", search=False
     )
 
-    plot_on_top(fig, proj, job_filter=dict(power=2.125, n_e=7.8e24))
+    for p, n in zip(
+        (2.125, 2.2, 2.125, 2.15), (7.8e24, 7.775e24, 7.65e24, 7.65e24)
+    ):
+        plot_on_top(fig, proj, job_filter={"power.$near": p, "n_e.$near": n})
 
 
 if __name__ == "__main__":
