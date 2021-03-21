@@ -65,7 +65,7 @@ def main():
     ds.to_netcdf("spectra.nc")
 
     xs = XSpectra(
-        spectra, gaussian_std=10, dim_mapping=DIM_MAPPING, left_xlim=71.0, vmax=120.0
+        spectra, gaussian_std=10, dim_mapping=DIM_MAPPING, left_xlim=71.0, vmax=80.0
     )
     #
     xf = XFigure(xs, chosen_y_vals + chosen_x_vals)
