@@ -1,4 +1,5 @@
-"""Load spectra from file into a 3D xarray.
+"""
+Load spectra from file into a 3D xarray.
 Usage: python load_spectra.py
 Requires xarray: http://xarray.pydata.org/en/stable/installing.html#instructions
 """
