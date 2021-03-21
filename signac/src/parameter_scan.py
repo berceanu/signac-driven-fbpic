@@ -45,7 +45,6 @@ def main():
         job = first(match)
         charge[i, j, :] = job_energy_histogram(job)
         # TODO: normalize to [0, 1]
-        # TODO: set energy range to [71, 499]
 
     spectra = xr.DataArray(
         charge,
@@ -62,7 +61,7 @@ def main():
     spectra.coords[DIM_MAPPING["x"]].attrs["to_units"] = "1 / centimeter ** 3"
     spectra.coords[DIM_MAPPING["x"]].attrs["scaling_factor"] = 1.0e-18
 
-    xs = XSpectra(spectra, gaussian_std=10, dim_mapping=DIM_MAPPING)
+    xs = XSpectra(spectra, gaussian_std=10, dim_mapping=DIM_MAPPING, left_xlim=71.0, vmax=70.0)
     #
     xf = XFigure(xs, chosen_y_vals + chosen_x_vals)
     xf.render()
