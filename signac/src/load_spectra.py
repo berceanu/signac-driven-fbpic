@@ -18,6 +18,7 @@ def main():
 
     # select spectrum with alpha=1.4 and electron density 7.2 x 10^18 cm^(-3)
     # see http://xarray.pydata.org/en/stable/indexing.html#indexing-and-selecting-data
+    # power is alpha
     charge = spectra.sel(power=1.4, n_e=7.2e24, method="nearest")
 
     print(charge)
