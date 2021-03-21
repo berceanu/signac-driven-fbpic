@@ -61,7 +61,12 @@ def main():
     spectra.coords[DIM_MAPPING["x"]].attrs["to_units"] = "1 / centimeter ** 3"
     spectra.coords[DIM_MAPPING["x"]].attrs["scaling_factor"] = 1.0e-18
 
-    xs = XSpectra(spectra, gaussian_std=10, dim_mapping=DIM_MAPPING, left_xlim=71.0, vmax=70.0)
+    ds = spectra.to_dataset(name="spectra")
+    ds.to_netcdf("spectra.nc")
+
+    xs = XSpectra(
+        spectra, gaussian_std=10, dim_mapping=DIM_MAPPING, left_xlim=71.0, vmax=120.0
+    )
     #
     xf = XFigure(xs, chosen_y_vals + chosen_x_vals)
     xf.render()
