@@ -31,7 +31,7 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    n_e = np.linspace(7.2, 7.9, 8) * 1.0e+18 * 1.0e+6
+    n_e = np.linspace(7.2, 7.9, 8) * 1.0e18 * 1.0e6
     power = np.linspace(1.4, 2.1, 8)
 
     m = np.meshgrid(power, n_e)
