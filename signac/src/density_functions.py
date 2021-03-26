@@ -37,6 +37,9 @@ def make_gaussian_dens_func(job):
         """Gaussian-like function."""
         return np.exp(-((np.abs(z - center) / sigma) ** p))
 
+    w_matched = 50.e-6
+    rel_delta_n_over_w2 = 1./( np.pi * 2.81e-15 * job.sp.w0**4 * job.sp.n_e )
+
     # The density profile
     def dens_func(z, r):
         """
@@ -81,6 +84,8 @@ def make_gaussian_dens_func(job):
         # after down-ramp
         n = np.where(z >= job.sp.center_right + 2 * job.sp.sigma_right, 0, n)
 
+        # Add transverse guiding parabolic profile
+        n = n * ( 1. + rel_delta_n_over_w2 * r**2 )
         return n
 
     return dens_func
