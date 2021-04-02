@@ -137,14 +137,6 @@ class Timer:
         return runtime
 
 
-def nozzle_center_offset(distance):
-    """
-    Convert between distance from center of gas nozzle to distance from z = 0 point.
-    """
-    other_distance = np.subtract(20_000.0e-6, distance)
-    return other_distance
-
-
 def ffmpeg_command(
     frame_rate: float = 10.0,  # CHANGEME
     input_files: str = "pic%04d.png",  # pic0001.png, pic0002.png, ...
@@ -191,8 +183,6 @@ def main():
 
     d = np.array([500, 750, 1000, 1250, 1500]) * 1e-6
     print(d)
-    print(nozzle_center_offset(d))
-    print(nozzle_center_offset(nozzle_center_offset(d)))
 
     t = Timer()
     t.start()
