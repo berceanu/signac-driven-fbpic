@@ -42,7 +42,7 @@ def main():
             dr_over_dz=10,  # Δr = dr_over_dz * Δz (default 5)
             zmin=-60.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
-            rmax=70.0e-6,  # Length of the box along r (meters) (default 70.0e-6)
+            rmax=250.0e-6,  # Length of the box along r (meters) (default 70.0e-6)
             r_boundary_conditions="reflective",  #  'reflective' (default) / 'open' more expensive
             n_order=32,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 16)
             Nm=3,  # Number of modes used (default 3)
@@ -63,9 +63,9 @@ def main():
             profile_flatness=100,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
             # The density profile
             flat_top_dist=10 * 1.0e+3 * 1.0e-6,  # plasma flat top distance
-            sigma_right=7.5 * 1.0e+3 * 1.0e-6,
+            sigma_right=20 * 1.0e+3 * 1.0e-6,
             center_left=15 * 1.0e+3 * 1.0e-6,
-            sigma_left=7.5 * 1.0e+3 * 1.0e-6,
+            sigma_left=20 * 1.0e+3 * 1.0e-6,
             power=3.5,
             current_correction="curl-free",  # "curl-free" (default, faster) or "cross-deposition" (more local)
             # do not change below this line ##############
