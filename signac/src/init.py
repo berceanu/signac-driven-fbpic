@@ -49,7 +49,7 @@ def main():
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
-            n_e=2.4 * 1.0e+18 * 1.0e+6,  # Density (electrons.meters^-3)
+            n_e=2.4 * 1.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z (default 2)
             p_nr=2,  # Number of particles per cell along r (default 2)
             # The laser
@@ -59,16 +59,16 @@ def main():
             # Laser duration, converted from experimental FWHM@intensity
             tau=50.0e-15 / SQRT_FACTOR,
             z0=-10.0e-6,  # Laser centroid
-            zfoc_from_nozzle_center=20_000e-6,  # Laser focal position, measured from the center of the gas jet
+            zfoc_from_nozzle_center=15e-3,  # Laser focal position, measured from the center of the gas jet
             profile_flatness=100,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
             # The density profile
-            flat_top_dist=10 * 1.0e+3 * 1.0e-6,  # plasma flat top distance
-            sigma_right=20 * 1.0e+3 * 1.0e-6,
-            center_left=15 * 1.0e+3 * 1.0e-6,
-            sigma_left=20 * 1.0e+3 * 1.0e-6,
+            flat_top_dist=10e-3,  # plasma flat top distance
+            sigma_left=17.5e-3,
             power=3.5,
             current_correction="curl-free",  # "curl-free" (default, faster) or "cross-deposition" (more local)
             # do not change below this line ##############
+            center_left=None,
+            sigma_right=None,
             Nz=None,  # Number of gridpoints along z
             Nr=None,  # Number of gridpoints along r
             p_rmax=None,  # Maximal radial position of the plasma (meters)
@@ -108,6 +108,8 @@ def main():
         # Laser focal position
         sp["zfoc"] = util.nozzle_center_offset(sp["zfoc_from_nozzle_center"])
 
+        sp["sigma_right"] = sp["sigma_left"]
+        sp["center_left"] = 2 * sp["sigma_left"]
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
         sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
 
