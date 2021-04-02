@@ -3,11 +3,12 @@ from itertools import cycle
 
 import numpy as np
 import pandas as pd
+import unyt as u
 from matplotlib import pyplot
 from matplotlib.gridspec import GridSpec
 
 
-def read_longitudinal_profile(txt_file="longitudinal_density.txt", offset=20):
+def read_longitudinal_profile(txt_file="longitudinal_density.txt", offset=40):
     return read_density(txt_file=txt_file, offset=offset)
 
 
@@ -124,7 +125,11 @@ def plot_density_profile(profile_maker, fig_fname, job):
     all_z = np.linspace(job.sp.zmin, job.sp.L_interact, num)
     all_r = np.linspace(-job.sp.rmax, job.sp.rmax, 512)
     dens_z = profile_maker(job)(all_z, 0.0)
-    dens_r = profile_maker(job)(20e-3, all_r)
+
+    print(
+        f"<{job.sp.capillary_left * 1e3:.1f}|{job.sp.capillary_center * 1e3:.1f}|{job.sp.capillary_right * 1e3:.1f}>"
+    )
+    dens_r = profile_maker(job)(job.sp.capillary_center, all_r)
 
     fig = pyplot.figure(figsize=(30, 6.8))
     G = GridSpec(2, 1, figure=fig)
@@ -153,6 +158,10 @@ def plot_density_profile(profile_maker, fig_fname, job):
         "p_zmin",
         "p_zmax",
         "L_interact",
+        "center_left",
+        "center_right",
+        "capillary_left",
+        "capillary_right",
     )
     y_annotation_positions = (0.5, 0.7, 0.9, 1.1)
     pos_cycle = cycle(y_annotation_positions)
@@ -162,16 +171,22 @@ def plot_density_profile(profile_maker, fig_fname, job):
     for p, y_pos in params_and_positions:
         mark_on_plot(ax=ax_top, parameter=p, y=y_pos)
 
-    ax_top.hlines(
-        y=1.0,
-        xmin=all_z[0] * 1e6,
-        xmax=all_z[-1] * 1e6,
-        linewidth=0.75,
-        linestyle="dashed",
-        color="0.75",
-    )
+    for ax, horiz_coord in zip((ax_top, ax_bottom), (all_z, all_r)):
+        ax.hlines(
+            y=1.0,
+            xmin=horiz_coord[0] * 1e6,
+            xmax=horiz_coord[-1] * 1e6,
+            linewidth=0.75,
+            linestyle="dashed",
+            color="0.75",
+        )
 
-    position_m, norm_density = read_longitudinal_profile()
+    ne = job.sp.n_e * (1 * u.meter ** (-3)).to(u.cm ** (-3))
+    ax_top.annotate(text=f"nₑ = {ne:.1e}", xy=(0, 1.1), xycoords="data")
+
+    position_m, norm_density = read_longitudinal_profile(
+        offset=job.sp.capillary_center * 1e3
+    )
     plot_profile(position_m, norm_density, ax_top)
 
     position_m, norm_density = read_transverse_profile()

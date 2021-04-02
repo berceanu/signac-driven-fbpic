@@ -59,7 +59,6 @@ def main():
             # Laser duration, converted from experimental FWHM@intensity
             tau=50.0e-15 / SQRT_FACTOR,
             z0=-10.0e-6,  # Laser centroid
-            zfoc_from_nozzle_center=15e-3,  # Laser focal position, measured from the center of the gas jet
             profile_flatness=100,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
             # The density profile
             flat_top_dist=10e-3,  # plasma flat top distance
@@ -67,8 +66,12 @@ def main():
             power=3.5,
             current_correction="curl-free",  # "curl-free" (default, faster) or "cross-deposition" (more local)
             # do not change below this line ##############
+            zfoc=None,  # Laser focal position
             center_left=None,
             sigma_right=None,
+            capillary_center=None,
+            capillary_left=None,
+            capillary_right=None,
             Nz=None,  # Number of gridpoints along z
             Nr=None,  # Number of gridpoints along r
             p_rmax=None,  # Maximal radial position of the plasma (meters)
@@ -105,13 +108,16 @@ def main():
 
         sp["p_nt"] = 4 * sp["Nm"]
         sp["p_rmax"] = 0.9 * sp["rmax"]
-        # Laser focal position
-        sp["zfoc"] = util.nozzle_center_offset(sp["zfoc_from_nozzle_center"])
 
         sp["sigma_right"] = sp["sigma_left"]
-        sp["center_left"] = 2 * sp["sigma_left"]
+        sp["center_left"] = 1.5 * sp["sigma_left"]
         sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
-        sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
+        sp["p_zmax"] = sp["center_right"] + 1.5 * sp["sigma_right"]
+
+        sp["capillary_center"] = sp["center_left"] + sp["flat_top_dist"] / 2
+        sp["capillary_left"] = sp["capillary_center"] - 15e-3
+        sp["capillary_right"] = sp["capillary_center"] + 15e-3
+        sp["zfoc"] = sp["capillary_left"]
 
         sp["L_interact"] = sp["p_zmax"] - sp["p_zmin"]
         sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value("m/s")
