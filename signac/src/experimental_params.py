@@ -9,8 +9,7 @@ def main():
     beam = lwfa.GaussianBeam(w0=120 * u.micrometer, λL=800 * u.nanometer)
     laser = lwfa.Laser(ɛL=8 * u.milijoule, τL=50 * u.femtosecond, beam=beam)
 
-
-    plasma = Plasma(n_pe=2.65e+18 * u.cm ** (-3))
+    plasma = Plasma(n_pe=2.65e18 * u.cm ** (-3), laser=laser)
 
     print(laser)
     print(plasma)
