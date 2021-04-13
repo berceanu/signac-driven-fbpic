@@ -16,6 +16,7 @@ import signac
 from fast_histogram import histogram1d
 
 import job_util
+import util
 
 ureg = pint.UnitRegistry()
 m_e = ureg.electron_mass
@@ -61,15 +62,25 @@ class LastH5File:
         return tuple(fnames)[-1]
 
 
-def energy_histogram(normalized_particle_momenta, weights, bins=499, erange=(1, 500)):
+def energy_histogram(
+    normalized_particle_momenta,
+    weights,
+    *,
+    bins=499,
+    erange=(1, 500),
+    normalized=False,
+):
     ux = normalized_particle_momenta["x"]
     uy = normalized_particle_momenta["y"]
     uz = normalized_particle_momenta["z"]
     expr = ne.evaluate("sqrt(1+ux**2+uy**2+uz**2)")
-    return histogram1d(mc2 * expr, bins=bins, range=erange, weights=e_pC * weights)
+    hist = histogram1d(mc2 * expr, bins=bins, range=erange, weights=e_pC * weights)
+    if normalized:
+        hist = util.normalize_to_interval(0, 1, hist)
+    return hist
 
 
-def job_energy_histogram(job):
+def job_energy_histogram(job, *, bins=499, erange=(1, 500), normalized=False):
     uxyz = dict()
     h5f = LastH5File(job)
     with h5f as f:
@@ -77,7 +88,14 @@ def job_energy_histogram(job):
         for xyz in "x", "y", "z":
             # normalize momenta by mc
             uxyz[xyz] = np.array(f[h5f.mom[xyz]]) / mc
-    return energy_histogram(uxyz, w)
+    hist = energy_histogram(
+        normalized_particle_momenta=uxyz,
+        weights=w,
+        bins=bins,
+        erange=erange,
+        normalized=normalized,
+    )
+    return hist
 
 
 def main():
