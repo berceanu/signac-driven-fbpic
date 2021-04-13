@@ -38,14 +38,14 @@ def main():
             nranks=4,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
             # The simulation box
             lambda0=0.8e-6,  # Laser wavelength (default 0.815e-6)
-            lambda0_over_dz=24,  # Δz = lambda0 / lambda0_over_dz (default 32)
+            lambda0_over_dz=20,  # Δz = lambda0 / lambda0_over_dz (default 32)
             dr_over_dz=10,  # Δr = dr_over_dz * Δz (default 5)
             zmin=-60.0e-6,  # Left end of the simulation box (meters)
             zmax=0.0e-6,  # Right end of the simulation box (meters)
             rmax=250.0e-6,  # Length of the box along r (meters) (default 70.0e-6)
             r_boundary_conditions="reflective",  #  'reflective' (default) / 'open' more expensive
             n_order=32,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 16)
-            Nm=3,  # Number of modes used (default 3)
+            Nm=2,  # Number of modes used (default 3)
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
