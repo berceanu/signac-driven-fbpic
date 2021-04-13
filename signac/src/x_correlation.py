@@ -4,13 +4,11 @@ Automatic search for best fit amongst simulated spectra.
 import pathlib
 
 import numpy as np
-from numpy.core.numeric import cross
 import pandas as pd
 import xarray as xr
 from icecream import ic
-from matplotlib import cm, colors, figure
-from matplotlib import pyplot as plt
-from matplotlib import rc_context, ticker
+from matplotlib import figure
+from matplotlib import rc_context
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 import util
@@ -49,8 +47,6 @@ Exp_Counts = Exp_Counts_full[
 # Normalyze Counts:
 Exp_Counts = Exp_Counts / np.max(Exp_Counts)
 
-ic(Exp_Energy)
-ic(Exp_Counts)
 
 # SIMULATIONS
 Npower = 8
@@ -101,19 +97,62 @@ def compute_simulated_spectra(project, *, from_energy, to_energy):
     return spectra
 
 
+def my_cross_corellation(
+    simulated_spectra, experimental_spectrum, cutoff_from_maximum=0.8
+):
+    simulated_count = simulated_spectra.values
+    experimental_count = experimental_spectrum["dN_over_dE_normalized"].to_numpy()
+
+    weight = np.tanh((experimental_count / cutoff_from_maximum) ** 2)
+
+    numerator = np.sum(
+        simulated_count * experimental_count[np.newaxis, np.newaxis, :],
+        axis=-1,
+    )
+
+    relative_deviation = numerator ** 2 / (
+        np.sum(simulated_count, axis=-1) ** 2 * np.sum(experimental_count) ** 2
+    )
+
+    x_corr = np.sum(
+        relative_deviation[:, :, np.newaxis] * weight[np.newaxis, np.newaxis, :],
+        axis=-1,
+    )
+
+    ind = np.unravel_index(np.argmax(x_corr), x_corr.shape)
+    ic(ind)
+
+    return x_corr, ind
+
+
 def cross_corellation(
     simulated_spectra, experimental_spectrum, cutoff_from_maximum=0.8
 ):
-    exp_counts = experimental_spectrum["dN_over_dE_normalized"]
+    experimental_counts = experimental_spectrum["dN_over_dE_normalized"]
+    weight = np.tanh((experimental_counts / cutoff_from_maximum) ** 2)
 
-    # Num_Spectrum = spectra.sel(power=power, n_e=n_e, method="nearest")
+    x_corr = np.zeros((simulated_spectra.power.size, simulated_spectra.n_e.size))
 
-    # weight = np.tanh((exp_counts / cutoff_from_maximum) ** 2)
+    for i, power in enumerate(simulated_spectra.power.values):
+        for j, n_e in enumerate(simulated_spectra.n_e.values):
+            selected_spectrum = simulated_spectra.sel(
+                power=power.item(), n_e=n_e.item(), method="nearest"
+            )
+            relative_deviation = np.sum(
+                selected_spectrum.values * experimental_counts
+            ) ** 2 / (
+                np.sum(selected_spectrum.values) ** 2 * np.sum(experimental_counts) ** 2
+            )
 
-    # relative_deviation = np.sum(Num_Counts_interp * exp_counts) ** 2 / (
-    #     np.sum(Num_Counts_interp) ** 2 * np.sum(exp_counts) ** 2
-    # )
-    return exp_counts
+            ic(selected_spectrum.values.shape, experimental_counts.shape)
+            ic(weight.shape, relative_deviation.shape)
+
+            x_corr[i, j] = np.sum(weight * relative_deviation)
+
+    ind = np.unravel_index(np.argmax(x_corr), x_corr.shape)
+    ic(ind)
+
+    return x_corr, ind
 
 
 XCorr = np.zeros((Npower, Nn))  # The output weighted chi^2  matrix
@@ -161,9 +200,12 @@ n_e = N_e[int(result[1])]
 print("Optimised density  \t\t= ", n_e, "$1/m^3$")
 print("Optimised power  \t\t= ", power)
 
+# TODO remove ".png" from everywhere
+# TODO remove ic statements
 
-def plot_spectrum(spectrum, axes):
-    """Visualize spectrum as a line."""
+
+def plot_experimental_spectrum(axes, spectrum):
+    """Create 1D spectrum figure."""
     axes.step(
         spectrum.index.values,
         spectrum.dN_over_dE_normalized.values,
@@ -172,48 +214,18 @@ def plot_spectrum(spectrum, axes):
     )
     axes.set_xlabel(r"$E$ ($\mathrm{MeV}$)")
     axes.set_ylabel(r"$\frac{\mathrm{d} N}{\mathrm{d} E}$ ($\mathrm{a.u.}$)")
-    return axes
-
-
-def spectrum_figure(spectrum, plotter, savefig=True):
-    """Create spectrum figure, either 1D or colormap."""
-    with rc_context():
-        mpl_util.mpl_publication_style()
-
-        sfig = figure.Figure()
-        _ = FigureCanvasAgg(sfig)
-        axes = sfig.add_subplot(111)
-
-        plotter(spectrum, axes)
-
-        if savefig:
-            sfig.savefig(f"spectrum_exp_{plotter.__name__}" + ".png")
-
-    return sfig
-
-
-# TODO remove ".png" from everywhere
-# TODO remove ic statements
-
-
-def plot_on_top(sfig, spectrum):
-    """Plot simulated spectrum on top of the experimental one."""
-
-    label = f"{spectrum.n_e.attrs['plot_label']} = {spectrum.n_e.values / 1.0e+24}, {spectrum.power.attrs['plot_label']} = {spectrum.power.values:.3f}"
-
-    with rc_context():
-        mpl_util.mpl_publication_style()
-
-        axes = sfig.axes
-        assert len(axes) == 1, "Figure contains multiple Axes"
-        axes = util.first(axes)
-
-        axes.step(spectrum.E.values, spectrum.values, label=label)
-        axes.legend(fontsize=4)
-
-        sfig.savefig(util.slugify(label) + ".png")
 
     return axes
+
+
+def plot_on_top(axes, simulated_spectrum):
+    """Plot simulated simulated_spectrum on top of the experimental one."""
+    label = f"{simulated_spectrum.n_e.attrs['plot_label']} = {simulated_spectrum.n_e.values / 1.0e+24}, {simulated_spectrum.power.attrs['plot_label']} = {simulated_spectrum.power.values:.3f}"
+
+    axes.step(simulated_spectrum.E.values, simulated_spectrum.values, label=label)
+    axes.legend(fontsize=4)
+
+    return axes, label
 
 
 def read_spectrum(path_to_csv, *, from_energy, to_energy):
@@ -221,28 +233,21 @@ def read_spectrum(path_to_csv, *, from_energy, to_energy):
     csv_df = pd.read_csv(
         path_to_csv,
         comment="#",
-        names=["E_MeV_float", "dN_over_dE"],
+        names=["E", "dN_over_dE"],
     )
+    csv_df.set_index("E", inplace=True)
 
-    csv_df.set_index("E_MeV_float", inplace=True)
     new_index = np.linspace(
-        from_energy, to_energy, to_energy - from_energy, endpoint=False
+        from_energy,
+        to_energy,
+        to_energy - from_energy,
+        endpoint=False,
+        dtype=int,
     )
-    df_reindexed = csv_df.reindex(new_index, method="nearest")
+    df_ = csv_df.reindex(new_index, method="nearest")
 
-    ic(df_reindexed)
-
-    # csv_df.loc[:, "E_MeV"] = new_index
-    csv_df.loc[:, "E_MeV"] = csv_df.loc[:, "E_MeV_float"].astype(int)
-
-    grouped = csv_df.groupby(["E_MeV"])
-    df_ = grouped[["dN_over_dE"]].agg(["mean"])
-
-    df_.columns = df_.columns.get_level_values(0)
-    df_["dN_over_dE"] = df_["dN_over_dE"].astype(np.float64)
     df_["dN_over_dE_normalized"] = util.normalize_to_interval(0, 1, df_["dN_over_dE"])
-
-    return df_.query(f"E_MeV >= {from_energy} & E_MeV < {to_energy}")
+    return df_
 
 
 def main():
@@ -251,33 +256,33 @@ def main():
     TO_ENERGY = 500  # MeV
 
     csv_path = pathlib.Path.cwd() / "experimental_spectrum.csv"
-    spectrum = read_spectrum(csv_path, from_energy=FROM_ENERGY, to_energy=TO_ENERGY)
-
-    ic(spectrum.index.values[0], spectrum.index.values[-1], spectrum.index.values.shape)
+    experimental_spectrum = read_spectrum(
+        csv_path, from_energy=FROM_ENERGY, to_energy=TO_ENERGY
+    )
 
     proj = signac.get_project(search=False)
-
     spectra = compute_simulated_spectra(
         proj, from_energy=FROM_ENERGY, to_energy=TO_ENERGY
     )
-    selected_spectrum = spectra.sel(power=2.57, n_e=7.8e24, method="nearest")
 
-    ic(
-        selected_spectrum.E.values[0],
-        selected_spectrum.E.values[-1],
-        selected_spectrum.E.values.shape,
-    )
+    my_cross_corellation(spectra, experimental_spectrum)
 
-    my_fig = spectrum_figure(spectrum, plot_spectrum, savefig=False)
-    # plot_on_top(
-    #     my_fig, proj, job_filter={"power.$near": [3.0, 0.01], "n_e.$near": 8.1e24}
-    # )
-    plot_on_top(
-        my_fig,
-        selected_spectrum,
-    )
+    with rc_context():
+        mpl_util.mpl_publication_style()
 
-    cross_corellation(spectra, spectrum)
+        fig = figure.Figure()
+        _ = FigureCanvasAgg(fig)
+        axs = fig.add_subplot(111)
+
+        axs = plot_experimental_spectrum(axs, experimental_spectrum)
+
+        selected_spectrum = spectra.sel(power=2.57, n_e=7.8e24, method="nearest")
+        # selected_spectrum = spectra.sel(power=3.0, n_e=8.1e24, method="nearest")
+        axs, label = plot_on_top(
+            axs,
+            simulated_spectrum=selected_spectrum,
+        )
+        axs.figure.savefig(util.slugify(label) + ".png")
 
 
 if __name__ == "__main__":
