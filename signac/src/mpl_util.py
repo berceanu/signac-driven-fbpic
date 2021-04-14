@@ -68,7 +68,7 @@ def mpl_publication_style(extension="pdf"):
     matplotlib.rcParams["pgf.texsystem"] = "pdflatex"
     matplotlib.rcParams[
         "pgf.preamble"
-    ] = r"\usepackage[utf8x]{inputenc} \usepackage[T1]{fontenc} \usepackage{cmbright}"
+    ] = r"\usepackage[utf8x]{inputenc} \usepackage[T1]{fontenc} \usepackage{cmbright} \usepackage{amsmath}"
 
     # Increase the padding between the ticklabels and the axes, to prevent
     # overlap in the lower left-hand corner
