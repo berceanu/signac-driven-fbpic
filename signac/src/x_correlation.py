@@ -109,20 +109,28 @@ def plot_experimental_spectrum(axes, spectrum):
         spectrum.values,
         "black",
         label="experiment",
+        linewidth=0.8,
     )
     axes.set_xlabel(r"$E$ ($\mathrm{MeV}$)")
     axes.set_ylabel(r"$\frac{\mathrm{d} N}{\mathrm{d} E}$ ($\mathrm{a.u.}$)")
     return axes
 
 
-def plot_simulated_spectrum(axes, spectrum, *, angle):
+def plot_simulated_spectrum(axes, spectrum, *, cone_aperture):
     label = (
         f"{spectrum.n_e.attrs['plot_label']} = {spectrum.n_e.values.item() / 1e24}, "
-        f"{spectrum.power.attrs['plot_label']} = {spectrum.power.values.item():.3f}, "
-        f"$2\\theta = {angle * 1e3:.1f}$ mrad"
+        f"{spectrum.power.attrs['plot_label']} = {spectrum.power.values.item():.3f}"
     )
-    axes.step(spectrum.E.values, spectrum.values, label=label)
-    axes.legend(fontsize=4)
+    if cone_aperture is not None:
+        label += f", $2\\theta = {float(cone_aperture) * 1e3:.1f}$ mrad"
+
+    axes.step(
+        spectrum.E.values,
+        spectrum.values,
+        linewidth=0.8,
+        label=label,
+    )
+    axes.legend(fontsize=3)
     return axes, label
 
 
@@ -173,13 +181,12 @@ def main():
 
             axs = plot_experimental_spectrum(axs, experimental_spectrum)
             for aperture in matched_spectra[x_corr_foo]:
-                axs, label = plot_simulated_spectrum(
+                axs, _ = plot_simulated_spectrum(
                     axs,
                     matched_spectra[x_corr_foo][aperture],
-                    angle=aperture,
+                    cone_aperture=aperture,
                 )
-
-            axs.set_title(f"{x_corr_foo}")
+            axs.set_title(f"$\\text{{{x_corr_foo}}}$")
             fig.savefig(f"{x_corr_foo}.png")
 
 
