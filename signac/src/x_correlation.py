@@ -75,12 +75,7 @@ def max_cross_correlation(
     return ind.power.values.item(), ind.n_e.values.item()
 
 
-# TODO remove ".png" from everywhere
-# TODO remove ic statements
-
-
 def plot_experimental_spectrum(axes, spectrum):
-    """Create 1D spectrum figure."""
     axes.step(
         spectrum.E.values,
         spectrum.values,
@@ -89,22 +84,20 @@ def plot_experimental_spectrum(axes, spectrum):
     )
     axes.set_xlabel(r"$E$ ($\mathrm{MeV}$)")
     axes.set_ylabel(r"$\frac{\mathrm{d} N}{\mathrm{d} E}$ ($\mathrm{a.u.}$)")
-
     return axes
 
 
-def plot_on_top(axes, simulated_spectrum):
-    """Plot simulated simulated_spectrum on top of the experimental one."""
-    label = f"{simulated_spectrum.n_e.attrs['plot_label']} = {simulated_spectrum.n_e.values / 1.0e+24}, {simulated_spectrum.power.attrs['plot_label']} = {simulated_spectrum.power.values:.3f}"
-
-    axes.step(simulated_spectrum.E.values, simulated_spectrum.values, label=label)
+def plot_simulated_spectrum(axes, spectrum):
+    label = (
+        f"{spectrum.n_e.attrs['plot_label']} = {spectrum.n_e.values / 1.0e+24}, "
+        f"{spectrum.power.attrs['plot_label']} = {spectrum.power.values:.3f}"
+    )
+    axes.step(spectrum.E.values, spectrum.values, label=label)
     axes.legend(fontsize=4)
-
     return axes, label
 
 
-def read_spectrum(path_to_csv, *, from_energy, to_energy):
-    """Read spectrum data from CSV file, return dataframe."""
+def read_experimental_spectrum(path_to_csv, *, from_energy, to_energy):
     csv_df = pd.read_csv(
         path_to_csv,
         comment="#",
@@ -131,16 +124,27 @@ def main():
     TO_ENERGY = 500  # MeV
 
     csv_path = pathlib.Path.cwd() / "experimental_spectrum.csv"
-    experimental_spectrum = read_spectrum(
+    experimental_spectrum = read_experimental_spectrum(
         csv_path, from_energy=FROM_ENERGY, to_energy=TO_ENERGY
     )
 
     proj = signac.get_project(search=False)
-    spectra = compute_simulated_spectra(
+    simulated_spectra = compute_simulated_spectra(
         proj, from_energy=FROM_ENERGY, to_energy=TO_ENERGY
     )
 
-    optim_power, optim_density = max_cross_correlation(spectra, experimental_spectrum)
+    # manual selection
+    # optim_power, optim_density = 3.0, 8.1e24
+
+    # automatic selection
+    optim_power, optim_density = max_cross_correlation(
+        simulated_spectra,
+        experimental_spectrum,
+    )
+
+    selected_simulated_spectrum = simulated_spectra.sel(
+        power=optim_power, n_e=optim_density, method="nearest"
+    )
 
     with rc_context():
         mpl_util.mpl_publication_style()
@@ -150,15 +154,8 @@ def main():
         axs = fig.add_subplot(111)
 
         axs = plot_experimental_spectrum(axs, experimental_spectrum)
+        axs, label = plot_simulated_spectrum(axs, selected_simulated_spectrum)
 
-        selected_spectrum = spectra.sel(
-            power=optim_power, n_e=optim_density, method="nearest"
-        )
-        # selected_spectrum = spectra.sel(power=3.0, n_e=8.1e24, method="nearest")
-        axs, label = plot_on_top(
-            axs,
-            simulated_spectrum=selected_spectrum,
-        )
         axs.figure.savefig(util.slugify(label) + ".png")
 
 
