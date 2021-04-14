@@ -186,7 +186,7 @@ def main():
                     matched_spectra[x_corr_foo][aperture],
                     cone_aperture=aperture,
                 )
-            axs.set_title(f"$\\text{{{x_corr_foo}}}$")
+            axs.set_title(r"$\mathrm{%s}$" % x_corr_foo.replace("_", " "))
             fig.savefig(f"{x_corr_foo}.png")
 
 
