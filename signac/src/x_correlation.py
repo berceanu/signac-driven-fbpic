@@ -20,44 +20,6 @@ import signac
 ic.configureOutput(includeContext=True)
 
 
-# load xarray dataset from file
-ds_spectra = xr.open_dataset("spectra.nc")
-# extract the (only) array from the dataset
-spectra = ds_spectra["spectra"]
-
-
-# Read the experimental spectrum
-Energy_min = 70  # minimum enregy, MeV
-Energy_max = 450  # maximum energy, MeV
-
-Exp_Spectrum = np.loadtxt("Experimental.txt", delimiter=",")
-Exp_Energy_full = Exp_Spectrum[:, 0]  # Exp. energy scan
-Exp_Counts_full = Exp_Spectrum[:, 1]  # Exp. spectrum
-
-# Selected energy range
-
-Exp_Energy = Exp_Energy_full[
-    (Exp_Energy_full >= Energy_min) * (Exp_Energy_full < Energy_max)
-]
-Exp_Counts = Exp_Counts_full[
-    (Exp_Energy_full >= Energy_min) * (Exp_Energy_full < Energy_max)
-]
-
-
-# Normalyze Counts:
-Exp_Counts = Exp_Counts / np.max(Exp_Counts)
-
-
-# SIMULATIONS
-Npower = 8
-Nn = 8
-
-Power = np.linspace(1.5, 3, Npower)  # power set
-N_e = np.linspace(7.4, 8.1, Nn) * 1e24  # electron density set, 1/m^3
-
-Cutoff_from_maximum = 0.8  # Data weights are increasingly reduced below that threshold
-
-
 def compute_simulated_spectra(project, *, from_energy, to_energy):
     """
     Loop though the project's statepoints and compute the energy spectrum for each.
@@ -110,83 +72,8 @@ def max_cross_correlation(
     cross_corr = (rd * weights).sum(dim="E")
 
     ind = cross_corr.where(cross_corr == cross_corr.max(), drop=True).squeeze()
-    ic(ind.power, ind.n_e)
+    return ind.power.values.item(), ind.n_e.values.item()
 
-    return ind.power, ind.n_e
-
-
-def my_cross_corellation(
-    simulated_spectra, experimental_spectrum, cutoff_from_maximum=0.8
-):
-    simulated_count = simulated_spectra.values
-    experimental_count = experimental_spectrum.values
-
-    weight = np.tanh((experimental_count / cutoff_from_maximum) ** 2)
-
-    numerator = np.sum(
-        simulated_count * experimental_count[np.newaxis, np.newaxis, :],
-        axis=-1,
-    )
-
-    relative_deviation = numerator ** 2 / (
-        np.sum(simulated_count, axis=-1) ** 2 * np.sum(experimental_count) ** 2
-    )
-
-    x_corr = np.sum(
-        relative_deviation[:, :, np.newaxis] * weight[np.newaxis, np.newaxis, :],
-        axis=-1,
-    )
-
-    ind = np.unravel_index(np.argmax(x_corr), x_corr.shape)
-    ic(ind)
-
-    return x_corr, ind
-
-
-XCorr = np.zeros((Npower, Nn))  # The output weighted chi^2  matrix
-
-
-for i in range(0, Nn):
-    power = Power[i]
-
-    for j in range(0, Nn):
-        n_e = N_e[j]
-
-        # Read data
-        Num_Spectrum = spectra.sel(power=power, n_e=n_e, method="nearest")
-
-        # Numerical spectrum
-        Num_Energy_full = Num_Spectrum.E.values  # Exp. energy scan
-        Num_Counts_full = Num_Spectrum.values  # Exp. spectrum
-        Num_Energy = Num_Energy_full[
-            (Num_Energy_full >= Energy_min) * (Num_Energy_full < Energy_max)
-        ]
-        Num_Counts = Num_Counts_full[
-            (Num_Energy_full >= Energy_min) * (Num_Energy_full < Energy_max)
-        ]
-
-        # Find the (weighted) Exp/Num matching
-        Num_Counts_interp = np.interp(Exp_Energy, Num_Energy, Num_Counts)
-        Num_Counts_interp = Num_Counts_interp / np.max(Num_Counts_interp)
-
-        Weight = np.tanh((Exp_Counts / Cutoff_from_maximum) ** 2)
-
-        Rel_deviation = np.sum(Num_Counts_interp * Exp_Counts) ** 2 / (
-            np.sum(Num_Counts_interp) ** 2 * np.sum(Exp_Counts) ** 2
-        )
-        xcorr = np.sum(Weight * Rel_deviation)
-        XCorr[i, j] = xcorr
-
-# ic(XCorr.shape, XCorr)
-
-# Best case (maximum xcorr)
-result = np.where(XCorr == XCorr.max())
-
-power = Power[int(result[0])]
-n_e = N_e[int(result[1])]
-
-print("Optimised density  \t\t= ", n_e, "$1/m^3$")
-print("Optimised power  \t\t= ", power)
 
 # TODO remove ".png" from everywhere
 # TODO remove ic statements
@@ -253,7 +140,7 @@ def main():
         proj, from_energy=FROM_ENERGY, to_energy=TO_ENERGY
     )
 
-    max_cross_correlation(spectra, experimental_spectrum)
+    optim_power, optim_density = max_cross_correlation(spectra, experimental_spectrum)
 
     with rc_context():
         mpl_util.mpl_publication_style()
@@ -264,7 +151,9 @@ def main():
 
         axs = plot_experimental_spectrum(axs, experimental_spectrum)
 
-        selected_spectrum = spectra.sel(power=2.57, n_e=7.8e24, method="nearest")
+        selected_spectrum = spectra.sel(
+            power=optim_power, n_e=optim_density, method="nearest"
+        )
         # selected_spectrum = spectra.sel(power=3.0, n_e=8.1e24, method="nearest")
         axs, label = plot_on_top(
             axs,
