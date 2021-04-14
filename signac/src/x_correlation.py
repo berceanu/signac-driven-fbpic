@@ -38,24 +38,21 @@ def compute_simulated_spectra(project, *, from_energy, to_energy):
         assert len(match) == 1, "Only one job needs to match."
         job = util.first(match)
 
-        hist = energy_histograms.job_energy_histogram(
+        charge[i, j, :] = energy_histograms.job_energy_histogram(
             job,
             bins=to_energy - from_energy,
             erange=(from_energy, to_energy),
             normalized=True,
+            cone_aperture=0.01,
         )
-        charge[i, j, :] = hist
 
     spectra = xr.DataArray(
         charge,
         dims=("power", "n_e", "E"),
         coords={"power": powers, "n_e": densities, "E": energy},
     )
-    #
     spectra.coords["power"].attrs["plot_label"] = r"$\alpha$"
-    #
     spectra.coords["n_e"].attrs["plot_label"] = r"$n_e$ ($10^{18}\,\mathrm{cm^{-3}}$)"
-
     return spectra
 
 

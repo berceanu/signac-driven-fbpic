@@ -69,18 +69,44 @@ def energy_histogram(
     bins=499,
     erange=(1, 500),
     normalized=False,
+    cone_aperture=None,
 ):
     ux = normalized_particle_momenta["x"]
     uy = normalized_particle_momenta["y"]
     uz = normalized_particle_momenta["z"]
+
+    if cone_aperture is not None:
+        # angle in radians
+        theta = cone_aperture / 2
+
+        particle_in_cone = (ux ** 2 + uy ** 2) * np.cos(theta) ** 2 - uz ** 2 * np.sin(
+            theta
+        ) ** 2 <= 0.0
+
+        ux = ux[particle_in_cone]
+        uy = uy[particle_in_cone]
+        uz = uz[particle_in_cone]
+
+        weights = weights[particle_in_cone]
+
     expr = ne.evaluate("sqrt(1+ux**2+uy**2+uz**2)")
+
     hist = histogram1d(mc2 * expr, bins=bins, range=erange, weights=e_pC * weights)
+
     if normalized:
         hist = util.normalize_to_interval(0, 1, hist)
+
     return hist
 
 
-def job_energy_histogram(job, *, bins=499, erange=(1, 500), normalized=False):
+def job_energy_histogram(
+    job,
+    *,
+    bins=499,
+    erange=(1, 500),
+    normalized=False,
+    cone_aperture=None,
+):
     uxyz = dict()
     h5f = LastH5File(job)
     with h5f as f:
@@ -88,12 +114,14 @@ def job_energy_histogram(job, *, bins=499, erange=(1, 500), normalized=False):
         for xyz in "x", "y", "z":
             # normalize momenta by mc
             uxyz[xyz] = np.array(f[h5f.mom[xyz]]) / mc
+
     hist = energy_histogram(
         normalized_particle_momenta=uxyz,
         weights=w,
         bins=bins,
         erange=erange,
         normalized=normalized,
+        cone_aperture=cone_aperture,
     )
     return hist
 
