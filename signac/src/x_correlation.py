@@ -109,7 +109,7 @@ def plot_experimental_spectrum(axes, spectrum):
         spectrum.values,
         "black",
         label="experiment",
-        linewidth=0.8,
+        linewidth=0.5,
     )
     axes.set_xlabel(r"$E$ ($\mathrm{MeV}$)")
     axes.set_ylabel(r"$\frac{\mathrm{d} N}{\mathrm{d} E}$ ($\mathrm{a.u.}$)")
@@ -127,7 +127,7 @@ def plot_simulated_spectrum(axes, spectrum, *, cone_aperture):
     axes.step(
         spectrum.E.values,
         spectrum.values,
-        linewidth=0.8,
+        linewidth=0.5,
         label=label,
     )
     axes.legend(fontsize=3)
@@ -186,8 +186,8 @@ def main():
                     matched_spectra[x_corr_foo][aperture],
                     cone_aperture=aperture,
                 )
-            axs.set_title(r"$\mathrm{%s}$" % x_corr_foo.replace("_", " "))
-            fig.savefig(f"{x_corr_foo}.png")
+            axs.set_title(r"$\mathrm{%s}$" % x_corr_foo.replace("_", r" \, "))
+            fig.savefig(f"{x_corr_foo}")
 
 
 if __name__ == "__main__":
