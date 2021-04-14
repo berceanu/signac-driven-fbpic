@@ -97,11 +97,29 @@ def compute_simulated_spectra(project, *, from_energy, to_energy):
     return spectra
 
 
+def max_cross_correlation(
+    simulated_spectra, experimental_spectrum, cutoff_from_maximum=0.8
+):
+    weights = np.tanh((experimental_spectrum / cutoff_from_maximum) ** 2)
+
+    se = (simulated_spectra * experimental_spectrum).sum(dim="E")
+    s = simulated_spectra.sum(dim="E")
+    e = experimental_spectrum.sum(dim="E")
+
+    rd = (se / (s * e)) ** 2
+    cross_corr = (rd * weights).sum(dim="E")
+
+    ind = cross_corr.where(cross_corr == cross_corr.max(), drop=True).squeeze()
+    ic(ind.power, ind.n_e)
+
+    return ind.power, ind.n_e
+
+
 def my_cross_corellation(
     simulated_spectra, experimental_spectrum, cutoff_from_maximum=0.8
 ):
     simulated_count = simulated_spectra.values
-    experimental_count = experimental_spectrum["dN_over_dE_normalized"].to_numpy()
+    experimental_count = experimental_spectrum.values
 
     weight = np.tanh((experimental_count / cutoff_from_maximum) ** 2)
 
@@ -118,36 +136,6 @@ def my_cross_corellation(
         relative_deviation[:, :, np.newaxis] * weight[np.newaxis, np.newaxis, :],
         axis=-1,
     )
-
-    ind = np.unravel_index(np.argmax(x_corr), x_corr.shape)
-    ic(ind)
-
-    return x_corr, ind
-
-
-def cross_corellation(
-    simulated_spectra, experimental_spectrum, cutoff_from_maximum=0.8
-):
-    experimental_counts = experimental_spectrum["dN_over_dE_normalized"]
-    weight = np.tanh((experimental_counts / cutoff_from_maximum) ** 2)
-
-    x_corr = np.zeros((simulated_spectra.power.size, simulated_spectra.n_e.size))
-
-    for i, power in enumerate(simulated_spectra.power.values):
-        for j, n_e in enumerate(simulated_spectra.n_e.values):
-            selected_spectrum = simulated_spectra.sel(
-                power=power.item(), n_e=n_e.item(), method="nearest"
-            )
-            relative_deviation = np.sum(
-                selected_spectrum.values * experimental_counts
-            ) ** 2 / (
-                np.sum(selected_spectrum.values) ** 2 * np.sum(experimental_counts) ** 2
-            )
-
-            ic(selected_spectrum.values.shape, experimental_counts.shape)
-            ic(weight.shape, relative_deviation.shape)
-
-            x_corr[i, j] = np.sum(weight * relative_deviation)
 
     ind = np.unravel_index(np.argmax(x_corr), x_corr.shape)
     ic(ind)
@@ -207,8 +195,8 @@ print("Optimised power  \t\t= ", power)
 def plot_experimental_spectrum(axes, spectrum):
     """Create 1D spectrum figure."""
     axes.step(
-        spectrum.index.values,
-        spectrum.dN_over_dE_normalized.values,
+        spectrum.E.values,
+        spectrum.values,
         "black",
         label="experiment",
     )
@@ -247,7 +235,7 @@ def read_spectrum(path_to_csv, *, from_energy, to_energy):
     df_ = csv_df.reindex(new_index, method="nearest")
 
     df_["dN_over_dE_normalized"] = util.normalize_to_interval(0, 1, df_["dN_over_dE"])
-    return df_
+    return df_["dN_over_dE_normalized"].to_xarray()
 
 
 def main():
@@ -265,7 +253,7 @@ def main():
         proj, from_energy=FROM_ENERGY, to_energy=TO_ENERGY
     )
 
-    my_cross_corellation(spectra, experimental_spectrum)
+    max_cross_correlation(spectra, experimental_spectrum)
 
     with rc_context():
         mpl_util.mpl_publication_style()
