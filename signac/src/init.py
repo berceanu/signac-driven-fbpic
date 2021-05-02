@@ -30,14 +30,14 @@ def main():
             Nz=512,  # Number of gridpoints along z
             zmin=-900.0e-6,  # Left end of the simulation box (meters)
             zmax=900.0e-6,  # Right end of the simulation box (meters)
-            Nr=64,  # Number of gridpoints along r
-            rmax=200.0e-6,  # Length of the box along r (meters)
+            Nr=128,  # Number of gridpoints along r
+            rmax=400.0e-6,  # Length of the box along r (meters)
             Nm=3,  # Number of modes
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=1000.0e-6,
             # Maximal radial position of the plasma (meters)
-            p_rmax=200.0e-6,
+            p_rmax=400.0e-6,
             n_e=ne,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
