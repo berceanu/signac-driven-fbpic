@@ -14,8 +14,6 @@ import logging
 import math
 import pathlib
 import sys
-from multiprocessing import Pool
-from functools import partial
 
 import numpy as np
 from flow import FlowProject, directives
@@ -347,8 +345,7 @@ def save_final_bunch(job):
     write_bunch(df, pathlib.Path(job.ws) / "bunch" / "final_bunch.txt")
 
 
-@ex.with_directives(directives=dict(np=3))
-@directives(np=3)
+@ex
 @Project.operation
 @Project.pre.after(run_fbpic)
 @Project.post(are_rho_pngs)
@@ -365,27 +362,24 @@ def save_pngs(job):
     centroid_path = pathlib.Path(job.ws) / "centroids"
     time_series = LpaDiagnostics(h5_path, check_all_files=True)
 
-    it_density_plot = partial(
-        density_plot,
-        tseries=time_series,
-        save_path=rho_path,
-        rho_field_name="rho_bunch",
-        n_e=job.sp.n_e,
-        n_bunch=job.doc.n_bunch,
-    )
-    it_centroid_plot = partial(
-        centroid_plot,
-        tseries=time_series,
-        save_path=centroid_path,
-        smoothing_factor=1e-8,
-        vmax=5e5,
-        plot_range=[[None, None], [-600e-6, 400e-6]],
-        annotation=f"ne = {(job.sp.n_e * u.meter ** (-3)).to(u.cm ** (-3)):.2e}",
-    )
-
-    with Pool(3) as pool:
-        pool.map(it_centroid_plot, time_series.iterations.tolist())
-        pool.map(it_density_plot, time_series.iterations.tolist())
+    for ts_it in time_series.iterations:
+        centroid_plot(
+            iteration=ts_it,
+            tseries=time_series,
+            save_path=centroid_path,
+            smoothing_factor=1e-8,
+            vmax=5e5,
+            plot_range=[[None, None], [-600e-6, 400e-6]],
+            annotation=f"ne = {(job.sp.n_e * u.meter ** (-3)).to(u.cm ** (-3)):.2e}",
+        )
+        density_plot(
+            iteration=ts_it,
+            tseries=time_series,
+            save_path=rho_path,
+            rho_field_name="rho_bunch",
+            n_e=job.sp.n_e,
+            n_bunch=job.doc.n_bunch,
+        )
 
 
 def generate_movie(job, stem):
