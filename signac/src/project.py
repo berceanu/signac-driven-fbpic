@@ -119,7 +119,7 @@ def fbpic_ran(job):
     iterations: np.ndarray = time_series.iterations
 
     # estimate iteration array based on input parameters
-    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=int)
 
     # check if iterations array corresponds to input params
     did_it_run = np.array_equal(estimated_iterations, iterations)
@@ -138,7 +138,7 @@ def are_pngs(job, stem):
     files = [fn.name for fn in p.glob("*.png")]
 
     # estimate iteration array based on input parameters
-    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+    iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=int)
 
     pngs = (f"{stem}{it:06d}.png" for it in iterations)
 
@@ -333,7 +333,7 @@ def run_fbpic(job):
 @Project.post.isfile("bunch/final_bunch.txt")
 def save_final_bunch(job):
     # estimate iteration array based on input parameters
-    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=int)
     it = estimated_iterations[-1]
 
     src = pathlib.Path(pathlib.Path(job.ws) / "diags" / "hdf5" / f"data{it:08}.h5")

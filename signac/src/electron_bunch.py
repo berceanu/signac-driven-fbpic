@@ -310,7 +310,7 @@ def main():
     bunch_centroid_plot(workdir=pathlib.Path.cwd() / "bunch")
 
     # estimate iteration array based on input parameters
-    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=np.int)
+    estimated_iterations = np.arange(0, job.sp.N_step, job.sp.diag_period, dtype=int)
     print(estimated_iterations[-2])
     fbpic_df = bunch_openpmd_to_dataframe(
         series_path=pathlib.Path(job.ws) / "bunch" / "data%08T.h5",
