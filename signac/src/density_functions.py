@@ -34,12 +34,15 @@ def read_density(txt_file, every_nth=20, offset=0.0):
     return df.position_m.to_numpy(), df.norm_density.to_numpy()
 
 
-def make_experimental_dens_func(job):
+def make_experimental_dens_func(job, density_threshold=0.57):
     total_offset = 36.84e-3 + 1100.0e-6
     position_m, norm_density = read_density(
         job.fn("density_1_inlet_spacers.txt"),
         offset=math.ceil(total_offset * 1e6) / 1e6,
     )
+    hump = norm_density >= density_threshold
+    position_m = position_m[hump]
+    norm_density = norm_density[hump]
 
     interp_z_min = math.ceil(position_m.min() * 1e6) / 1e6
     interp_z_max = math.ceil(position_m.max() * 1e6) / 1e6
@@ -47,6 +50,7 @@ def make_experimental_dens_func(job):
     rho = interpolate.interp1d(
         position_m, norm_density, bounds_error=False, fill_value=(0.0, 0.0)
     )
+    shift = job.sp.ramp_start - (interp_z_min - job.sp.ramp_length)
 
     # The density profile
     def dens_func(z, r):
@@ -65,22 +69,47 @@ def make_experimental_dens_func(job):
         n : 1d array of floats
             Array of relative density, with one element per macroparticles
         """
+        # Translation
+        my_z = z - shift
 
         # Allocate relative density
-        n = np.ones_like(z)
+        n = np.ones_like(my_z)
 
         # only compute n if z is inside the interpolation bounds
-        n = np.where(np.logical_and(z >= interp_z_min, z <= interp_z_max), rho(z), n)
-
-        # Make linear ramp
         n = np.where(
-            z < job.sp.ramp_start + job.sp.ramp_length,
-            (z - job.sp.ramp_start) / job.sp.ramp_length * rho(interp_z_min),
+            np.logical_and(my_z >= interp_z_min, my_z <= interp_z_max), rho(my_z), n
+        )
+
+        # Make ramp up
+        n = np.where(
+            np.logical_and(
+                my_z > interp_z_min - job.sp.ramp_length, my_z < interp_z_min
+            ),
+            (my_z - (interp_z_min - job.sp.ramp_length))
+            / job.sp.ramp_length
+            * rho(interp_z_min),
+            n,
+        )
+        # Make ramp down
+        n = np.where(
+            np.logical_and(
+                my_z > interp_z_max, my_z < interp_z_max + job.sp.ramp_length
+            ),
+            -(my_z - (interp_z_max + job.sp.ramp_length))
+            / job.sp.ramp_length
+            * rho(interp_z_max),
             n,
         )
 
-        # Supress density before the ramp
-        n = np.where(z < job.sp.ramp_start, 0.0, n)
+        # Supress density before and after the ramps
+        n = np.where(
+            np.logical_and(
+                my_z < interp_z_min - job.sp.ramp_length,
+                my_z > interp_z_max + job.sp.ramp_length,
+            ),
+            0.0,
+            n,
+        )
 
         return n
 
