@@ -73,7 +73,7 @@ def make_experimental_dens_func(job, density_threshold=0.57):
         my_z = z - shift
 
         # Allocate relative density
-        n = np.ones_like(my_z)
+        n = np.zeros_like(my_z)
 
         # only compute n if z is inside the interpolation bounds
         n = np.where(
@@ -103,7 +103,7 @@ def make_experimental_dens_func(job, density_threshold=0.57):
 
         # Supress density before and after the ramps
         n = np.where(
-            np.logical_and(
+            np.logical_or(
                 my_z < interp_z_min - job.sp.ramp_length,
                 my_z > interp_z_max + job.sp.ramp_length,
             ),
