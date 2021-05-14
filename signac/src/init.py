@@ -37,7 +37,7 @@ def main():
             # Position of the beginning of the plasma (meters)
             p_zmin=1000.0e-6,
             # Maximal radial position of the plasma (meters)
-            p_rmax=400.0e-6,
+            p_rmax=800.0e-6,
             n_e=ne,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z
             p_nr=2,  # Number of particles per cell along r
