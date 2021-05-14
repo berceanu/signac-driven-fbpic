@@ -32,6 +32,12 @@ To submit a `SLURM` job for `N` parallel `fbpic` simulations:
 $ ./project.sh N
 ```
 
+### post-processing
+
+```console
+$ watch -c gpustat -cp --color
+```
+
 # Notes
 
 - all commands should be ran from the directory that contains this README file
