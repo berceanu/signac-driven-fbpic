@@ -34,7 +34,7 @@ def read_density(txt_file, every_nth=20, offset=0.0):
     return df.position_m.to_numpy(), df.norm_density.to_numpy()
 
 
-def make_experimental_dens_func(job, density_threshold=0.57):
+def make_experimental_dens_func(job, density_threshold=0.0):
     total_offset = 36.84e-3 + 1100.0e-6
     position_m, norm_density = read_density(
         job.fn("density_1_inlet_spacers.txt"),
