@@ -38,6 +38,20 @@ $ ./project.sh N
 $ watch -c gpustat -cp --color
 ```
 
+```console
+$ python src/dashboard.py run
+```
+
+```console
+# copy outputs to runs/ folder
+$ python src/copy_with_hash.py
+
+# create bunch_centroid/ 
+$ python src/centroid.py
+
+$ python src/paper_figures.py
+```
+
 # Notes
 
 - all commands should be ran from the directory that contains this README file
