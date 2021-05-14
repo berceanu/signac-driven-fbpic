@@ -173,7 +173,7 @@ def main():
             fn,
             nbx=200,
             nbz=200,
-            range=[[42.0, 44.0], [-900, 600]],
+            range=[[70.0, 72.0], [-900, 600]],
         )
 
         centroid_z, centroid = bunch_centroid(
@@ -228,15 +228,10 @@ def main():
         pyplot.close(fig)
 
     x, y = job_densities, job_centroid_positions
-    np.savetxt("average_centroids.txt", np.c_[x, y])
+    np.savetxt('average_centroids.txt', np.c_[x,y])
 
     fig, ax = pyplot.subplots(figsize=(golden * 4, 4))
-    ax.plot(
-        x,
-        y,
-        "C1o:",
-        mec="1.0",
-    )
+    ax.plot(x, y, "C1o:", mec="1.0",)
 
     ax.set_xscale("log")
     ax.set_xlabel(r"$n_e$ (cm${}^{-3}$)")
@@ -245,7 +240,8 @@ def main():
     ax.grid(which="both")
 
     for x_c, y_c in zip(x, y):
-        ax.annotate(f"{x_c.value:.3e}", xy=(x_c, y_c), textcoords="data", fontsize=6)
+        ax.annotate(f"{x_c.value:.3e}", xy=(x_c, y_c), textcoords='data', fontsize=6)
+
 
     fig.savefig("average_centroids_cut.png", bbox_inches="tight")
     pyplot.close(fig)

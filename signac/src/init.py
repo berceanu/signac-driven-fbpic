@@ -30,8 +30,8 @@ def main():
             Nz=512,  # Number of gridpoints along z
             zmin=-900.0e-6,  # Left end of the simulation box (meters)
             zmax=900.0e-6,  # Right end of the simulation box (meters)
-            Nr=256,  # Number of gridpoints along r
-            rmax=800.0e-6,  # Length of the box along r (meters)
+            Nr=128,  # Number of gridpoints along r
+            rmax=400.0e-6,  # Length of the box along r (meters)
             Nm=3,  # Number of modes
             # The particles
             # Position of the beginning of the plasma (meters)
@@ -43,10 +43,10 @@ def main():
             p_nr=2,  # Number of particles per cell along r
             p_nt=12,  # Number of particles per cell along theta, should be 4*Nm
             # do not change below this line ##############
-            p_zmax=41400.0e-6,  # Position of the end of the plasma (meters)
+            p_zmax=69500.0e-6,  # Position of the end of the plasma (meters)
             # The density profile
             ramp_start=1000.0e-6,
-            ramp_length=0.5e-3,  # increase (up to `p_zmax`) !
+            ramp_length=100.0e-6,  # increase (up to `p_zmax`) !
             # The injected electron bunch
             bunch_charge=-200.0e-12,  # Charge in Coulomb
             # The interaction length of the simulation (meters)
