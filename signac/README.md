@@ -46,9 +46,14 @@ $ python src/dashboard.py run
 # copy outputs to runs/ folder
 $ python src/copy_with_hash.py
 
-# create bunch_centroid/ 
+# needs runs/final_bunch_*.txt
+# create bunch_centroid/bunch_centroid_xxxxxx.png,
+# bunch_centroid_{n_e}*.png, bunch_centroid_cut.mp4,
+# average_centroids_cut.png, average_centroids.txt
 $ python src/centroid.py
 
+# needs average_centroids.txt
+# produce average_centroids_cut_log_paper.png
 $ python src/paper_figures.py
 ```
 
