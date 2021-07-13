@@ -32,6 +32,75 @@ def read_density(txt_file, every_nth=20, offset=0.0):
     return df.position_m.to_numpy(), df.norm_density.to_numpy()
 
 
+def make_fourier_dens_func(job):
+    a0 = 4.258860e-01
+    a1 = -4.183891e-01
+    a2 = 9.154480e-03
+    a3 = -5.887399e-02
+    a4 = 7.397105e-03
+    a5 = 9.221758e-02
+    a6 = -3.997372e-02
+    a7 = 6.515002e-04
+    a8 = -1.882064e-02
+    a9 = 1.154141e-02
+    b1 = 3.420198e-01
+    b2 = -4.511583e-02
+    b3 = -1.116895e-01
+    b4 = 3.130806e-03
+    b5 = -2.700915e-02
+    b6 = 5.835702e-02
+    b7 = 7.671273e-03
+    b8 = -1.940835e-02
+    b9 = 1.338626e-03
+    w = 1.146819e00
+
+    # The density profile
+    def dens_func(z, r):
+        """
+        User-defined function: density profile of the plasma
+
+        It should return the relative density with respect to n_plasma,
+        at the position x, y, z (i.e. return a number between 0 and 1)
+
+        Parameters
+        ----------
+        z, r: 1darrays of floats
+            Arrays with one element per macroparticle
+        Returns
+        -------
+        n : 1d array of floats
+            Array of relative density, with one element per macroparticles
+        """
+        # Allocate relative density
+        n = np.ones_like(z)
+
+        n = (
+            a0
+            + a1 * np.cos(w * z)
+            + a2 * np.cos(2 * w * z)
+            + a3 * np.cos(3 * w * z)
+            + a4 * np.cos(4 * w * z)
+            + a5 * np.cos(5 * w * z)
+            + a6 * np.cos(6 * w * z)
+            + a7 * np.cos(7 * w * z)
+            + a8 * np.cos(8 * w * z)
+            + a9 * np.cos(9 * w * z)
+            + b1 * np.sin(w * z)
+            + b2 * np.sin(2 * w * z)
+            + b3 * np.sin(3 * w * z)
+            + b4 * np.sin(4 * w * z)
+            + b5 * np.sin(5 * w * z)
+            + b6 * np.sin(6 * w * z)
+            + b7 * np.sin(7 * w * z)
+            + b8 * np.sin(8 * w * z)
+            + b9 * np.sin(9 * w * z)
+        )
+
+        return n
+
+    return dens_func
+
+
 def make_gaussian_dens_func(job):
     def ramp(z, *, center, sigma, p):
         """Gaussian-like function."""

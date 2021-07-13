@@ -22,7 +22,7 @@ from matplotlib import pyplot
 from openpmd_viewer.addons import LpaDiagnostics
 
 import job_util
-from density_functions import make_gaussian_dens_func, plot_density_profile
+from density_functions import make_fourier_dens_func, plot_density_profile
 from electron_spectrum import construct_electron_spectrum
 from laser_profiles import make_flat_laser_profile, plot_laser_intensity
 from render_lwfa_script import write_lwfa_script
@@ -162,7 +162,7 @@ def lwfa_script(job):
 def plot_initial_density_profile(job):
     """Plot the initial plasma density profile."""
     plot_density_profile(
-        make_gaussian_dens_func, job.fn("initial_density_profile.png"), job
+        make_fourier_dens_func, job.fn("initial_density_profile.png"), job
     )
 
 
@@ -235,7 +235,7 @@ def run_fbpic(job):
         q=u.electron_charge.to_value("C"),
         m=u.electron_mass.to_value("kg"),
         n=job.sp.n_e,
-        dens_func=make_gaussian_dens_func(job),
+        dens_func=make_fourier_dens_func(job),
         p_zmin=job.sp.p_zmin,
         p_zmax=job.sp.p_zmax,
         p_rmax=job.sp.p_rmax,
@@ -448,7 +448,7 @@ def plot_2d_hist(job):
     z_0 = positions.to_value("micrometer")
     all_z = positions.to_value("meter")
 
-    dens = make_gaussian_dens_func(job)(all_z, 0.0)
+    dens = make_fourier_dens_func(job)(all_z, 0.0)
 
     # rescale for visibility, 1/5th of the histogram y axis
     v_axis_size = hist_edges[-1] - hist_edges[1]
