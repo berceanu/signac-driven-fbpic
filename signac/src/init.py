@@ -31,8 +31,8 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    power = np.linspace(1.5, 3, 8)
-    n_e = np.linspace(7.4, 8.1, 8) * 1.0e18 * 1.0e6
+    power = np.linspace(1.7, 2.0, 4)
+    n_e = np.linspace(7.7, 8.2, 4) * 1.0e18 * 1.0e6
 
     m = np.meshgrid(power, n_e)  # a0
     p_n_e = np.transpose(m).reshape(-1, 2)
@@ -58,7 +58,7 @@ def main():
             p_nz=2,  # Number of particles per cell along z (default 2)
             p_nr=2,  # Number of particles per cell along r (default 2)
             # The laser
-            a0=2.8,  # Laser amplitude
+            a0=2.7,  # Laser amplitude
             # Laser waist, converted from experimental FWHM@intensity
             w0=22.0e-6 / SQRT_FACTOR,
             # Laser duration, converted from experimental FWHM@intensity
