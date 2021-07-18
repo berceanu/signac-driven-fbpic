@@ -31,12 +31,12 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    power = np.linspace(1.5, 3, 8)
-    n_e = np.linspace(7.4, 8.1, 8) * 1.0e18 * 1.0e6
+    a_not = np.linspace(1.5, 2.2, 8)
+    focal_position = np.linspace(0.0, 3.5, 8) * 1e-3
 
-    m = np.meshgrid(power, n_e)  # a0
-    p_n_e = np.transpose(m).reshape(-1, 2)
-    for p, n_e in p_n_e:
+    m = np.meshgrid(a_not, focal_position)  # a0
+    parameter_space = np.transpose(m).reshape(-1, 2)
+    for anot, focpos in parameter_space:
         sp = dict(
             random_seed=42,  # deterministic random seed
             # TODO: move to job document
@@ -54,24 +54,19 @@ def main():
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
-            n_e=n_e,  # Density (electrons.meters^-3)
+            n_e=4.3e24,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z (default 2)
             p_nr=2,  # Number of particles per cell along r (default 2)
             # The laser
-            a0=1.8,  # Laser amplitude
+            a0=anot,  # Laser amplitude
             # Laser waist, converted from experimental FWHM@intensity
-            w0=22.0e-6 / SQRT_FACTOR,
+            w0=25.0e-6 / SQRT_FACTOR,
             # Laser duration, converted from experimental FWHM@intensity
             tau=25.0e-15 / SQRT_FACTOR,
             z0=-10.0e-6,  # Laser centroid
-            zfoc_from_nozzle_center=1400e-6,  # Laser focal position, measured from the center of the gas jet
-            profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
+            zfoc=focpos,  # Laser focal position
+            profile_flatness=6,  # for flattened laser
             # The density profile
-            flat_top_dist=0.0e-6,  # plasma flat top distance
-            sigma_right=1471.0e-6,
-            center_left=3000.0e-6,
-            sigma_left=1471.0e-6,
-            power=p,
             current_correction="curl-free",  # "curl-free" (default, faster) or "cross-deposition" (more local)
             # do not change below this line ##############
             Nz=None,  # Number of gridpoints along z
@@ -79,8 +74,7 @@ def main():
             p_rmax=None,  # Maximal radial position of the plasma (meters)
             p_nt=None,  # Number of particles per cell along theta (default 4*Nm)
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
-            center_right=None,
-            p_zmax=None,  # Position of the end of the plasma (meters)
+            p_zmax=4e-3,  # Position of the end of the plasma (meters)
             L_interact=None,
             # Period in number of timesteps
             diag_period=None,
@@ -110,11 +104,6 @@ def main():
 
         sp["p_nt"] = 4 * sp["Nm"]
         sp["p_rmax"] = 0.9 * sp["rmax"]
-        # Laser focal position
-        sp["zfoc"] = util.nozzle_center_offset(sp["zfoc_from_nozzle_center"])
-
-        sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
-        sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
 
         sp["L_interact"] = sp["p_zmax"] - sp["p_zmin"]
         sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value("m/s")

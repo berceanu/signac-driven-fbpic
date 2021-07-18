@@ -1,7 +1,7 @@
 from matplotlib import pyplot, colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
-from fbpic.lpa_utils.laser import FlattenedGaussianLaser
+from fbpic.lpa_utils.laser import FlattenedGaussianLaser, GaussianLaser
 import unyt as u
 import colorcet as cc
 
@@ -17,6 +17,18 @@ def make_flat_laser_profile(job):
         tau=job.sp.tau,
         z0=job.sp.z0,
         N=job.sp.profile_flatness,
+        zf=job.sp.zfoc,
+        lambda0=job.sp.lambda0,
+    )
+    return profile
+
+
+def make_gaussian_laser_profile(job):
+    profile = GaussianLaser(
+        a0=job.sp.a0,
+        waist=job.sp.w0,
+        tau=job.sp.tau,
+        z0=job.sp.z0,
         zf=job.sp.zfoc,
         lambda0=job.sp.lambda0,
     )
@@ -40,7 +52,7 @@ def plot_laser_intensity(
     # vacuum impedance
     wave_impedance = 377 * u.ohm
 
-    z = {"near": zfoc * u.meter, "far": (zfoc + 4 * zR) * u.meter}
+    z = {"near": zfoc * u.meter, "far": (zfoc + 2 * zR) * u.meter}
 
     # Initially (at t = 0), the laser is at z = z0.
     #  After time t + T, it will be at zfoc, having run the distance zfoc - z0 in time T.

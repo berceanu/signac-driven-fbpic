@@ -24,7 +24,11 @@ from openpmd_viewer.addons import LpaDiagnostics
 import job_util
 from density_functions import make_fourier_dens_func, plot_density_profile
 from electron_spectrum import construct_electron_spectrum
-from laser_profiles import make_flat_laser_profile, plot_laser_intensity
+from laser_profiles import (
+    make_gaussian_laser_profile,
+    plot_laser_intensity,
+    make_flat_laser_profile,
+)
 from render_lwfa_script import write_lwfa_script
 from simulation_diagnostics import (
     laser_density_plot,

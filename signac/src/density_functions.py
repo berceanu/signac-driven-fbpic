@@ -71,29 +71,32 @@ def make_fourier_dens_func(job):
         n : 1d array of floats
             Array of relative density, with one element per macroparticles
         """
+        # convert to mm from m
+        z_mm = z * 1e3
+
         # Allocate relative density
-        n = np.ones_like(z)
+        n = np.ones_like(z_mm)
 
         n = (
             a0
-            + a1 * np.cos(w * z)
-            + a2 * np.cos(2 * w * z)
-            + a3 * np.cos(3 * w * z)
-            + a4 * np.cos(4 * w * z)
-            + a5 * np.cos(5 * w * z)
-            + a6 * np.cos(6 * w * z)
-            + a7 * np.cos(7 * w * z)
-            + a8 * np.cos(8 * w * z)
-            + a9 * np.cos(9 * w * z)
-            + b1 * np.sin(w * z)
-            + b2 * np.sin(2 * w * z)
-            + b3 * np.sin(3 * w * z)
-            + b4 * np.sin(4 * w * z)
-            + b5 * np.sin(5 * w * z)
-            + b6 * np.sin(6 * w * z)
-            + b7 * np.sin(7 * w * z)
-            + b8 * np.sin(8 * w * z)
-            + b9 * np.sin(9 * w * z)
+            + a1 * np.cos(w * z_mm)
+            + a2 * np.cos(2 * w * z_mm)
+            + a3 * np.cos(3 * w * z_mm)
+            + a4 * np.cos(4 * w * z_mm)
+            + a5 * np.cos(5 * w * z_mm)
+            + a6 * np.cos(6 * w * z_mm)
+            + a7 * np.cos(7 * w * z_mm)
+            + a8 * np.cos(8 * w * z_mm)
+            + a9 * np.cos(9 * w * z_mm)
+            + b1 * np.sin(w * z_mm)
+            + b2 * np.sin(2 * w * z_mm)
+            + b3 * np.sin(3 * w * z_mm)
+            + b4 * np.sin(4 * w * z_mm)
+            + b5 * np.sin(5 * w * z_mm)
+            + b6 * np.sin(6 * w * z_mm)
+            + b7 * np.sin(7 * w * z_mm)
+            + b8 * np.sin(8 * w * z_mm)
+            + b9 * np.sin(9 * w * z_mm)
         )
 
         return n
@@ -159,13 +162,13 @@ def plot_density_profile(profile_maker, fig_fname, job):
     """Plot the plasma density profile."""
 
     def mark_on_plot(*, ax, parameter: str, y=1.1):
-        ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e6, y), xycoords="data")
+        ax.annotate(text=parameter, xy=(job.sp[parameter] * 1e3, y), xycoords="data")
         ax.axvline(
-            x=job.sp[parameter] * 1e6, linewidth=1, linestyle="dashed", color="0.75"
+            x=job.sp[parameter] * 1e3, linewidth=1, linestyle="dashed", color="0.75"
         )
         return ax
 
-    num = int((job.sp.L_interact - job.sp.zmin) * 1e6 / 100 + 1)
+    num = 100
     all_z = np.linspace(job.sp.zmin, job.sp.L_interact, num)
     dens = profile_maker(job)(all_z, 0.0)
 
@@ -175,15 +178,14 @@ def plot_density_profile(profile_maker, fig_fname, job):
     ax_bottom = fig.add_subplot(G[1, :])
 
     for ax in (ax_top, ax_bottom):
-        ax.plot(all_z * 1e6, dens, marker="o", linestyle="", markersize=5, alpha=0.2)
-        ax.fill_between(all_z * 1e6, dens, alpha=0.3)
-        ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
+        ax.plot(all_z * 1e3, dens, marker="o", linestyle="", markersize=5, alpha=0.2)
+        ax.fill_between(all_z * 1e3, dens, alpha=0.3)
+        ax.set_xlabel(r"$%s \;(mm)$" % "z")
         ax.set_ylim(0.0, 1.2)
-        ax.set_xlim(left=job.sp.zmin * 1e6 - 20)
+        ax.set_xlim(left=job.sp.zmin * 1e3 - 20e-3)
         ax.set_ylabel("Density profile $n$")
 
-    ax_top.set_xlim(right=job.sp.L_interact * 1e6 + 20)
-    ax_bottom.set_xlim(right=job.sp.center_left * 1e6)
+    ax_top.set_xlim(right=job.sp.L_interact * 1e3 + 20e-3)
 
     params_to_annotate = (
         "zmin",
@@ -203,8 +205,8 @@ def plot_density_profile(profile_maker, fig_fname, job):
 
     ax_top.hlines(
         y=1.0,
-        xmin=all_z[0] * 1e6,
-        xmax=all_z[-1] * 1e6,
+        xmin=all_z[0] * 1e3,
+        xmax=all_z[-1] * 1e3,
         linewidth=0.75,
         linestyle="dashed",
         color="0.75",
@@ -224,7 +226,8 @@ def main():
     ids = [job.id for job in proj]
     job = proj.open_job(id=random.choice(ids))
 
-    plot_density_profile(make_gaussian_dens_func, "initial_density_profile.png", job)
+    plot_density_profile(make_fourier_dens_func, "initial_density_profile.png", job)
+    # plot_density_profile(make_gaussian_dens_func, "initial_density_profile.png", job)
 
 
 if __name__ == "__main__":
