@@ -699,22 +699,22 @@ def main():
     #     es.plot()
     #     es.savefig()
 
-    # spectra = multiple_jobs_single_iteration(
-    #     jobs=proj.find_jobs(),
-    #     # label=SpectrumLabel(key="Nm"),
-    #     label=SpectrumLabel(
-    #         key="zfoc_from_nozzle_center",
-    #         name=r"$x$",
-    #         unit=r"$\mathrm{\mu m}$",
-    #         get_value=lambda job, key: job.sp[key] * 1.0e6,
-    #     ),
-    # )
-    # with rc_context():
-    #     mpl_util.mpl_publication_style()
-    #     spectra.plot_spectra()
-    #     spectra.save_spectra()
-    #     spectra.plot_quantity("peak_position", ylabel="E (MeV)")
-    #     spectra.plot_quantity("total_charge", ylabel="Q (pC)")
+    spectra = multiple_jobs_single_iteration(
+        jobs=proj.find_jobs(),
+        # label=SpectrumLabel(key="Nm"),
+        label=SpectrumLabel(
+            key="zfoc_from_nozzle_center",
+            name=r"$x$",
+            unit=r"$\mathrm{\mu m}$",
+            get_value=lambda job, key: job.sp[key] * 1.0e6,
+        ),
+    )
+    with rc_context():
+        mpl_util.mpl_publication_style()
+        spectra.plot_spectra()
+        spectra.save_spectra()
+        spectra.plot_quantity("peak_position", ylabel="E (MeV)")
+        spectra.plot_quantity("total_charge", ylabel="Q (pC)")
 
     # spectra = multiple_jobs_single_iteration(
     #     jobs=proj.find_jobs(),
