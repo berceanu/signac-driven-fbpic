@@ -31,12 +31,11 @@ def main():
         workspace="/scratch/berceanu/runs/signac-driven-fbpic/workspace_lwfa/",
     )
 
-    power = np.linspace(1.7, 2.0, 4)
-    n_e = np.linspace(7.7, 8.2, 4) * 1.0e18 * 1.0e6
+    focal_positions = np.array(
+        [200e-6, 400e-6, 600e-6, 800e-6, 1000e-6, 1200e-6, 1400e-6, 1600e-6, 1800e-6]
+    )
 
-    m = np.meshgrid(power, n_e)  # a0
-    p_n_e = np.transpose(m).reshape(-1, 2)
-    for p, n_e in p_n_e:
+    for zfoc in focal_positions:
         sp = dict(
             random_seed=42,  # deterministic random seed
             # TODO: move to job document
@@ -54,7 +53,7 @@ def main():
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
-            n_e=n_e,  # Density (electrons.meters^-3)
+            n_e=8.0 * 1.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z (default 2)
             p_nr=2,  # Number of particles per cell along r (default 2)
             # The laser
@@ -64,14 +63,14 @@ def main():
             # Laser duration, converted from experimental FWHM@intensity
             tau=25.0e-15 / SQRT_FACTOR,
             z0=-10.0e-6,  # Laser centroid
-            zfoc_from_nozzle_center=1400e-6,  # Laser focal position, measured from the center of the gas jet
+            zfoc_from_nozzle_center=zfoc,  # Laser focal position, measured from the center of the gas jet
             profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
             # The density profile
             flat_top_dist=0.0e-6,  # plasma flat top distance
             sigma_right=1471.0e-6,
             center_left=3000.0e-6,
             sigma_left=1471.0e-6,
-            power=p,
+            power=1.8,
             current_correction="curl-free",  # "curl-free" (default, faster) or "cross-deposition" (more local)
             # do not change below this line ##############
             Nz=None,  # Number of gridpoints along z
