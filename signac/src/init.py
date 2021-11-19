@@ -5,6 +5,7 @@ the associated job workspace directories."""
 import logging
 import math
 import pathlib
+from dataclasses import dataclass
 
 import numpy as np
 import signac
@@ -15,8 +16,35 @@ import util
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
-NUMBER_OF_H5 = 50
+NUMBER_OF_H5 = 33
 SQRT_FACTOR = math.sqrt(2 * math.log(2))
+
+
+@dataclass
+class LaserChirp:
+    """Class for computing GDD, chirp and laser duration."""
+
+    tau: float  # laser duration, in seconds, converted from experimental FWHM@intensity
+    chirp_stretching: float = 1.001  # pulse lengthening due to chirp
+    chirp_sign: int = -1  # negative chirp
+
+    @property
+    def ctau(self) -> float:
+        """Pulse length."""
+        return u.clight.to_value("m/s") * self.tau
+
+    @property
+    def ctau_stretched(self) -> float:
+        return self.ctau * self.chirp_stretching
+
+    @property
+    def gdd(self) -> float:
+        return (
+            self.chirp_sign
+            * 0.5
+            * self.tau ** 2
+            * math.sqrt(self.chirp_stretching ** 2 - 1)
+        )
 
 
 def get_dz(zmax, zmin, Nz):
@@ -32,7 +60,9 @@ def main():
     )
 
     focal_positions = np.array(
-        [200e-6, 400e-6, 600e-6, 800e-6, 1000e-6, 1200e-6, 1400e-6, 1600e-6, 1800e-6]
+        [
+            2000.0e-6,
+        ]
     )
 
     for zfoc in focal_positions:
@@ -41,28 +71,26 @@ def main():
             # TODO: move to job document
             nranks=4,  # number of MPI ranks (default 4); it's also the number of GPUs used per job
             # The simulation box
-            lambda0=0.8e-6,  # Laser wavelength (default 0.815e-6)
+            lambda0=0.815e-6,  # Laser wavelength (default 0.815e-6)
             lambda0_over_dz=24,  # Δz = lambda0 / lambda0_over_dz (default 32)
-            dr_over_dz=10,  # Δr = dr_over_dz * Δz (default 5)
-            zmin=-60.0e-6,  # Left end of the simulation box (meters)
-            zmax=0.0e-6,  # Right end of the simulation box (meters)
-            rmax=70.0e-6,  # Length of the box along r (meters) (default 70.0e-6)
+            dr_over_dz=3,  # Δr = dr_over_dz * Δz (default 5)
             r_boundary_conditions="reflective",  #  'reflective' (default) / 'open' more expensive
-            n_order=32,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 16)
+            n_order=64,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 16)
             Nm=3,  # Number of modes used (default 3)
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
-            n_e=8.0 * 1.0e18 * 1.0e6,  # Density (electrons.meters^-3)
+            n_e=0.9 * 1.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z (default 2)
-            p_nr=2,  # Number of particles per cell along r (default 2)
+            p_nr=3,  # Number of particles per cell along r (default 2)
             # The laser
-            a0=2.4,  # Laser amplitude
+            a0=5.0,  # Laser amplitude
             # Laser waist, converted from experimental FWHM@intensity
-            w0=22.0e-6 / SQRT_FACTOR,
+            w0=22.0e-6,
             # Laser duration, converted from experimental FWHM@intensity
-            tau=25.0e-15 / SQRT_FACTOR,
-            z0=-10.0e-6,  # Laser centroid
+            tau=29.0e-15 / SQRT_FACTOR,
+            z0=0.0e-6,  # Laser centroid
+            # TODO is the laser focal plane measured from the nozzle center?
             zfoc_from_nozzle_center=zfoc,  # Laser focal position, measured from the center of the gas jet
             profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
             # The density profile
@@ -73,6 +101,10 @@ def main():
             power=1.8,
             current_correction="curl-free",  # "curl-free" (default, faster) or "cross-deposition" (more local)
             # do not change below this line ##############
+            zmin=None,  # Left end of the simulation box (meters)
+            zmax=None,  # Right end of the simulation box (meters)
+            rmax=None,  # Length of the box along r (meters) (default 70.0e-6)
+            phi2_chirp=None,  # GDD
             Nz=None,  # Number of gridpoints along z
             Nr=None,  # Number of gridpoints along r
             p_rmax=None,  # Maximal radial position of the plasma (meters)
@@ -96,6 +128,15 @@ def main():
             τL=sp["tau"] * u.second,
             beam=lwfa.GaussianBeam(w0=sp["w0"] * u.meter, λL=sp["lambda0"] * u.meter),
         )
+        laser_chirp = LaserChirp(sp["tau"])
+        plasma = Plasma(n_pe=sp["n_e"] * u.meter ** (-3))
+
+        sp["phi2_chirp"] = laser_chirp.gdd
+
+        sp["zmax"] = 2.2 * laser_chirp.ctau_stretched
+        sp["zmin"] = -2 * laser_chirp.ctau_stretched - 1.5 * plasma.λp
+        sp["rmax"] = 5 * sp["w0"]
+
         sp["n_c"] = laser.ncrit.to_value("1/m**3")
         sp["E0"] = (laser.E0 / sp["a0"]).to_value("volt/m")
         sp["zR"] = laser.beam.zR.to_value("m")
@@ -137,6 +178,9 @@ def main():
 
         plasma = Plasma(n_pe=job.sp.n_e * u.meter ** (-3))
         job.doc.setdefault("λp", f"{plasma.λp:.3f}")
+
+        gamma_wake = math.sqrt(job.sp.n_c / job.sp.n_e)
+        job.doc.setdefault("Γwake", f"{gamma_wake:.3f}")
 
         p = pathlib.Path(job.ws)
         for folder in ("rhos", "phasespaces"):

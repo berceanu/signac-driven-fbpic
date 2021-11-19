@@ -24,7 +24,7 @@ from openpmd_viewer.addons import LpaDiagnostics
 import job_util
 from density_functions import make_gaussian_dens_func, plot_density_profile
 from electron_spectrum import construct_electron_spectrum
-from laser_profiles import make_flat_laser_profile, plot_laser_intensity
+from laser_profiles import make_chirped_gaussian_laser, plot_laser_intensity
 from render_lwfa_script import write_lwfa_script
 from simulation_diagnostics import (
     laser_density_plot,
@@ -173,7 +173,7 @@ def plot_initial_density_profile(job):
 def plot_laser(job):
     """Plot the laser intensity at focus and far from focus, in linear and log scale."""
     plot_laser_intensity(
-        make_flat_laser_profile(job),
+        make_chirped_gaussian_laser(job),
         rmax=job.sp.rmax,
         Nr=job.sp.Nr,
         zfoc=job.sp.zfoc,
@@ -206,6 +206,7 @@ def run_fbpic(job):
         ParticleChargeDensityDiagnostic,
         ParticleDiagnostic,
     )
+    from fbpic.fields.smoothing import BinomialSmoother
 
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
@@ -225,6 +226,7 @@ def run_fbpic(job):
             "z": "open",
             "r": job.sp.r_boundary_conditions,
         },
+        smoother=BinomialSmoother({"z": 4, "r": 4}, compensator={"z": True, "r": True}),
         n_order=job.sp.n_order,
         current_correction=job.sp.current_correction,
         use_cuda=True,
@@ -246,7 +248,7 @@ def run_fbpic(job):
 
     add_laser_pulse(
         sim=sim,
-        laser_profile=make_flat_laser_profile(job),
+        laser_profile=make_chirped_gaussian_laser(job),
     )
     sim.set_moving_window(v=u.clight.to_value("m/s"))
 
@@ -263,6 +265,7 @@ def run_fbpic(job):
         ParticleDiagnostic(
             period=job.sp.diag_period,
             species={"electrons": plasma_elec},
+            select={"uz": [200.0, None]},
             comm=sim.comm,
             write_dir=write_dir,
         ),

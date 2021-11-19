@@ -1,3 +1,4 @@
+from fbpic.lpa_utils.laser.laser_profiles import GaussianLaser
 from matplotlib import pyplot, colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
@@ -8,6 +9,19 @@ import colorcet as cc
 
 def flattened_waist_far_from_focus(z, /, *, lambda0, w0, zfoc):
     return lambda0 / (np.pi * w0) * np.abs(z - zfoc)
+
+
+def make_chirped_gaussian_laser(job):
+    profile = GaussianLaser(
+        a0=job.sp.a0,
+        waist=job.sp.w0,
+        tau=job.sp.tau,
+        z0=job.sp.z0,
+        lambda0=job.sp.lambda0,
+        zf=job.sp.zfoc,
+        phi2_chirp=job.sp.phi2_chirp,
+    )
+    return profile
 
 
 def make_flat_laser_profile(job):
