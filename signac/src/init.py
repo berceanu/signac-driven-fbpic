@@ -11,6 +11,7 @@ import numpy as np
 import signac
 import unyt as u
 from prepic import Plasma, lwfa
+from small import L_vacuum
 
 import util
 
@@ -65,7 +66,7 @@ def main():
         ]
     )
 
-    for zfoc in focal_positions:
+    for focal_plane in focal_positions:
         sp = dict(
             random_seed=42,  # deterministic random seed
             # TODO: move to job document
@@ -91,16 +92,17 @@ def main():
             tau=29.0e-15 / SQRT_FACTOR,
             z0=0.0e-6,  # Laser centroid
             # TODO is the laser focal plane measured from the nozzle center?
-            zfoc_from_nozzle_center=zfoc,  # Laser focal position, measured from the center of the gas jet
-            profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
+            zfoc=focal_plane,  # Laser focal position, measured from the center of the gas jet
             # The density profile
-            flat_top_dist=0.0e-6,  # plasma flat top distance
-            sigma_right=1471.0e-6,
-            center_left=3000.0e-6,
-            sigma_left=1471.0e-6,
-            power=1.8,
+            ramp_up=1000.0e-6,
+            plateau=20e3 * 1.0e-6,
+            ramp_down=1000.0e-6,
+            L_vacuum=1000.0e-6,  # length of vacuum region after the plasma
             current_correction="curl-free",  # "curl-free" (default, faster) or "cross-deposition" (more local)
+            # channel guiding
+            w_matched=400000000000000000.0e-6,
             # do not change below this line ##############
+            rel_delta_n_over_w2=None,  # relative change divided by w_matched^2 that allows guiding
             zmin=None,  # Left end of the simulation box (meters)
             zmax=None,  # Right end of the simulation box (meters)
             rmax=None,  # Length of the box along r (meters) (default 70.0e-6)
@@ -150,13 +152,14 @@ def main():
 
         sp["p_nt"] = 4 * sp["Nm"]
         sp["p_rmax"] = 0.9 * sp["rmax"]
-        # Laser focal position
-        sp["zfoc"] = util.nozzle_center_offset(sp["zfoc_from_nozzle_center"])
 
-        sp["center_right"] = sp["center_left"] + sp["flat_top_dist"]
-        sp["p_zmax"] = sp["center_right"] + 2 * sp["sigma_right"]
+        sp["rel_delta_n_over_w2"] = 1.0 / (
+            math.pi * 2.81e-15 * sp["w_matched"] ** 4 * sp["n_e"]
+        )
 
-        sp["L_interact"] = sp["p_zmax"] - sp["p_zmin"]
+        sp["p_zmax"] = sp["ramp_up"] + sp["plateau"] + sp["ramp_down"]
+
+        sp["L_interact"] = sp["p_zmax"] - sp["p_zmin"] + sp["L_vacuum"]
         sp["dt"] = (sp["zmax"] - sp["zmin"]) / sp["Nz"] / u.clight.to_value("m/s")
         sp["T_interact"] = (
             sp["L_interact"] + (sp["zmax"] - sp["zmin"])

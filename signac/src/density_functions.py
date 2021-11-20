@@ -32,6 +32,54 @@ def read_density(txt_file, every_nth=20, offset=0.0):
     return df.position_m.to_numpy(), df.norm_density.to_numpy()
 
 
+def make_ramped_dens_func(job):
+    # The density profile
+    def dens_func(z, r):
+        """
+        User-defined function: density profile of the plasma
+
+        It should return the relative density with respect to n_plasma,
+        at the position x, y, z (i.e. return a number between 0 and 1)
+
+        Parameters
+        ----------
+        z, r: 1darrays of floats
+            Arrays with one element per macroparticle
+        Returns
+        -------
+        n : 1d array of floats
+            Array of relative density, with one element per macroparticles
+        """
+        # Allocate relative density
+        n = np.ones_like(z)
+
+        # before up-ramp
+        n = np.where(z <= 0.0, 0.0, n)
+
+        # Make ramp up
+        inv_ramp_up = 1.0 / job.sp.ramp_up
+        n = np.where(z < job.sp.ramp_up, (z * inv_ramp_up) ** 2, n)
+
+        # Make ramp down
+        inv_ramp_down = 1.0 / job.sp.ramp_down
+        n = np.where(
+            (z >= job.sp.ramp_up + job.sp.plateau)
+            & (z < job.sp.ramp_up + job.sp.plateau + job.sp.ramp_down),
+            -(z - (job.sp.ramp_up + job.sp.plateau + job.sp.ramp_down)) * inv_ramp_down,
+            n,
+        )
+
+        # after down-ramp
+        n = np.where(z >= job.sp.ramp_up + job.sp.plateau + job.sp.ramp_down, 0, n)
+
+        # Add transverse guiding parabolic profile
+        n = n * (1.0 + job.sp.rel_delta_n_over_w2 * r ** 2)
+
+        return n
+
+    return dens_func
+
+
 def make_gaussian_dens_func(job):
     def ramp(z, *, center, sigma, p):
         """Gaussian-like function."""
@@ -111,7 +159,7 @@ def plot_density_profile(profile_maker, fig_fname, job):
         ax.set_xlabel(r"$%s \;(\mu m)$" % "z")
         ax.set_ylim(0.0, 1.2)
         ax.set_xlim(left=job.sp.zmin * 1e6 - 20)
-        ax.set_ylabel("Density profile $n$")
+        ax.set_ylabel("Density profile $n_e/n_0$")
 
     ax_top.set_xlim(right=job.sp.L_interact * 1e6 + 20)
     ax_bottom.set_xlim(right=job.sp.center_left * 1e6)
@@ -121,6 +169,7 @@ def plot_density_profile(profile_maker, fig_fname, job):
         "zmax",
         "p_zmin",
         "p_zmax",
+        "zfoc",
         "L_interact",
     )
     y_annotation_positions = (0.5, 0.7, 0.9, 1.1)
