@@ -11,7 +11,6 @@ import numpy as np
 import signac
 import unyt as u
 from prepic import Plasma, lwfa
-from small import L_vacuum
 
 import util
 
@@ -112,7 +111,6 @@ def main():
             p_rmax=None,  # Maximal radial position of the plasma (meters)
             p_nt=None,  # Number of particles per cell along theta (default 4*Nm)
             n_c=None,  # critical plasma density for this laser (electrons.meters^-3)
-            center_right=None,
             p_zmax=None,  # Position of the end of the plasma (meters)
             L_interact=None,
             # Period in number of timesteps
@@ -136,7 +134,7 @@ def main():
         sp["phi2_chirp"] = laser_chirp.gdd
 
         sp["zmax"] = 2.2 * laser_chirp.ctau_stretched
-        sp["zmin"] = -2 * laser_chirp.ctau_stretched - 1.5 * plasma.λp
+        sp["zmin"] = -2 * laser_chirp.ctau_stretched - 1.5 * plasma.λp.to_value("m")
         sp["rmax"] = 5 * sp["w0"]
 
         sp["n_c"] = laser.ncrit.to_value("1/m**3")

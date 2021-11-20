@@ -162,7 +162,7 @@ def plot_density_profile(profile_maker, fig_fname, job):
         ax.set_ylabel("Density profile $n_e/n_0$")
 
     ax_top.set_xlim(right=job.sp.L_interact * 1e6 + 20)
-    ax_bottom.set_xlim(right=job.sp.center_left * 1e6)
+    ax_bottom.set_xlim(right=job.sp.ramp_up * 1e6)
 
     params_to_annotate = (
         "zmin",
