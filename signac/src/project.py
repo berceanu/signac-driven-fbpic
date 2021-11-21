@@ -68,8 +68,8 @@ class OdinEnvironment(DefaultSlurmEnvironment):
             "-w",
             "--walltime",
             type=float,
-            default=72,
-            help="The wallclock time in hours. (default=72)",
+            default=288,
+            help="The wallclock time in hours. (default=288)",
         )
         parser.add_argument(
             "--mem-per-cpu",

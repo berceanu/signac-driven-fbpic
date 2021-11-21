@@ -58,7 +58,7 @@ def make_ramped_dens_func(job):
 
         # Make ramp up
         inv_ramp_up = 1.0 / job.sp.ramp_up
-        n = np.where(z < job.sp.ramp_up, (z * inv_ramp_up) ** 2, n)
+        n = np.where(z < job.sp.ramp_up, z * inv_ramp_up, n)
 
         # Make ramp down
         inv_ramp_down = 1.0 / job.sp.ramp_down

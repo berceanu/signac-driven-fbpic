@@ -62,6 +62,8 @@ def main():
     focal_positions = np.array(
         [
             2000.0e-6,
+            4000.0e-6,
+            6000.0e-6,
         ]
     )
 
@@ -76,7 +78,7 @@ def main():
             dr_over_dz=3,  # Δr = dr_over_dz * Δz (default 5)
             r_boundary_conditions="reflective",  #  'reflective' (default) / 'open' more expensive
             n_order=64,  # Order of the stencil for z derivatives in the Maxwell solver (-1, 32 default, 16)
-            Nm=3,  # Number of modes used (default 3)
+            Nm=2,  # Number of modes used (default 3)
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
@@ -162,8 +164,11 @@ def main():
         sp["T_interact"] = (
             sp["L_interact"] + (sp["zmax"] - sp["zmin"])
         ) / u.clight.to_value("m/s")
+        #
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
         sp["N_step"] = util.round_to_nearest(sp["N_step"], base=NUMBER_OF_H5) + 1
+        # sp["N_step"] = 21000
+        #
         sp["diag_period"] = (sp["N_step"] - 1) // NUMBER_OF_H5
         project.open_job(sp).init()
 
