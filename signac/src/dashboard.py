@@ -20,10 +20,10 @@ def shave(number_as_str):
 
 class MyDashboard(Dashboard):
     def job_sorter(self, job):
-        return job.sp.zfoc_from_nozzle_center
+        return job.sp.zfoc
 
     def job_title(self, job):
-        return f"x = {job.sp.zfoc_from_nozzle_center * 1e6:.0f} μm"
+        return f"x = {job.sp.zfoc * 1e6:.0f} μm"
 
 
 config = {
