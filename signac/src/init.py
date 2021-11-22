@@ -61,9 +61,9 @@ def main():
 
     focal_positions = np.array(
         [
-            2000.0e-6,
-            4000.0e-6,
-            6000.0e-6,
+            500.0e-6,
+            1_000.0e-6,
+            2_000.0e-6,
         ]
     )
 
@@ -167,7 +167,7 @@ def main():
         #
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
         sp["N_step"] = util.round_to_nearest(sp["N_step"], base=NUMBER_OF_H5) + 1
-        # sp["N_step"] = 21000
+        # sp["N_step"] = 21_000
         #
         sp["diag_period"] = (sp["N_step"] - 1) // NUMBER_OF_H5
         project.open_job(sp).init()
