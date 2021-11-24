@@ -26,7 +26,7 @@ from density_functions import make_ramped_dens_func, plot_density_profile
 from electron_spectrum import construct_electron_spectrum
 from laser_profiles import make_chirped_gaussian_laser, plot_laser_intensity
 
-# from render_lwfa_script import write_lwfa_script
+from render_lwfa_script import write_lwfa_script
 from simulation_diagnostics import (
     laser_density_plot,
     particle_energy_histogram,
@@ -149,12 +149,12 @@ def are_phasespace_pngs(job):
     return are_pngs(job, "phasespace")
 
 
-# @preprocessing
-# @Project.operation
-# @Project.post.isfile("lwfa_script.py")
-# def lwfa_script(job):
-#     """Write lwfa_script.py in the job's workspace folder."""
-#     write_lwfa_script(job)
+@preprocessing
+@Project.operation
+@Project.post.isfile("lwfa_script.py")
+def lwfa_script(job):
+    """Write lwfa_script.py in the job's workspace folder."""
+    write_lwfa_script(job)
 
 
 @preprocessing

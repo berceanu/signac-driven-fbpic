@@ -20,7 +20,9 @@ where fbpic_object is any of the objects or function of FBPIC.
 
 import numpy as np
 # Import the relevant structures in FBPIC
-from fbpic.lpa_utils.laser import add_laser_pulse, FlattenedGaussianLaser
+from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
+from fbpic.fields.smoothing import BinomialSmoother
+
 from fbpic.main import Simulation
 from fbpic.openpmd_diag import (
     FieldDiagnostic,
@@ -56,7 +58,7 @@ rmax = {{ sp.rmax }}  # Length of the box along r (meters)
 Nm = {{ sp.Nm }}  # Number of modes used
 
 # The simulation timestep
-dt = (zmax - zmin) / Nz / c  # Timestep (seconds)
+dt = {{ sp.dt }}  # Timestep (seconds)
 
 # The particles
 p_zmin = {{ sp.p_zmin }}  # Position of the beginning of the plasma (meters)
@@ -74,7 +76,7 @@ z0 = {{ sp.z0 }}  # Laser centroid
 lambda0 = {{ sp.lambda0 }}  # Laser wavelength
 zfoc = {{ sp.zfoc }}  # Focal position
 tau = {{ sp.tau }}  # Laser duration
-profile_flatness = {{ sp.profile_flatness }}  # Flatness of laser profile far from focus (larger means flatter)
+phi2_chirp = {{ sp.phi2_chirp }}  # Chirping
 
 # The moving window
 v_window = c  # Speed of the window
@@ -83,13 +85,11 @@ v_window = c  # Speed of the window
 diag_period = {{ sp.diag_period }}  # Period of the diagnostics in number of timesteps
 
 # The density profile
-flat_top_dist = {{ sp.flat_top_dist }}  # plasma flat top distance
-sigma_right = {{ sp.sigma_right }}
-center_left = {{ sp.center_left }}
-sigma_left = {{ sp.sigma_left }}
-power = {{ sp.power }}
-center_right = {{ sp.center_right }}
-
+ramp_up = {{ sp.ramp_up }}
+plateau = {{ sp.plateau }}
+ramp_down = {{ sp.ramp_down }}
+L_vacuum = {{ sp.L_vacuum }}  # length of vacuum region after the plasma
+rel_delta_n_over_w2 = {{ sp.rel_delta_n_over_w2 }}
 
 def dens_func(z, r):
     """
@@ -107,30 +107,30 @@ def dens_func(z, r):
     n : 1d array of floats
         Array of relative density, with one element per macroparticles
     """
-
     # Allocate relative density
     n = np.ones_like(z)
 
     # before up-ramp
-    n = np.where(z < 0.0, 0.0, n)
+    n = np.where(z <= 0.0, 0.0, n)
 
-    # Make up-ramp
-    n = np.where(
-        z < center_left,
-        np.exp(-(((z - center_left) / sigma_left) ** power)),
-        n,
-    )
+    # Make ramp up
+    inv_ramp_up = 1.0 / ramp_up
+    n = np.where(z < ramp_up, z * inv_ramp_up, n)
 
-    # Make down-ramp
+    # Make ramp down
+    inv_ramp_down = 1.0 / ramp_down
     n = np.where(
-        (z >= center_right)
-        & (z < center_right + 2 * sigma_right),
-        np.exp(-(((z - center_right) / sigma_right) ** power)),
+        (z >= ramp_up + plateau)
+        & (z < ramp_up + plateau + ramp_down),
+        -(z - (ramp_up + plateau + ramp_down)) * inv_ramp_down,
         n,
     )
 
     # after down-ramp
-    n = np.where(z >= center_right + 2 * sigma_right, 0, n)
+    n = np.where(z >= ramp_up + plateau + ramp_down, 0, n)
+
+    # Add transverse guiding parabolic profile
+    n = n * (1.0 + rel_delta_n_over_w2 * r ** 2)
 
     return n
 
@@ -138,7 +138,7 @@ def dens_func(z, r):
 # The interaction length of the simulation (meters)
 L_interact = {{ sp.L_interact }}  # increase to simulate longer distance!
 # Interaction time (seconds) (to calculate number of PIC iterations)
-T_interact = (L_interact + (zmax - zmin)) / v_window
+T_interact = {{ sp.T_interact }}
 # (i.e. the time it takes for the moving window to slide across the plasma)
 
 # ---------------------------
@@ -161,6 +161,8 @@ if __name__ == '__main__':
             "z": "open",
             "r": {{ '\"' + sp.r_boundary_conditions + '\"' }},
         },  # "r": "open" is more expensive
+        smoother=BinomialSmoother({"z": 4, "r": 4}, compensator={"z": True, "r": True}),
+        current_correction={{ '\"' + sp.current_correction + '\"' }},
         n_order=n_order,
         use_cuda=use_cuda,
     )
@@ -181,14 +183,14 @@ if __name__ == '__main__':
 
     # Load initial fields
     # Add a laser to the fields of the simulation
-    profile = FlattenedGaussianLaser(
+    profile = GaussianLaser(
         a0=a0,
-        w0=w0,
+        waist=w0,
         tau=tau,
         z0=z0,
-        N=profile_flatness,
-        zf=zfoc,
         lambda0=lambda0,
+        zf=zfoc,
+        phi2_chirp=phi2_chirp,
     )
     add_laser_pulse(
         sim=sim,
@@ -209,6 +211,7 @@ if __name__ == '__main__':
         ParticleDiagnostic(
             period=diag_period,
             species={"electrons": plasma_elec},
+            select={"uz": [200.0, None]},
             comm=sim.comm,
         ),
         ParticleChargeDensityDiagnostic(
@@ -219,10 +222,10 @@ if __name__ == '__main__':
     ]
 
     # Number of iterations to perform
-    N_step = int(T_interact / sim.dt)
+    N_step = {{ sp.N_step }}
 
     # set deterministic random seed
-    np.random.seed(42)
+    np.random.seed({{ sp.random_seed }})
 
     # Run the simulation
     sim.step(N_step)
