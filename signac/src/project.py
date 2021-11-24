@@ -325,7 +325,7 @@ def save_pngs(job):
             save_path=rho_path,
             n_c=job.sp.n_c,
             E0=job.sp.E0,
-            ylim=(-25.0, 25.0),  # um
+            ylim=(-job.sp.rmax * 1e6, job.sp.rmax * 1e6),  # um
         )
         phase_space_plot(
             iteration=ts_it,
