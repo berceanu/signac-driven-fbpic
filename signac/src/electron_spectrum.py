@@ -261,7 +261,7 @@ class ElectronSpectrum:
     ax: axes.Axes = field(init=False, repr=False)
     title: str = field(init=False, repr=False)
     xlabel: str = r"$E\, (\mathrm{MeV})$"
-    xlim: Tuple[float] = (50.0, 350.0)
+    xlim: Tuple[float] = (50.0, 2000.0)
     hatch_window: EnergyWindow = field(
         init=False, default_factory=lambda: EnergyWindow(100.0, 300.0)
     )

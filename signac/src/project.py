@@ -330,7 +330,7 @@ def save_pngs(job):
         phase_space_plot(
             iteration=ts_it,
             tseries=time_series,
-            uzmax=1.5e3,
+            uzmax=4.0e3,
             vmax=1.0e8,
             save_path=phasespace_path,
         )
