@@ -61,8 +61,8 @@ def main():
 
     focal_positions = np.array(
         [
-            500.0e-6,
-            1_000.0e-6,
+            # 500.0e-6,
+            # 1_000.0e-6,
             2_000.0e-6,
         ]
     )
@@ -82,7 +82,7 @@ def main():
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
-            n_e=0.9 * 1.0e18 * 1.0e6,  # Density (electrons.meters^-3)
+            n_e=1.0 * 1.0e18 * 1.0e6,  # Density (electrons.meters^-3)
             p_nz=2,  # Number of particles per cell along z (default 2)
             p_nr=3,  # Number of particles per cell along r (default 2)
             # The laser
