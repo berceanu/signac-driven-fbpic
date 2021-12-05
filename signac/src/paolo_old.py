@@ -3,32 +3,35 @@ from scipy.constants import c, e, m_e, m_p
 from fbpic.main import Simulation
 from fbpic.openpmd_diag import FieldDiagnostic, ParticleDiagnostic
 import matplotlib.pyplot as pl
-from fbpic.lpa_utils.laser import add_laser_pulse, FlattenedGaussianLaser
+from fbpic.lpa_utils.laser import add_laser_pulse, GaussianLaser
 from fbpic.fields.smoothing import BinomialSmoother
 
-n_order = -1
+n_order = 64
 use_cuda = True
 lambda0 = 0.815e-6
 a0 = 5
 w0 = 22 * 1e-6
 tau = 29 / np.sqrt(2.0 * np.log(2)) * 1e-15
+ChirpStretching = 1.001
+ChirpSign = -1
 ctau = c * tau
+ctau_stretched = ctau * ChirpStretching
 z0 = 0.0e-6
 zfoc = 2000.0e-6
-N_supergaussian = 4
+GDD = ChirpSign * 0.5 * tau ** 2 * np.sqrt(ChirpStretching ** 2 - 1)
 lambdad = lambda0
 Max_m = 1
-n_e = 1.0e18 * 1e6
+n_e = 0.9e18 * 1e6
 n_c = 1.1e15 / lambdad ** 2
 lambda_p = lambdad * np.sqrt(n_c / n_e)
 print("Plasma wavelength  %e m " % lambda_p)
 gamma_wake = np.sqrt(n_c / n_e)
-zmax = 2.2 * ctau
-zmin = -2 * ctau - 1.9 * lambda_p
-rmax = 4.5 * w0
+zmax = 2.2 * ctau_stretched
+zmin = -2 * ctau_stretched - 1.5 * lambda_p
+rmax = 5 * w0
 Nm = 2
 dz = lambda0 / 24
-dr = lambda0 / 4
+dr = lambda0 / 8
 dt = dz / c
 Nz = int(np.round((zmax - zmin) / dz))
 Nr = int(np.round(rmax / dr))
@@ -42,11 +45,11 @@ p_zmax = ramp_up + plateau + ramp_down
 p_rmin = 0.0
 p_rmax = 0.95 * rmax
 p_nz = 2
-p_nr = 2
-p_nt = 4
+p_nr = 3
+p_nt = 6
 uz_m = 0.0
 L_vacuum = ramp_up
-v_window = c * np.sqrt(1.0 - n_e / n_c)
+v_window = c
 L_interact = p_zmax - p_zmin + L_vacuum
 T_interact = L_interact / c
 diag_period = 20000
@@ -110,8 +113,8 @@ if __name__ == "__main__":
         p_nr=p_nr,
         p_nt=p_nt,
     )
-    profile = FlattenedGaussianLaser(
-        a0=a0, w0=w0, tau=tau, N=N_supergaussian, z0=z0, lambda0=lambdad, zf=zfoc
+    profile = GaussianLaser(
+        a0=a0, waist=w0, tau=tau, z0=z0, lambda0=lambdad, zf=zfoc, phi2_chirp=GDD
     )
     add_laser_pulse(sim, profile)
     sim.set_moving_window(v=v_window)
