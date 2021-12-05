@@ -198,7 +198,7 @@ def particle_energy_histogram(
     tseries,
     iteration: int,
     energy_min=1,
-    energy_max=2000,
+    energy_max=3000,
     delta_energy=1,
     cutoff=35,  # CHANGEME
     species=None,
