@@ -37,7 +37,7 @@
 {% block project_header %}
 {{ super() -}}
 module use $HOME/MyModules
-module load miniforge3pic/latest
+module load mambaforge_pic/latest
 
 export FBPIC_DISABLE_THREADING=1
 export MKL_NUM_THREADS=1
