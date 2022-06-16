@@ -1,22 +1,20 @@
 """
 Automatic search for best fit amongst simulated spectra.
 """
+import csv
 import pathlib
 
 import numpy as np
 import pandas as pd
+import signac
 import xarray as xr
-from icecream import ic
-from matplotlib import rc_context
-from matplotlib import pyplot
+from matplotlib import pyplot, rc_context
+from openpyxl import load_workbook
 
-import util
+import energy_histograms
 import job_util
 import mpl_util
-import energy_histograms
-import signac
-
-ic.configureOutput(includeContext=True)
+import util
 
 FROM_ENERGY = 71  # MeV
 TO_ENERGY = 500  # MeV
@@ -134,6 +132,19 @@ def plot_simulated_spectrum(axes, spectrum, *, cone_aperture):
     return axes, label
 
 
+def excel_to_csv(path, *, out="experimental_spectrum.csv"):
+    workbook = load_workbook(filename=path)
+    sheet = workbook.active
+
+    with open(out, "w", newline="") as file_handle:
+        csv_writer = csv.writer(file_handle)
+        csv_writer.writerow(["#MeV", "dN/dE. a.u."])
+        for row in sheet.iter_rows(min_row=8, min_col=2, max_col=3):
+            csv_writer.writerow([cell.value for cell in row])
+
+    return path.parent / out
+
+
 def read_experimental_spectrum(path_to_csv, *, from_energy, to_energy):
     csv_df = pd.read_csv(
         path_to_csv,
@@ -157,7 +168,9 @@ def read_experimental_spectrum(path_to_csv, *, from_energy, to_energy):
 
 def main():
     """Main entry point."""
-    csv_path = pathlib.Path.cwd() / "experimental_spectrum.csv"
+    xls_path = pathlib.Path.cwd() / "E4 LWFA - shots of max energy.xlsx"
+    csv_path = excel_to_csv(xls_path)
+
     experimental_spectrum = read_experimental_spectrum(
         csv_path, from_energy=FROM_ENERGY, to_energy=TO_ENERGY
     )
