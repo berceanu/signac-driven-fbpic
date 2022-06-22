@@ -114,7 +114,7 @@ def plot_experimental_spectrum(axes, spectrum):
     return axes
 
 
-def plot_simulated_spectrum(axes, spectrum, *, cone_aperture):
+def plot_simulated_spectrum(axes, spectrum, *, cone_aperture, legend=True):
     label = (
         f"{spectrum.n_e.attrs['plot_label']} = {spectrum.n_e.values.item() / 1e24}, "
         f"{spectrum.power.attrs['plot_label']} = {spectrum.power.values.item():.3f}"
@@ -128,7 +128,8 @@ def plot_simulated_spectrum(axes, spectrum, *, cone_aperture):
         linewidth=0.5,
         label=label,
     )
-    axes.legend(fontsize=3)
+    if legend:
+        axes.legend(fontsize=3)
     return axes, label
 
 
@@ -201,6 +202,20 @@ def main():
                 )
             axs.set_title(r"$\mathrm{%s}$" % x_corr_foo.replace("_", r" \, "))
             fig.savefig(f"{x_corr_foo}")
+
+    # final publication figure
+    simulated_data = matched_spectra["weighted_correlation"][0.01]
+    with rc_context():
+        mpl_util.mpl_publication_style()
+        fig, axs = pyplot.subplots()
+        axs = plot_experimental_spectrum(axs, experimental_spectrum)
+        axs, _ = plot_simulated_spectrum(
+            axs,
+            simulated_data,
+            cone_aperture=0.01,
+            legend=False,
+        )
+        fig.savefig("correlation.pdf")
 
 
 if __name__ == "__main__":
