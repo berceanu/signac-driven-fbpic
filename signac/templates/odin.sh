@@ -43,7 +43,7 @@ set -u
 ### . startjob
 
 module use $HOME/MyModules
-module load miniforge3pic/latest
+module load mambaforge_pic/latest
 
 cd {{ project.config.project_dir }}
 {% endblock %}
