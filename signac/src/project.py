@@ -153,11 +153,11 @@ def are_centroid_pngs(job):
 
 @ex
 @Project.operation
-@Project.pre.isfile("exp_4deg.txt")
+@Project.pre.isfile("exp_0deg.txt")
 @Project.post.isfile("bunch/data_00000.h5")
 def bunch_txt_to_opmd(job):
     write_bunch_openpmd(
-        bunch_txt=job.fn("exp_4deg.txt"),
+        bunch_txt=job.fn("exp_0deg.txt"),
         bunch_charge=job.sp.bunch_charge,
         outdir=pathlib.Path(job.ws),
     )
