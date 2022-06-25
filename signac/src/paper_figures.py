@@ -71,7 +71,7 @@ def plot_average_centroids(x, y, ax, x_scale_is_log=True, save_as_png=True):
 def main():
     x, y = np.loadtxt("average_centroids.txt", unpack=True)
 
-    fig, ax = pplt.subplots(aspect=(golden * 3, 3))
+    fig, ax = pplt.subplots()
     plot_average_centroids(x, y, ax, x_scale_is_log=True, save_as_png=True)
 
 
