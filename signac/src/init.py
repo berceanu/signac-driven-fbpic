@@ -32,7 +32,19 @@ def main():
     )
 
     power = np.linspace(1.5, 3, 8)
-    n_e = np.linspace(7.4, 8.1, 8) * 1.0e18 * 1.0e6
+
+    f = 2/100  # fraction of N₂/(N₂+He) molecules in He-N₂ gas mixture
+
+    # density of helium gas atoms in m^-3
+    rho_he = np.linspace(3626/1040, 3969/1040, 8) * 1.0e18 * 1.0e6
+    # this gives an electron plasma density between 7.4 and 8.1 e+24 m^-3
+    atomic_number_he = 2
+
+    ionization_level_nitrogen = 3.  # initial ionization level of Nitrogen, ionized by laser prepulse
+    rho_nitrogen_molecules = f / (1 - f) * rho_he
+    rho_nitrogen_atoms = 2 * rho_nitrogen_molecules
+
+    n_e = ionization_level_nitrogen * rho_nitrogen_atoms + atomic_number_he * rho_he
 
     m = np.meshgrid(power, n_e)  # a0
     p_n_e = np.transpose(m).reshape(-1, 2)
@@ -68,9 +80,9 @@ def main():
             profile_flatness=6,  # Flatness of laser profile far from focus (larger means flatter) (default 100)
             # The density profile
             flat_top_dist=0.0e-6,  # plasma flat top distance
-            sigma_right=1471.0e-6,
-            center_left=3000.0e-6,
-            sigma_left=1471.0e-6,
+            sigma_right=1000.0e-6,
+            center_left=2500.0e-6,
+            sigma_left=1000.0e-6,
             power=p,
             current_correction="curl-free",  # "curl-free" (default, faster) or "cross-deposition" (more local)
             # do not change below this line ##############
