@@ -243,20 +243,29 @@ def run_fbpic(job):
         p_nr=job.sp.p_nr,
         p_nt=job.sp.p_nt,
     )
-
-    job.sp.rho_nitrogen_atoms
-    
     # Add the contaminant ions
-    atoms_nitrogen = sim.add_new_species( q=job.sp.ionization_level_nitrogen * u.proton_charge.to_value("C"), m=14.*u.proton_mass.to_value("kg"), n=job.sp.rho_nitrogen_atoms,
-    dens_func=make_gaussian_dens_func(job), p_nz=job.sp.p_nz, p_nr=job.sp.p_nr, p_nt=job.sp.p_nt, p_zmin=job.sp.p_zmin )
-
-    # Activate ionization of N ions (for levels above 5).
+    # Helium is assumed to be fully ionized
+    atoms_N = sim.add_new_species(
+        q=job.sp.ionization_level_nitrogen * u.elementary_charge.to_value("C"),
+        m=14.0 * u.proton_mass.to_value("kg"),
+        n=job.sp.rho_nitrogen_atoms,
+        dens_func=make_gaussian_dens_func(job),
+        p_nz=job.sp.p_nz,
+        p_nr=job.sp.p_nr,
+        p_nt=job.sp.p_nt,
+        p_zmin=job.sp.p_zmin,
+        p_zmax=job.sp.p_zmax,
+        p_rmax=job.sp.p_rmax,
+    )
+    # Activate ionization of N ions (for levels above job.sp.ionization_level_nitrogen).
     # Store the created electrons in a new dedicated electron species that
     # does not contain any macroparticles initially
- 
-    elec_from_N = sim.add_new_species( q=u.electron_charge.to_value("C"), m=u.electron_mass.to_value("kg") )
-    atoms_nitrogen.make_ionizable( 'N', target_species=elec_from_N, level_start=job.sp.ionization_level_nitrogen )
-
+    elec_from_N = sim.add_new_species(
+        q=u.electron_charge.to_value("C"), m=u.electron_mass.to_value("kg")
+    )
+    atoms_N.make_ionizable(
+        "N", target_species=elec_from_N, level_start=job.sp.ionization_level_nitrogen
+    )
 
     add_laser_pulse(
         sim=sim,
@@ -277,14 +286,14 @@ def run_fbpic(job):
         ParticleDiagnostic(
             period=job.sp.diag_period,
             species={"electrons": plasma_elec, "electrons from N": elec_from_N},
-            select={'uz': [5, None]},
+            select={"uz": [5, None]},
             comm=sim.comm,
             write_dir=write_dir,
         ),
         ParticleChargeDensityDiagnostic(
             period=job.sp.diag_period,
             sim=sim,
-            species={"electrons": plasma_elec,"electrons from N": elec_from_N},
+            species={"electrons": plasma_elec, "electrons from N": elec_from_N},
             write_dir=write_dir,
         ),
     ]

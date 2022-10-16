@@ -17,6 +17,7 @@ import util
 # easily fits in RAM
 NUMBER_OF_H5 = 50
 SQRT_FACTOR = math.sqrt(2 * math.log(2))
+ATOMIC_NUMBER_HE = 2  # Z for Helium
 
 
 def get_dz(zmax, zmin, Nz):
@@ -33,22 +34,13 @@ def main():
 
     power = np.linspace(1.5, 3, 8)
 
-    f = 2/100  # fraction of N₂/(N₂+He) molecules in He-N₂ gas mixture
-
     # density of helium gas atoms in m^-3
-    rho_he = np.linspace(3626/1040, 3969/1040, 8) * 1.0e18 * 1.0e6
+    rho_he = np.linspace(3626 / 1040, 3969 / 1040, 8) * 1.0e18 * 1.0e6
     # this gives an electron plasma density between 7.4 and 8.1 e+24 m^-3
-    atomic_number_he = 2
 
-    ionization_level_nitrogen = 3.  # initial ionization level of Nitrogen, ionized by laser prepulse
-    rho_nitrogen_molecules = f / (1 - f) * rho_he
-    rho_nitrogen_atoms = 2 * rho_nitrogen_molecules
-
-    n_e = ionization_level_nitrogen * rho_nitrogen_atoms + atomic_number_he * rho_he
-
-    m = np.meshgrid(power, n_e)  # a0
-    p_n_e = np.transpose(m).reshape(-1, 2)
-    for p, n_e in p_n_e:
+    m = np.meshgrid(power, rho_he)
+    values = np.transpose(m).reshape(-1, 2)
+    for p, rhohe in values:
         sp = dict(
             random_seed=42,  # deterministic random seed
             # TODO: move to job document
@@ -66,9 +58,15 @@ def main():
             # The particles
             # Position of the beginning of the plasma (meters)
             p_zmin=0.0e-6,
-            n_e=n_e,  # Density (electrons.meters^-3)
+            rho_he=rhohe,  # Density of Helium atoms (monoatomic gas)
             p_nz=2,  # Number of particles per cell along z (default 2)
             p_nr=2,  # Number of particles per cell along r (default 2)
+            # ionization
+            f=2 / 100,  # Fraction of N₂/(N₂+He) molecules in He-N₂ gas mixture
+            ionization_level_nitrogen=3,  # Initial ionization level of Nitrogen, ionized by laser prepulse
+            rho_nitrogen_molecules=None,  # Density of Nitrogen diatomic molecules
+            rho_nitrogen_atoms=None,  # Density of Nitrogen atoms
+            n_e=None,  # Density of background electrons (electrons.meters^-3)
             # The laser
             a0=2.4,  # Laser amplitude
             # Laser waist, converted from experimental FWHM@intensity
@@ -136,6 +134,14 @@ def main():
         sp["N_step"] = int(sp["T_interact"] / sp["dt"])
         sp["N_step"] = util.round_to_nearest(sp["N_step"], base=NUMBER_OF_H5) + 1
         sp["diag_period"] = (sp["N_step"] - 1) // NUMBER_OF_H5
+
+        sp["rho_nitrogen_molecules"] = sp["f"] / (1 - sp["f"]) * sp["rho_he"]
+        sp["rho_nitrogen_atoms"] = 2 * sp["rho_nitrogen_molecules"]
+        sp["n_e"] = (
+            sp["ionization_level_nitrogen"] * sp["rho_nitrogen_atoms"]
+            + ATOMIC_NUMBER_HE * sp["rho_he"],
+        )  # Density of background electrons (electrons.meters^-3)
+
         project.open_job(sp).init()
 
     for job in project:
