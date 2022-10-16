@@ -139,8 +139,9 @@ def main():
         sp["rho_nitrogen_atoms"] = 2 * sp["rho_nitrogen_molecules"]
         sp["n_e"] = (
             sp["ionization_level_nitrogen"] * sp["rho_nitrogen_atoms"]
-            + ATOMIC_NUMBER_HE * sp["rho_he"],
-        )  # Density of background electrons (electrons.meters^-3)
+            + ATOMIC_NUMBER_HE * sp["rho_he"]
+        )
+        # Density of background electrons (electrons.meters^-3)
 
         project.open_job(sp).init()
 
