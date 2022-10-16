@@ -206,6 +206,7 @@ def run_fbpic(job):
         ParticleChargeDensityDiagnostic,
         ParticleDiagnostic,
     )
+    from scipy.constants import e
 
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
@@ -232,7 +233,7 @@ def run_fbpic(job):
     )
     # Add the plasma electrons
     plasma_elec = sim.add_new_species(
-        q=u.electron_charge.to_value("C"),  # <0
+        q=-e,  # <0
         m=u.electron_mass.to_value("kg"),
         n=job.sp.n_e,
         dens_func=make_gaussian_dens_func(job),
@@ -261,7 +262,7 @@ def run_fbpic(job):
     # Store the created electrons in a new dedicated electron species that
     # does not contain any macroparticles initially
     elec_from_N = sim.add_new_species(
-        q=u.electron_charge.to_value("C"), m=u.electron_mass.to_value("kg")
+        q=-e, m=u.electron_mass.to_value("kg")
     )
     atoms_N.make_ionizable(
         "N", target_species=elec_from_N, level_start=job.sp.ionization_level_nitrogen
