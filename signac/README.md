@@ -32,6 +32,12 @@ To submit a `SLURM` job for `N` parallel `fbpic` simulations:
 $ ./project.sh N
 ```
 
+### for debugging
+
+```console
+$ python src/project.py exec --debug run_fbpic 7eac9305b1f30eab0cde1d1f0fc48ba3
+```
+
 # Notes
 
 - all commands should be ran from the directory that contains this README file
