@@ -206,7 +206,8 @@ def run_fbpic(job):
         ParticleChargeDensityDiagnostic,
         ParticleDiagnostic,
     )
-    from scipy.constants import e
+    from scipy.constants import c, e, m_e, m_p
+
 
     # redirect stdout to "stdout.txt"
     orig_stdout = sys.stdout
@@ -234,7 +235,7 @@ def run_fbpic(job):
     # Add the plasma electrons
     plasma_elec = sim.add_new_species(
         q=-e,  # <0
-        m=u.electron_mass.to_value("kg"),
+        m=m_e,
         n=job.sp.n_e,
         dens_func=make_gaussian_dens_func(job),
         p_zmin=job.sp.p_zmin,
@@ -247,8 +248,8 @@ def run_fbpic(job):
     # Add the contaminant ions
     # Helium is assumed to be fully ionized
     atoms_N = sim.add_new_species(
-        q=job.sp.ionization_level_nitrogen * u.elementary_charge.to_value("C"),
-        m=14.0 * u.proton_mass.to_value("kg"),
+        q=job.sp.ionization_level_nitrogen * e,
+        m=14.0 * m_p,
         n=job.sp.rho_nitrogen_atoms,
         dens_func=make_gaussian_dens_func(job),
         p_nz=job.sp.p_nz,
@@ -262,7 +263,7 @@ def run_fbpic(job):
     # Store the created electrons in a new dedicated electron species that
     # does not contain any macroparticles initially
     elec_from_N = sim.add_new_species(
-        q=-e, m=u.electron_mass.to_value("kg")
+        q=-e, m=m_e
     )
     atoms_N.make_ionizable(
         "N", target_species=elec_from_N, level_start=job.sp.ionization_level_nitrogen
