@@ -140,7 +140,7 @@ def excel_to_csv(path, *, out="experimental_spectrum.csv"):
     with open(out, "w", newline="") as file_handle:
         csv_writer = csv.writer(file_handle)
         csv_writer.writerow(["#MeV", "dN/dE. a.u."])
-        for row in sheet.iter_rows(min_row=8, min_col=2, max_col=3):
+        for row in sheet.iter_rows(min_row=8, min_col=5, max_col=6):
             csv_writer.writerow([cell.value for cell in row])
 
     return path.parent / out
