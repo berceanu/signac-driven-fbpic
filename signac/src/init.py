@@ -7,11 +7,11 @@ import math
 import pathlib
 
 import numpy as np
-import signac
 import unyt as u
+import util
 from prepic import Plasma, lwfa
 
-import util
+import signac
 
 # The number of output hdf5 files, such that Nz * Nr * NUMBER_OF_H5 * size(float64)
 # easily fits in RAM
