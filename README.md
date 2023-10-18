@@ -1,8 +1,6 @@
-# `fbpic` + `signac` = 💓
+# `fbpic` automation via `signac`
 
 Integration of the [`fbpic`](https://fbpic.github.io) particle-in-cell code with the [`signac`](https://signac.io) data management framework.
-
-Demo at [`ra5.ro`](http://signac.ra5.ro)
 
 ![dashboard](https://github.com/berceanu/signac-driven-fbpic/blob/master/images/dashboard.png?raw=true)
 
